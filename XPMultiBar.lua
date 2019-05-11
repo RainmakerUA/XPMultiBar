@@ -1,7 +1,13 @@
-local addonName, addonTable = ...
+--[=====[
+		## XPMultiBar.lua - module
+		Main module (UI) for XPMultiBar addon
+--]=====]
 
-XPMultiBar = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceEvent-3.0", "AceConsole-3.0")
-local self, XPMultiBar, utils, metadata = XPMultiBar, XPMultiBar, addonTable.utils, addonTable.metadata
+local addonName = ...
+local XPMultiBar = LibStub("AceAddon-3.0"):NewAddon(addonName)
+local UI = XPMultiBar:NewModule("UI", "AceEvent-3.0")
+
+local self = UI
 
 -- Libs
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
@@ -9,10 +15,7 @@ local LSM3 = LibStub("LibSharedMedia-3.0")
 local LQT = LibStub("LibQTip-1.0")
 
 -- Lua
-local _G = _G
-local ipairs = ipairs
 local select = select
-local tonumber = tonumber
 local tostring = tostring
 local type = type
 
@@ -22,7 +25,8 @@ local math_floor = math.floor
 local math_min = math.min
 
 -- WoW globals
-local BreakUpLargeNumbers = BreakUpLargeNumbers
+local ChatEdit_GetActiveWindow = ChatEdit_GetActiveWindow
+local ChatEdit_GetLastActiveWindow = ChatEdit_GetLastActiveWindow
 local CollapseFactionHeader = CollapseFactionHeader
 local ExpandFactionHeader = ExpandFactionHeader
 local GameFontNormal = GameFontNormal
@@ -42,7 +46,6 @@ local GetMouseButtonClicked = GetMouseButtonClicked
 local GetNumFactions = GetNumFactions
 local GetWatchedFactionInfo = GetWatchedFactionInfo
 local GetXPExhaustion = GetXPExhaustion
-local InterfaceOptionsFrame_OpenToCategory = InterfaceOptionsFrame_OpenToCategory
 local IsAltKeyDown = IsAltKeyDown
 local IsControlKeyDown = IsControlKeyDown
 local IsResting = IsResting
@@ -61,827 +64,47 @@ local GetAzeritePowerLevel = C_AzeriteItem.GetPowerLevel
 local GetFactionParagonInfo = C_Reputation.GetFactionParagonInfo
 local IsFactionParagon = C_Reputation.IsFactionParagon
 
-local BACKGROUND = BACKGROUND
 local FACTION_ALLIANCE = FACTION_ALLIANCE
 local FACTION_BAR_COLORS = FACTION_BAR_COLORS
 local FACTION_HORDE = FACTION_HORDE
 local GUILD = GUILD
 
-utils.forEach(
-	{
-		["BantoBar"] = "Interface\\AddOns\\XPMultiBar\\Textures\\bantobar",
-		["Charcoal"] = "Interface\\AddOns\\XPMultiBar\\Textures\\charcoal",
-		["Glaze"] = "Interface\\AddOns\\XPMultiBar\\Textures\\glaze",
-		["LiteStep"] = "Interface\\AddOns\\XPMultiBar\\Textures\\litestep",
-		["Marble"] = "Interface\\AddOns\\XPMultiBar\\Textures\\marble",
-		["Otravi"] = "Interface\\AddOns\\XPMultiBar\\Textures\\otravi",
-		["Perl"] = "Interface\\AddOns\\XPMultiBar\\Textures\\perl",
-		["Smooth"] = "Interface\\AddOns\\XPMultiBar\\Textures\\smooth",
-		["Smooth v2"] = "Interface\\AddOns\\XPMultiBar\\Textures\\smoothv2",
-		["Striped"] = "Interface\\AddOns\\XPMultiBar\\Textures\\striped",
-		["Waves"] = "Interface\\AddOns\\XPMultiBar\\Textures\\waves"
-	},
-	function(path, name)
-		LSM3:Register("statusbar", path, name)
-	end
-)
-
--- SavedVariables stored here
-local db
-
--- Table stores KTL data
-local lastXPValues = {}
-local sessionKills = 0
-
--- Used to fix some weird bar switching issue :)
-local mouseOverWithShift
+-- Modules late init
+local Bars
+local Config
+local Data
+local Utils
 
 -- Reputation menu tooltip
 local repTooltip
 
--- Azerite bar show
-local showAzerBar = false
-
-local maxPlayerLevel = MAX_PLAYER_LEVEL_TABLE[GetExpansionLevel()]
-
--- Artifact item title color
-local artColor
-
-do
-	local color = ITEM_QUALITY_COLORS[6]
-	artColor = {
-		r = color.r,
-		g = color.g,
-		b = color.b,
-		a = color.a
-	}
-end
-
--- Reputation colors
-local STANDING_EXALTED = 8
-local repHexColor
-
--- repHex colors are automatically generated and cached when first looked up.
-do
-	repHexColor = setmetatable({}, {
-		__index = function(t, k)
-			local FBC
-			if k == STANDING_EXALTED then
-				FBC = db.bars.exalted
-			else
-				FBC = FACTION_BAR_COLORS[k]
-			end
-
-			local hex = ("%02x%02x%02x"):format(FBC.r * 255, FBC.g * 255, FBC.b * 255)
-			t[k] = hex
-
-			return hex
-		end,
-	})
-end
-
--- Cache FACTION_STANDING_LABEL
--- When a lookup is first attempted on this cable, we go and lookup the real
--- value and cache it.
-local factionStandingLabel
-do
-	local _G = _G
-	factionStandingLabel = setmetatable({}, {
-		__index = function(t, k)
-			local FSL = _G["FACTION_STANDING_LABEL"..k]
-			t[k] = FSL
-			return FSL
-		end,
-	})
-end
-
--- Default settings
-local defaults = {
-	profile = {
-		-- General
-		general = {
-			border = false,
-			texture = "Smooth",
-			width = 1028,
-			height = 20,
-			fontsize = 14,
-			fontoutline = false,
-			posx = nil,
-			posy = nil,
-			scale = 1,
-			strata = "HIGH",
-			hidetext = false,
-			dynamicbars = false,
-			mouseover = false,
-			locked = false,
-			bubbles = false,
-			clamptoscreen = true,
-			commify = false,
-			textposition = 50,
-		},
-		bars = {
-			-- XP bar
-			xpstring = "Exp: [curXP]/[maxXP] ([restPC]) :: [curPC] through level [pLVL] :: [needXP] XP left :: [KTL] kills to level",
-			indicaterest = true,
-			showremaining = true,
-			showzerorest = true,
-			-- Reputation bar
-			repstring = "Rep: [faction] ([standing]) [curRep]/[maxRep] :: [repPC]",
-			autowatchrep = true,
-			showrepbar = false,
-			autotrackguild = false,
-			-- Azerite bar
-			azerstr = "[name]: [curXP]/[maxXP] :: [curPC] through level [pLVL] :: [needXP] AP left",
-			showazerbar = true,
-		-- Bar colors
-			normal = { r = 0.8, g = 0, b = 1, a = 1 },
-			rested = { r = 0, g = 0.4, b = 1, a = 1 },
-			resting = { r = 1.0, g = 0.82, b = 0.25, a = 1 },
-			remaining = { r = 0.82, g = 0, b = 0, a = 1 },
-			background = { r = 0.5, g = 0.5, b = 0.5, a = 0.5 },
-			exalted = { r = 0, g = 0.77, b = 0.63, a = 1 },
-			azerite = artColor, -- azerite bar default color is a color of artifact item title
-			xptext = { r = 1, g = 1, b = 1, a = 1 },
-			reptext = { r = 1, g = 1, b = 1, a = 1 },
-			azertext = { r = 1, g = 1, b = 1, a = 1 },
-		},
-		-- Reputation menu options
-		repmenu = {
-			scale = 1,
-			autohidedelay = 1,
-		},
-	}
-}
-
---[[
-	Position: lock, screen clamp, frame strata
-	Size: width, height, scale
-	Font: font face, font size, outline
-	?: texture, bubbles, show border
-	?: text position, dynamic bars, mouseover
-	OFF: Text: hide text, separate thousands, show zero rest xp
---]]
-
-local function GetOptions(uiTypes, uiName, appName)
-	local function getColor(info)
-		local col = db.bars[info[#info]]
-		return col.r, col.g, col.b, col.a or 1
-	end
-	local function setColor(info, r, g, b, a)
-			local col = db.bars[info[#info]]
-			col.r, col.g, col.b, col.a = r, g, b, a
-			repHexColor[STANDING_EXALTED] = nil
-			local bgc = db.bars.background
-			XPMultiBar.frame.background:SetStatusBarColor(bgc.r, bgc.g, bgc.b, bgc.a)
-		XPMultiBar:UpdateXPBar()
-	end
-
-	if appName == "XPMultiBar-General" then
-		local options = {
-			type = "group",
-			name = metadata.title,
-			get = function(info) return db.general[info[#info]] end,
-			set = function(info, value)
-				db.general[info[#info]] = value
-				self:UpdateXPBar()
-			end,
-			args = {
-				-- Position
-				posGroup = {
-					type = "group",
-					order = 10,
-					name = L["Position"],
-					guiInline = true,
-					width = "full",
-					args = {
-						locked = {
-							type = "toggle",
-							order = 100,
-							name = L["Lock"],
-							desc = L["Toggle the locking."],
-						},
-						clamptoscreen = {
-							type = "toggle",
-							order = 200,
-							name = L["Screen Clamp"],
-							desc = L["Toggle screen clamping."],
-						},
-						strata = {
-							type = "select",
-							order = 300,
-							name = L["Frame Strata"],
-							desc = L["Set the frame strata."],
-							style = "dropdown",
-							values = {
-								HIGH = "High",
-								MEDIUM = "Medium",
-								LOW = "Low",
-								BACKGROUND = "Background",
-							},
-						},
-					},
-				},
-				-- Size
-				sizeGroup = {
-					type = "group",
-					order = 20,
-					name = L["Size"],
-					guiInline = true,
-					width = "full",
-					args = {
-						width = {
-							type = "range",
-							order = 100,
-							name = L["Width"],
-							desc = L["Set the bar width."],
-							min = 100,
-							max = 5000,
-							step = 1,
-							bigStep = 50,
-							set = function(info, value)
-								db.general.width = value
-								self:SetWidth(value)
-							end,
-						},
-						height = {
-							type = "range",
-							order = 200,
-							name = L["Height"],
-							desc = L["Set the bar height."],
-							min = 10,
-							max = 100,
-							step = 1,
-							bigStep = 5,
-							set = function(info, value)
-								db.general.height = value
-								self:SetHeight(value)
-							end
-						},
-						scale = {
-							type = "range",
-							order = 300,
-							name = L["Scale"],
-							desc = L["Set the bar scale."],
-							min = 0.5,
-							max = 2,
-							set = function(info, value)
-								self:SavePosition()
-								self.frame:SetScale(value)
-								db.general.scale = value
-								self:RestorePosition()
-							end,
-						},
-					},
-				},
-				-- Font
-				fontGroup = {
-					type = "group",
-					order = 30,
-					name = L["Font"],
-					guiInline = true,
-					width = "full",
-					args = {
-						font = {
-							type = "select",
-							order = 100,
-							name = L["Font Face"],
-							desc = L["Set the font face."],
-							style = "dropdown",
-							dialogControl = "LSM30_Font",
-							values = AceGUIWidgetLSMlists.font,
-							set = function(info, value)
-								db.general.font = value
-								self:SetFontOptions()
-								self:UpdateXPBar()
-							end,
-						},
-						fontsize = {
-							type = "range",
-							order = 200,
-							name = L["Font Size"],
-							desc = L["Change the size of the text."],
-							min = 5,
-							max = 30,
-							step = 1,
-							set = function(info, value)
-								db.general.fontsize = value
-								self:SetFontOptions()
-							end,
-						},
-						fontoutline = {
-							type = "toggle",
-							order = 300,
-							name = L["Font Outline"],
-							desc = L["Toggles the font outline."],
-							set = function(info, value)
-								db.general.fontoutline = value
-								self:SetFontOptions()
-							end,
-						},
-					},
-				},
-				-- Visuals
-				visGroup = {
-					type = "group",
-					order = 40,
-					name = L["Visuals"],
-					guiInline = true,
-					width = "full",
-					args = {
-						texture = {
-							type = "select",
-							order = 100,
-							name = L["Texture"],
-							desc = L["Set the bar texture."],
-							style = "dropdown",
-							dialogControl = "LSM30_Statusbar",
-							values = AceGUIWidgetLSMlists.statusbar,
-							set = function(info, value)
-								db.general.texture = value
-								self:SetTexture(value)
-								self:UpdateXPBar()
-							end,
-						},
-						bubbles = {
-							type = "toggle",
-							order = 200,
-							name = L["Bubbles"],
-							desc = L["Toggle bubbles on the XP bar."],
-							set = function(info, value)
-								db.general.bubbles = value
-								self:ToggleBubbles()
-							end,
-						},
-						border = {
-							type = "toggle",
-							order = 300,
-							name = L["Border"],
-							desc = L["Toggle the border."],
-							set = function(info, value)
-								db.general.border = value
-								self:ToggleBorder()
-							end,
-						},
-					},
-				},
-				-- Text
-				textGroup = {
-					type = "group",
-					order = 50,
-					name = L["Text Display"],
-					guiInline = true,
-					width = "full",
-					args = {
-						textposition = {
-							type = "range",
-							order = 100,
-							name = L["Text Position"],
-							desc = L["Select the position of the text on XP MultiBar."],
-							min = 0,
-							max = 100,
-							step = 1,
-							bigStep = 5,
-							set = function(info, value)
-								db.general.textposition = value
-								self:SetTextPosition(value)
-							end,
-						},
-						commify = {
-							type = "toggle",
-							order = 200,
-							name = L["Commify"],
-							desc = L["Insert thousands separators into long numbers."],
-						},
-						showzerorep = {
-							type = "toggle",
-							order = 300,
-							name = L["Show Zero"],
-							desc = L["Show zero values in the various Need tags, instead of an empty string"],
-						},
-					},
-				},
-			},
-		}
-		return options
-	end
-	if appName == "XPMultiBar-Bars" then
-		return {
-			type = "group",
-			name = L["Bars"],
-			get = function(info) return db.bars[info[#info]] end,
-			set = function(info, value)
-				db.bars[info[#info]] = value
-				self:UpdateXPBar()
-			end,
-			args = {
-				bardesc = {
-					type = "description",
-					order = 0,
-					name = L["Options for XP / reputation / azerite power bars."],
-				},
-				xpgroup = {
-					type = "group",
-					order = 10,
-					name = L["Experience"],
-					guiInline = true,
-					width = "full",
-					args = {
-						xpdesc = {
-							type = "description",
-							order = 0,
-							name = L["Experience Bar related options"],
-						},
-						xpstring = {
-							type = "input",
-							order = 10,
-							name = L["Customise Text"],
-							desc = L["Customise the XP text string."],
-							width = "full",
-						},
-						showremaining = {
-							type = "toggle",
-							order = 20,
-							name = L["Remaining Rested XP"],
-							desc = L["Toggle the display of remaining rested XP."],
-						},
-						indicaterest = {
-							type = "toggle",
-							order = 30,
-							name = L["Rest Indication"],
-							desc = L["Toggle the rest indication."],
-						},
-						xpcolorgroup = {
-							type = "group",
-							order = 40,
-							name = "",
-							guiInline = true,
-							width = "full",
-							get = getColor,
-							set = setColor,
-							args = {
-								xptext = {
-									type = "color",
-									order = 10,
-									name = L["XP Text"],
-									desc = L["Set the color of the XP text."],
-									hasAlpha = true,
-								},
-								background = {
-									type = "color",
-									order = 20,
-									name = BACKGROUND,
-									desc = L["Set the color of the background bar."],
-									hasAlpha = true,
-								},
-								normal = {
-									type = "color",
-									order = 30,
-									name = L["Normal"],
-									desc = L["Set the color of the normal bar."],
-									hasAlpha = true,
-								},
-								rested = {
-									type = "color",
-									order = 40,
-									name = L["Rested"],
-									desc = L["Set the color of the rested bar."],
-									hasAlpha = true,
-								},
-								resting = {
-									type = "color",
-									order = 50,
-									name = L["Resting"],
-									desc = L["Set the color of the resting bar."],
-									hasAlpha = true,
-								},
-								remaining = {
-									type = "color",
-									order = 60,
-									name = L["Remaining"],
-									desc = L["Set the color of the remaining bar."],
-									hasAlpha = true,
-								},
-							},
-						},
-					},
-				},
-				repgroup = {
-					type = "group",
-					order = 20,
-					name = L["Reputation Bar"],
-					guiInline = true,
-					width = "full",
-					args = {
-						repdesc = {
-							type = "description",
-							order = 0,
-							name = L["Reputation Bar related options"],
-						},
-						repstring = {
-							type = "input",
-							order = 10,
-							name = L["Customise Text"],
-							desc = L["Customise the Reputation text string."],
-							width = "full",
-						},
-						autowatchrep = {
-							type = "toggle",
-							order = 20,
-							name = L["Auto Watch Reputation"],
-							desc = L["Automatically watch the factions you gain reputation with."],
-							set = function()
-								db.bars.autowatchrep = not db.bars.autowatchrep
-								XPMultiBar:ToggleAutoWatch()
-							end,
-						},
-						autotrackguild = {
-							type = "toggle",
-							order = 30,
-							name = L["Auto Track Guild Reputation"],
-							desc = L["Automatically track your guild reputation increases."],
-						},
-						showrepbar = {
-							type = "toggle",
-							order = 40,
-							name = L["Show Reputation"],
-							desc = L["Show the reputation bar instead of the XP bar."],
-							set = function()
-								XPMultiBar:ToggleShowReputation()
-							end,
-						},
-						repcolorgroup = {
-							type = "group",
-							order = 50,
-							name = "",
-							guiInline = true,
-							width = "full",
-							get = getColor,
-							set = setColor,
-							args = {
-								reptext = {
-									type = "color",
-									order = 10,
-									name = L["Reputation Text"],
-									desc = L["Set the color of the Reputation text."],
-									hasAlpha = true,
-								},
-								exalted = {
-									type = "color",
-									order = 20,
-									name = _G.FACTION_STANDING_LABEL8,
-									desc = L["Set the color of the Exalted reputation bar."],
-									hasAlpha = true,
-								},
-							},
-						},
-					},
-				},
-				azergroup = {
-					type = "group",
-					order = 30,
-					name = L["Azerite Bar"],
-					guiInline = true,
-					width = "full",
-					args = {
-						azerdesc = {
-							type = "description",
-							order = 0,
-							name = L["Azerite Bar related options"],
-						},
-						azerstr = {
-							name = L["Customise Text"],
-							desc = L["Customise the Azerite text string."],
-							type = "input",
-							order = 10,
-							width = "full",
-						},
-						showazerbar = {
-							type = "toggle",
-							order = 20,
-							name = L["Show Azerite"],
-							desc = L["Show the azerite bar instead of the XP bar when on max level."],
-						},
-						azercolorgroup = {
-							type = "group",
-							order = 30,
-							name = "",
-							guiInline = true,
-							width = "full",
-							get = getColor,
-							set = setColor,
-							args = {
-								azertext = {
-									type = "color",
-									order = 10,
-									name = L["Azerite Text"],
-									desc = L["Set the color of the Azerite text."],
-									hasAlpha = true,
-								},
-								azerite = {
-									type = "color",
-									order = 20,
-									name = L["Azerite Bar"],
-									desc = L["Set the color of the Azerite Power bar."],
-									hasAlpha = true,
-								},
-							},
-						},
-					},
-				},
-			},
-		}
-	end
-	if appName == "XPMultiBar-Colors" then
-		local options = {
-			type = "group",
-			name = L["Bar Colors"],
-			get = function(info)
-				local col = db.bars[info[#info]]
-				return col.r, col.g, col.b, col.a or 1
-			end,
-			set = function(info, r, g, b, a)
-					local col = db.bars[info[#info]]
-					col.r, col.g, col.b, col.a = r, g, b, a
-					repHexColor[STANDING_EXALTED] = nil
-					local bgc = db.bars.background
-					self.frame.background:SetStatusBarColor(
-					bgc.r,
-					bgc.g,
-					bgc.b,
-					bgc.a
-				)
-				self:UpdateXPBar()
-			end,
-			args = {
-				colorsdesc = {
-					type = "description",
-					order = 0,
-					name = L["Set the colors for various XP MultiBar bars."],
-				},
-				xptext = {
-					name = L["XP Text"],
-					desc = L["Set the color of the XP text."],
-					type = "color",
-					order = 600,
-					hasAlpha = true,
-				},
-				background = {
-					name = BACKGROUND,
-					desc = L["Set the color of the background bar."],
-					type = "color",
-					order = 800,
-					hasAlpha = true,
-				},
-				normal = {
-					name = L["Normal"],
-					desc = L["Set the color of the normal bar."],
-					type = "color",
-					order = 100,
-					hasAlpha = true,
-				},
-				rested = {
-					name = L["Rested"],
-					desc = L["Set the color of the rested bar."],
-					type = "color",
-					order = 200,
-					hasAlpha = true,
-				},
-				resting = {
-					name = L["Resting"],
-					desc = L["Set the color of the resting bar."],
-					type = "color",
-					order = 300,
-					hasAlpha = true,
-				},
-				remaining = {
-					name = L["Remaining"],
-					desc = L["Set the color of the remaining bar."],
-					type = "color",
-					order = 400,
-					hasAlpha = true,
-				},
-				reptext = {
-					name = L["Reputation Text"],
-					desc = L["Set the color of the Reputation text."],
-					type = "color",
-					order = 700,
-					hasAlpha = true,
-				},
-				exalted = {
-					name = _G.FACTION_STANDING_LABEL8,
-					desc = L["Set the color of the Exalted reputation bar."],
-					type = "color",
-					order = 500,
-					hasAlpha = true,
-				},
-				azerite = {
-					name = L["Azerite Bar"],
-					desc = L["Set the color of the Azerite Power bar."],
-					type = "color",
-					order = 550,
-					hasAlpha = true,
-				},
-			},
-		}
-		return options
-	end
-	if appName == "XPMultiBar-RepMenu" then
-		local options = {
-			type = "group",
-			name = L["Reputation Menu"],
-			get = function(info) return db.repmenu[info[#info]] end,
-			set = function(info, value) db.repmenu[info[#info]] = value end,
-			args = {
-				repmenudesc = {
-					type = "description",
-					order = 0,
-					name = L["Configure the reputation menu."],
-				},
-				scale = {
-					name = L["Scale"],
-					desc = L["Set the scale of the reputation menu."],
-					type = "range",
-					order = 100,
-					min = 0.5,
-					max = 2,
-					step = 0.5,
-				},
-				autohidedelay = {
-					name = L["Auto Hide Delay"],
-					desc = L["Set the length of time (in seconds) it takes for the menu to disappear once you move the mouse away."],
-					type = "range",
-					order = 200,
-					min = 0,
-					max = 5,
-				},
-			}
-		}
-		return options
-	end
-end
-
 local function commify(num)
-	if not db.general.commify or type(num) ~= "number" or tostring(num):len() <= 3 then
-		return num
-	end
-	return BreakUpLargeNumbers(num)
+	local db = Config.GetDB()
+	return Utils.Commify(num, db.general.commify)
 end
 
-local function formatPercents(dividend, divisor)
-	return ("%.1f%%%%"):format(dividend / divisor * 100)
-end
-
-function formatRemainingPercents(dividend, divisor)
-	return ("%.1f%%%%"):format(100 - (dividend / divisor * 100))
-end
-
-local function GetKTL() --> number
-	if #lastXPValues == 0 then
-		return 0
-	end
-
-	local xp = 0
-
-	for _, v in ipairs(lastXPValues) do
-		xp = xp + v
-	end
-
-	if xp == 0 then
-		return 0
-	end
-
-	local remXP = XPMultiBar.remXP
-	local avgxp = xp / #lastXPValues
-	local ktl = remXP / avgxp
-
-	return math_ceil(remXP / avgxp)
+local function isPlayerMaxLevel(level)
+	return (level or UnitLevel("player")) == Config.MAX_PLAYER_LEVEL
 end
 
 local function GetXPText(cXP, nXP, remXP, restedXP)
 	local restXPText, restPCText
 	local level = UnitLevel("player")
-	local ktl = GetKTL()
+	local ktl = Data.GetKTL()
+	local db = Config.GetDB()
 
-	if restedXP then
-		restXPText = commify(restedXP)
-		restPCText = formatPercents(restedXP, nXP)
-	else
-		restXPText = db.bars.showzerorest and "0" or ""
-		restPCText = db.bars.showzerorest and "0%%" or ""
-	end
-
-	return utils.multiReplace(
+	return Utils.MultiReplace(
 		db.bars.xpstring,
 		{
 			["%[curXP%]"] = commify(cXP),
 			["%[maxXP%]"] = commify(nXP),
-			["%[restXP%]"] = restXPText,
-			["%[restPC%]"] = restPCText,
-			["%[curPC%]"] = formatPercents(cXP, nXP),
-			["%[needPC%]"] = formatRemainingPercents(cXP, nXP),
+			["%[restXP%]"] = commify(restedXP),
+			["%[restPC%]"] = Utils.FormatPercents(restedXP, nXP),
+			["%[curPC%]"] = Utils.FormatPercents(cXP, nXP),
+			["%[needPC%]"] = Utils.FormatRemainingPercents(cXP, nXP),
 			["%[pLVL%]"] = level,
 			["%[nLVL%]"] = level + 1,
-			["%[mLVL%]"] = maxPlayerLevel,
+			["%[mLVL%]"] = Config.MAX_PLAYER_LEVEL,
 			["%[needXP%]"] = commify(remXP),
 			["%[isLocked%]"] = IsXPUserDisabled() and "*" or "",
 			["%[KTL%]"] = ktl > 0 and commify(ktl) or "?",
@@ -891,14 +114,15 @@ local function GetXPText(cXP, nXP, remXP, restedXP)
 end
 
 local function GetAzerText(name, currAP, maxAP, level)
-	return utils.multiReplace(
+	local db = Config.GetDB()
+	return Utils.MultiReplace(
 		db.bars.azerstr,
 		{
 			["%[name%]"] = name,
 			["%[curXP%]"] = commify(currAP),
 			["%[maxXP%]"] = commify(maxAP),
-			["%[curPC%]"] = formatPercents(currAP, maxAP),
-			["%[needPC%]"] = formatRemainingPercents(currAP, maxAP),
+			["%[curPC%]"] = Utils.FormatPercents(currAP, maxAP),
+			["%[needPC%]"] = Utils.FormatRemainingPercents(currAP, maxAP),
 			["%[pLVL%]"] = level,
 			["%[nLVL%]"] = level + 1,
 			["%[needXP%]"] = commify(maxAP - currAP)
@@ -932,7 +156,6 @@ local function SetWatchedFactionByName(faction)
 		-- factionID, hasBonusRepGain, canBeLFGBonus = GetFactionInfo(factionIndex);
 		local fi = { GetFactionInfo(i) }
 		local name, isHeader, isWatched = fi[1], fi[9], fi[12]
-		--local name,_,_,_,_,_,_,_,isHeader,_,_,isWatched,_,_,_,_ = GetFactionInfo(i)
 
 		if name == faction then
 			-- If it is not watched and it is not a header watch it.
@@ -953,22 +176,24 @@ local function GetReputationText(repInfo)
 	else
 		-- Add a + next to the standing for bonus or paragon reputation.
 		if hasBonusRep or isFactionParagon then
-			standingText = ("%s+"):format(factionStandingLabel[repStanding])
+			standingText = ("%s+"):format(Config.GetFactionStandingLabel(repStanding))
 		else
-			standingText = factionStandingLabel[repStanding]
+			standingText = Config.GetFactionStandingLabel(repStanding)
 		end
 	end
 
-	return utils.multiReplace(
+	local db = Config.GetDB()
+
+	return Utils.MultiReplace(
 		db.bars.repstring,
 		{
 			["%[faction%]"] = repName,
 			["%[standing%]"] = standingText,
 			["%[curRep%]"] = commify(repValue),
 			["%[maxRep%]"] = commify(repMax),
-			["%[repPC%]"] = formatPercents(repValue, repMax),
+			["%[repPC%]"] = Utils.FormatPercents(repValue, repMax),
 			["%[needRep%]"] = commify(repMax - repValue),
-			["%[needPC%]"] = formatRemainingPercents(repValue, repMax)
+			["%[needPC%]"] = Utils.FormatRemainingPercents(repValue, repMax)
 		}
 	)
 end
@@ -1016,235 +241,98 @@ local function GetTipAnchor(frame, tooltip)
 	return vhalf..hhalf, frame, (vhalf == "TOP" and "BOTTOM" or "TOP")..hhalf, fX, 0
 end
 
-function XPMultiBar:OnInitialize()
-	self.db = LibStub("AceDB-3.0"):New("XPMultiBarDB", defaults, true)
-	db = self.db.profile
+function UI:OnInitialize()
+	Bars = XPMultiBar:GetModule("Bars")
+	Config = XPMultiBar:GetModule("Config")
+	Data = XPMultiBar:GetModule("Data")
+	Utils = XPMultiBar:GetModule("Utils")
 
-	local myName = metadata.title
-	local ACRegistry = LibStub("AceConfigRegistry-3.0")
-	local ACDialog = LibStub("AceConfigDialog-3.0")
-	ACRegistry:RegisterOptionsTable("XPMultiBar-General", GetOptions)
-	ACRegistry:RegisterOptionsTable("XPMultiBar-Bars", GetOptions)
-	ACRegistry:RegisterOptionsTable("XPMultiBar-RepMenu", GetOptions)
-
-	ACDialog:AddToBlizOptions("XPMultiBar-General", myName)
-	ACDialog:AddToBlizOptions("XPMultiBar-Bars", L["Bars"], myName)
-	ACDialog:AddToBlizOptions("XPMultiBar-RepMenu", L["Reputation Menu"], myName)
-
-	self:RegisterChatCommand("xpbar", function() InterfaceOptionsFrame_OpenToCategory(myName) end)
-
-	local popts = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
-	ACRegistry:RegisterOptionsTable("XPMultiBar-Profiles", popts)
-	ACDialog:AddToBlizOptions("XPMultiBar-Profiles", L["Profiles"], myName)
-
-	self.db.RegisterCallback(self, "OnProfileChanged", "RefreshConfig")
-	self.db.RegisterCallback(self, "OnProfileCopied", "RefreshConfig")
-	self.db.RegisterCallback(self, "OnProfileReset", "RefreshConfig")
-end
-
-function XPMultiBar:OnEnable()
-	if self.CreateXPBar then
-		self:CreateXPBar()
-	end
-
-	self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateXPBar")
-
-	self:RegisterEvent("PLAYER_XP_UPDATE", "UpdateXPData")
-	self:RegisterEvent("PLAYER_LEVEL_UP", "LevelUp")
-	self:RegisterEvent("PLAYER_UPDATE_RESTING", "UpdateXPData")
-	self:RegisterEvent("UPDATE_EXHAUSTION", "UpdateXPBar")
-
-	self:RegisterEvent("UPDATE_FACTION", "UpdateXPBar")
-
-	self:RegisterEvent("AZERITE_ITEM_EXPERIENCE_CHANGED", "UpdateXPBar")
-
-	if db.bars.autowatchrep then
-		self:RegisterEvent("COMBAT_TEXT_UPDATE")
-	end
-
-	self:RegisterEvent("PET_BATTLE_OPENING_START")
-	self:RegisterEvent("PET_BATTLE_CLOSE")
-
-	-- Register some LSM3 callbacks
-	LSM3.RegisterCallback(self, "LibSharedMedia_SetGlobal", function(callback, mtype, override)
-		if mtype == "statusbar" and override ~= nil then
-			self:SetTexture(override)
-		end
-	end)
-
-	-- Check for dynamic bars.
-	if db.general.dynamicbars then
-		self:UpdateDynamicBars()
-	end
-
-	-- Show the bar.
-	self:UpdateXPData()
-	self.frame:Show()
-end
-
-function XPMultiBar:OnDisable()
-	self.frame:Hide()
-	LSM3.UnregisterAllCallbacks(self)
-end
-
-function XPMultiBar:SetFontOptions()
-	local font, size, flags
-	if db.general.font then
-		font = LSM3:Fetch("font", db.general.font)
-	end
-	-- Use regular font if we could not restore the saved one.
-	if not font then
-		font, size, flags = GameFontNormal:GetFont()
-	end
-	if db.general.fontoutline then
-		flags = "OUTLINE"
-	end
-	self.frame.bartext:SetFont(font, db.general.fontsize, flags)
-end
-
-function XPMultiBar:SetTextPosition(percent)
-	local width = db.general.width
-	local posx = math_floor(((width / 100) * percent) - (width / 2))
-	self.frame.bartext:ClearAllPoints()
-	self.frame.bartext:SetPoint("CENTER", self.frame, "CENTER", posx or 0, 0)
-end
-
-function XPMultiBar:SetTexture(texture)
-	local texturePath = LSM3:Fetch("statusbar", texture)
-	utils.forEach(
-		{self.frame.background, self.frame.remaining, self.frame.xpbar},
-		function(bar)
-			bar:SetStatusBarTexture(texturePath)
-			bar:GetStatusBarTexture():SetHorizTile(false)
-		end
-	)
-	local bgColor = db.bars.background
-	self.frame.background:SetStatusBarColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a)
-end
-
-function XPMultiBar:SetWidth(width)
-	self.frame:SetWidth(width)
-	utils.forEach(
+	Utils.ForEach(
 		{
-			self.frame.button, self.frame.background, self.frame.remaining,
-			self.frame.xpbar, self.frame.bubbles
+			["BantoBar"] = "Interface\\AddOns\\XPMultiBar\\Textures\\bantobar",
+			["Charcoal"] = "Interface\\AddOns\\XPMultiBar\\Textures\\charcoal",
+			["Glaze"] = "Interface\\AddOns\\XPMultiBar\\Textures\\glaze",
+			["LiteStep"] = "Interface\\AddOns\\XPMultiBar\\Textures\\litestep",
+			["Marble"] = "Interface\\AddOns\\XPMultiBar\\Textures\\marble",
+			["Otravi"] = "Interface\\AddOns\\XPMultiBar\\Textures\\otravi",
+			["Perl"] = "Interface\\AddOns\\XPMultiBar\\Textures\\perl",
+			["Smooth"] = "Interface\\AddOns\\XPMultiBar\\Textures\\smooth",
+			["Smooth v2"] = "Interface\\AddOns\\XPMultiBar\\Textures\\smoothv2",
+			["Striped"] = "Interface\\AddOns\\XPMultiBar\\Textures\\striped",
+			["Waves"] = "Interface\\AddOns\\XPMultiBar\\Textures\\waves"
 		},
-		function(frame)
-			frame:SetWidth(width - 4)
+		function(path, name)
+			LSM3:Register("statusbar", name, path)
 		end
 	)
-	self:UpdateXPBar()
-end
 
-function XPMultiBar:SetHeight(height)
-	self.frame:SetHeight(height)
-	utils.forEach(
-		{
-			self.frame.background, self.frame.remaining,
-			self.frame.xpbar, self.frame.bubbles
-		},
-		function(frame)
-			frame:SetHeight(height - 8)
+	Config.RegisterDefaultReceiver(self)
+
+	local onBarSettingsUpdated = {
+		function(self, value)
+			self:UpdateBarSettings()
+			self:SetBars(false)
+		end,
+		true
+	}
+
+	local eventMap = {
+		_self = self,
+		bgColor = { self.SetBackgroundColor, true },
+		width = { self.SetWidth, true },
+		height = { self.SetHeight, true },
+		scale = self.SetScale,
+		font = self.SetFontOptions,
+		fontsize = self.SetFontOptions,
+		fontoutline = self.SetFontOptions,
+		texture = self.SetTexture,
+		bubbles = self.ShowBubbles,
+		border = self.ShowBorder,
+		textposition = self.SetTextPosition,
+		autowatchrep = function(self, value)
+			if value then
+				self:RegisterEvent("COMBAT_TEXT_UPDATE")
+			else
+				self:UnregisterEvent("COMBAT_TEXT_UPDATE")
+			end
+		end,
+		showmaxlevel = onBarSettingsUpdated,
+		showrepbar = onBarSettingsUpdated,
+		showazerbar = onBarSettingsUpdated,
+	}
+
+	Config.RegisterEvent(
+		Config.EVENT_CONFIG_UPDATED,
+		function(key, value)
+			local handler = eventMap[key]
+			local updateBar = false
+			if handler then
+				if type(handler) == "table" then
+					updateBar = handler[2] or handler["update"]
+					handler = handler[1]
+				end
+				if type(handler) ~= "function" then
+					handler = eventMap._self[handler]
+				end
+				handler(eventMap._self, value)
+			else
+				updateBar = true
+			end
+			if updateBar then
+				eventMap._self.UpdateXPBar(eventMap._self)
+			end
 		end
 	)
-	self:UpdateXPBar()
 end
 
-function XPMultiBar:ToggleBorder()
-	if db.general.border then
-		self.frame:SetBackdropBorderColor(1, 1, 1, 1)
-	else
-		self.frame:SetBackdropBorderColor(0, 0, 0, 0)
-	end
-end
-
-function XPMultiBar:ToggleBubbles()
-	if db.general.bubbles then
-		self.frame.bubbles:Show()
-	else
-		self.frame.bubbles:Hide()
-	end
-end
-
-function XPMultiBar:ToggleClamp()
-	self.frame:SetClampedToScreen(db.general.clamptoscreen and true or false)
-end
-
-function XPMultiBar:ToggleShowAzerite()
-	showAzerBar = not showAzerBar
-	self:UpdateXPBar()
-end
-
-function XPMultiBar:ToggleShowReputation()
-	db.bars.showrepbar = not db.bars.showrepbar
-	self:UpdateXPBar()
-end
-
-function XPMultiBar:ToggleAutoWatch()
-	if db.bars.autowatchrep then
-		self:RegisterEvent("COMBAT_TEXT_UPDATE")
-	else
-		self:UnregisterEvent("COMBAT_TEXT_UPDATE")
-	end
-end
-
-function XPMultiBar:RefreshConfig(event, database, newProfileKey)
-	db = database.profile
-	self.frame:SetFrameStrata(db.general.strata)
-	self.frame:SetScale(db.general.scale)
-	self:SetWidth(db.general.width)
-	self:SetHeight(db.general.height)
-	self:ToggleBorder()
-	self:SetFontOptions()
-	self:SetTextPosition(db.general.textposition)
-	self:SetTexture(db.general.texture)
-	self:ToggleBubbles()
-	self:ToggleClamp()
-	-- Nil out the exalted color in repHexColor so it can be regenerated
-	repHexColor[STANDING_EXALTED] = nil
-	self:RestorePosition()
-	self:UpdateXPBar()
-end
-
--- Tooltips for the reputation menu
-function XPMultiBar:SetTooltip(tip)
-	GameTooltip_SetDefaultAnchor(GameTooltip, WorldFrame)
-	GameTooltip:SetText(tip[1], 1, 1, 1)
-	GameTooltip:AddLine(tip[2])
-	GameTooltip:Show()
-end
-
-function XPMultiBar:HideTooltip()
-	GameTooltip:FadeOut()
-end
-
-function XPMultiBar:ToggleCollapse(args)
-	--local tooltip, factionIndex, name, hasRep, isCollapsed = args[1], args[2], args[3], args[4], args[5]
-	local tooltip, factionIndex, name, hasRep, isCollapsed = unpack(args)
-
-	if hasRep and GetMouseButtonClicked() == "RightButton" then
-		SetWatchedFactionByName(name)
-	else
-		if isCollapsed then
-			ExpandFactionHeader(factionIndex)
-		else
-			CollapseFactionHeader(factionIndex)
-		end
-	end
-
-	tooltip:UpdateScrolling()
-end
-
-function XPMultiBar:SetWatchedFactionIndex(faction)
-	SetWatchedFactionIndex(faction)
-end
-
--- XPBar creation
-function XPMultiBar:CreateXPBar()
+-- XP Bar creation
+function UI:CreateXPBar()
 	-- Check if the bar already exists before proceeding.
 	if self.frame then
 		return
 	end
+
+	local db = Config.GetDB()
 
 	-- Main Frame
 	self.frame = CreateFrame("Frame", "XPMultiBarFrame", UIParent)
@@ -1257,11 +345,13 @@ function XPMultiBar:CreateXPBar()
 	end
 
 	self.frame:ClearAllPoints()
+
 	if not db.general.posx then
 		self.frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 	else
 		self.frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", db.general.posx, db.general.posy)
 	end
+
 	self.frame:SetWidth(db.general.width)
 	self.frame:SetHeight(db.general.height)
 
@@ -1290,8 +380,7 @@ function XPMultiBar:CreateXPBar()
 
 		-- Display options on Shift-RightClick
 		if IsShiftKeyDown() and button == "RightButton" then
-			local name = metadata.title
-			InterfaceOptionsFrame_OpenToCategory(name)
+			Config.OpenSettings()
 		end
 
 		-- Display Reputation menu on Ctrl-RightClick
@@ -1315,28 +404,14 @@ function XPMultiBar:CreateXPBar()
 
 	-- On mouse entering the frame.
 	self.frame.button:SetScript("OnEnter", function()
-		if db.general.mouseover then
-			if not IsAltKeyDown() and not IsShiftKeyDown() and not IsControlKeyDown() then
-				self:ToggleShowReputation()
-			elseif IsAltKeyDown() then
-				showAzerBar = true
-				self:UpdateXPBar()
-			else
-				mouseOverWithShift = true
-			end
-		end
+		self:SetBars(true)
+		self:UpdateXPBar()
 	end)
 
 	-- On mouse leaving the frame
 	self.frame.button:SetScript("OnLeave", function()
-		if db.general.mouseover and not mouseOverWithShift and not showAzerBar then
-			self:ToggleShowReputation()
-		elseif showAzerBar then
-			showAzerBar = false
-			self:UpdateXPBar()
-		else
-			mouseOverWithShift = nil
-		end
+		self:SetBars(false)
+		self:UpdateXPBar()
 	end)
 
 	-- Background
@@ -1371,47 +446,265 @@ function XPMultiBar:CreateXPBar()
 	self.frame.bubbles:SetWidth(self.frame:GetWidth() - 4)
 	self.frame.bubbles:SetHeight(self.frame:GetHeight() - 8)
 
-	-- XXX: Blizz tiling breakage.zz3#
+	-- XXX: Blizz tiling breakage
 	self.frame.bubbles:GetStatusBarTexture():SetHorizTile(false)
 
 	-- XP Bar Text
 	self.frame.bartext = self.frame.button:CreateFontString("XPMultiBarText", "OVERLAY")
-	self:SetFontOptions()
+	self:SetFontOptions(db.general)
 	self.frame.bartext:SetShadowOffset(1, -1)
 	self:SetTextPosition(db.general.textposition)
 	self.frame.bartext:SetTextColor(1, 1, 1, 1)
 
 	-- Set frame levels.
 	self.frame:SetFrameLevel(0)
-	self.frame.background:SetFrameLevel(self.frame:GetFrameLevel() + 1)
-	self.frame.remaining:SetFrameLevel(self.frame:GetFrameLevel() + 2)
-	self.frame.xpbar:SetFrameLevel(self.frame:GetFrameLevel() + 3)
-	self.frame.bubbles:SetFrameLevel(self.frame:GetFrameLevel() + 4)
-	self.frame.button:SetFrameLevel(self.frame:GetFrameLevel() + 5)
+	local level = self.frame:GetFrameLevel()
+	self.frame.background:SetFrameLevel(level + 1)
+	self.frame.remaining:SetFrameLevel(level + 2)
+	self.frame.xpbar:SetFrameLevel(level + 3)
+	self.frame.bubbles:SetFrameLevel(level + 4)
+	self.frame.button:SetFrameLevel(level + 5)
 
 	self:SetTexture(db.general.texture)
-	self:ToggleBubbles()
-	self:ToggleClamp()
-	self:ToggleBorder()
+	self:ShowBubbles(db.general.bubbles)
+	self:SetClamp(db.general.clamptoscreen)
+	self:ShowBorder(db.general.border)
 	self:RestorePosition()
 
 	-- Kill function after the bar is made.
-	XPMultiBar.CreateXPBar = nil
+	self.CreateXPBar = nil
+end
+
+function UI:OnEnable()
+	if self.CreateXPBar then
+		self:CreateXPBar()
+	end
+
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateXPBar")
+
+	self:RegisterEvent("PLAYER_XP_UPDATE", "UpdateXPData")
+	self:RegisterEvent("PLAYER_LEVEL_UP", "LevelUp")
+	self:RegisterEvent("PLAYER_UPDATE_RESTING", "UpdateXPData")
+	self:RegisterEvent("UPDATE_EXHAUSTION", "UpdateXPBar")
+
+	self:RegisterEvent("UPDATE_FACTION", "UpdateXPBar")
+
+	self:RegisterEvent("AZERITE_ITEM_EXPERIENCE_CHANGED", "UpdateXPBar")
+
+	local db = Config.GetDB()
+
+	if db.bars.autowatchrep then
+		self:RegisterEvent("COMBAT_TEXT_UPDATE")
+	end
+
+	self:RegisterEvent("PET_BATTLE_OPENING_START")
+	self:RegisterEvent("PET_BATTLE_CLOSE")
+
+	-- Register some LSM3 callbacks
+	LSM3.RegisterCallback(self, "LibSharedMedia_SetGlobal", function(callback, mtype, override)
+		if mtype == "statusbar" and override ~= nil then
+			self:SetTexture(override)
+		end
+	end)
+
+	-- Update bars.
+	self:UpdateBarSettings(db.bars)
+	self:SetBars(false)
+
+	-- Show the bar.
+	self:UpdateXPData()
+	self.frame:Show()
+end
+
+function UI:OnDisable()
+	self.frame:Hide()
+	LSM3.UnregisterAllCallbacks(self)
+end
+
+function UI:RefreshConfig(db)
+	-- Receives value of new profile data
+	self.frame:SetFrameStrata(db.general.strata)
+	self.frame:SetScale(db.general.scale)
+	self:SetWidth(db.general.width)
+	self:SetHeight(db.general.height)
+	self:ShowBorder(db.general.border)
+	self:SetFontOptions(db.general)
+	self:SetTextPosition(db.general.textposition)
+	self:SetTexture(db.general.texture)
+	self:ShowBubbles(db.general.bubbles)
+	self:SetClamp(db.general.clamptoscreen)
+	self:RestorePosition()
+	self:UpdateXPBar()
+end
+
+function UI:SetFontOptions(general)
+	local font, size, flags
+
+	if not general then
+		general = Config.GetDB().general
+	end
+
+	if general.font then
+		font = LSM3:Fetch("font", general.font)
+	end
+
+	-- Use regular font if we could not restore the saved one.
+	if not font then
+		font, size, flags = GameFontNormal:GetFont()
+	end
+
+	if general.fontoutline then
+		flags = "OUTLINE"
+	end
+
+	self.frame.bartext:SetFont(font, general.fontsize, flags)
+end
+
+function UI:UpdateBarSettings(bars)
+	if type(bars) ~= "table" then
+		bars = Config.GetDB().bars
+	end
+	Bars.UpdateBarSettings(bars.showmaxlevel, bars.showrepbar, bars.showazerbar)
+end
+
+function UI:SetBars(isMouseOver, playerLevel)
+	Bars.UpdateBarState(
+		HasActiveAzeriteItem(),
+		isPlayerMaxLevel(playerLevel),
+		isMouseOver,
+		IsAltKeyDown(),
+		IsShiftKeyDown() or IsControlKeyDown()
+	)
+end
+
+function UI:SetTextPosition(percent)
+	local db = Config.GetDB()
+	local width = db.general.width
+	local posx = math_floor(((width / 100) * percent) - (width / 2))
+
+	self.frame.bartext:ClearAllPoints()
+	self.frame.bartext:SetPoint("CENTER", self.frame, "CENTER", posx or 0, 0)
+end
+
+function UI:SetTexture(texture)
+	local texturePath = LSM3:Fetch("statusbar", texture)
+	Utils.ForEach(
+		{self.frame.background, self.frame.remaining, self.frame.xpbar},
+		function(bar)
+			bar:SetStatusBarTexture(texturePath)
+			bar:GetStatusBarTexture():SetHorizTile(false)
+		end
+	)
+	local db = Config.GetDB()
+	local bgColor = db.bars.background
+	self.frame.background:SetStatusBarColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a)
+end
+
+function UI:SetBackgroundColor(color)
+	self.frame.background:SetStatusBarColor(color.r, color.g, color.b, color.a)
+end
+
+function UI:SetWidth(width)
+	self.frame:SetWidth(width)
+	Utils.ForEach(
+		{
+			self.frame.button, self.frame.background, self.frame.remaining,
+			self.frame.xpbar, self.frame.bubbles
+		},
+		function(frame)
+			frame:SetWidth(width - 4)
+		end
+	)
+end
+
+function UI:SetHeight(height)
+	self.frame:SetHeight(height)
+	Utils.ForEach(
+		{
+			self.frame.background, self.frame.remaining,
+			self.frame.xpbar, self.frame.bubbles
+		},
+		function(frame)
+			frame:SetHeight(height - 8)
+		end
+	)
+end
+
+function UI:SetScale(scale)
+	self:SavePosition()
+	self.frame:SetScale(scale)
+	self:RestorePosition()
+end
+
+function UI:ShowBorder(value)
+	if value then
+		self.frame:SetBackdropBorderColor(1, 1, 1, 1)
+	else
+		self.frame:SetBackdropBorderColor(0, 0, 0, 0)
+	end
+end
+
+function UI:ShowBubbles(value)
+	if value == nil then
+		local db = Config.GetDB()
+		value = db.general.bubbles
+	end
+	if value then
+		self.frame.bubbles:Show()
+	else
+		self.frame.bubbles:Hide()
+	end
+end
+
+function UI:SetClamp(value)
+	self.frame:SetClampedToScreen(value)
+end
+
+-- Tooltips for the reputation menu
+function UI:SetTooltip(tip)
+	GameTooltip_SetDefaultAnchor(GameTooltip, WorldFrame)
+	GameTooltip:SetText(tip[1], 1, 1, 1)
+	GameTooltip:AddLine(tip[2])
+	GameTooltip:Show()
+end
+
+function UI:HideTooltip()
+	GameTooltip:FadeOut()
+end
+
+function UI:ToggleCollapse(args)
+	local tooltip, factionIndex, name, hasRep, isCollapsed = unpack(args)
+
+	if hasRep and GetMouseButtonClicked() == "RightButton" then
+		SetWatchedFactionByName(name)
+	else
+		if isCollapsed then
+			ExpandFactionHeader(factionIndex)
+		else
+			CollapseFactionHeader(factionIndex)
+		end
+	end
+
+	tooltip:UpdateScrolling()
+end
+
+function UI:SetWatchedFactionIndex(faction)
+	SetWatchedFactionIndex(faction)
 end
 
 -- LSM3 Updates.
-function XPMultiBar:MediaUpdate()
-
+function UI:MediaUpdate()
 end
 
 -- Check for faction updates for the automatic reputation watching
-function XPMultiBar:COMBAT_TEXT_UPDATE(event, msgtype)
+function UI:COMBAT_TEXT_UPDATE(event, msgtype)
 	-- Abort if it is not a FACTION update
 	if msgtype ~= "FACTION" then
 		return
 	end
 
 	local faction, amount = GetCurrentCombatTextEventInfo()
+	local db = Config.GetDB()
 
 	-- If we are watching reputations automatically
 	if db.bars.autowatchrep then
@@ -1441,34 +734,22 @@ function XPMultiBar:COMBAT_TEXT_UPDATE(event, msgtype)
 end
 
 -- Hide and Show the XP frame when entering and leaving pet battles.
-function XPMultiBar:PET_BATTLE_OPENING_START()
+function UI:PET_BATTLE_OPENING_START()
 	self.frame:Hide()
 end
 
-function XPMultiBar:PET_BATTLE_CLOSE()
+function UI:PET_BATTLE_CLOSE()
 	self.frame:Show()
 end
 
 -- Update XP bar data
-function XPMultiBar:UpdateXPData()
-	local prevXP = self.cXP or 0
-	self.cXP = UnitXP("player")
-	self.nXP = UnitXPMax("player")
-	self.remXP = self.nXP - self.cXP
-	self.diffXP = self.cXP - prevXP
-
-	if self.diffXP > 0 then
-		lastXPValues[(sessionKills % 10) + 1] = self.diffXP
-		sessionKills = sessionKills + 1
-	end
-
+function UI:UpdateXPData()
+	Data.UpdateXP(UnitXP("player"), UnitXPMax("player"))
 	self:UpdateXPBar()
 end
 
-function XPMultiBar:UpdateReputationData()
-	if not db.bars.showrepbar then
-		return
-	end
+function UI:UpdateReputationData()
+	local db = Config.GetDB()
 
 	local repName, repStanding, repMin, repMax, repValue, factionID = GetWatchedFactionInfo()
 	local isFactionParagon = IsFactionParagon(factionID)
@@ -1541,26 +822,25 @@ function XPMultiBar:UpdateReputationData()
 
 	self.frame.xpbar:SetStatusBarColor(repColor.r, repColor.g, repColor.b, repColor.a)
 
-	if not db.general.hidetext then
-		self.frame.bartext:SetText(
-			GetReputationText( {
-				repName, repStanding, repMin, repMax,
-				repValue, friendID, friendTextLevel,
-				hasBonusRep, canBeLFGBonus, isFactionParagon
-			} )
-		)
-	else
-		self.frame.bartext:SetText("")
-	end
+	self.frame.bartext:SetText(
+		GetReputationText( {
+			repName, repStanding, repMin, repMax,
+			repValue, friendID, friendTextLevel,
+			hasBonusRep, canBeLFGBonus, isFactionParagon
+		} )
+	)
 end
 
-function XPMultiBar:UpdateXPBar()
+function UI:UpdateXPBar()
 	-- If the menu is open and we are in here, refresh the menu.
 	if LQT:IsAcquired("XPMultiBarTT") then
 		self:DrawReputationMenu()
 	end
 
-	if db.bars.showrepbar then
+	local db = Config.GetDB()
+	local bar = Bars.GetVisibleBar()
+
+	if bar == Bars.REP then
 		self:UpdateReputationData()
 		return
 	else
@@ -1569,10 +849,9 @@ function XPMultiBar:UpdateXPBar()
 		end
 	end
 
-	local restedXP, xpText, currXP, maxXP, barColor
+	local xpText, currXP, maxXP, barColor
 
-	if (showAzerBar or db.bars.showazerbar and UnitLevel("player") == maxPlayerLevel)
-			and HasActiveAzeriteItem() then
+	if bar == Bars.AZ then
 		local item = FindActiveAzeriteItem()
 		if item then
 			local name = GetAzeriteItemName(item)
@@ -1585,16 +864,17 @@ function XPMultiBar:UpdateXPBar()
 		if self.frame.remaining:IsVisible() then
 			self.frame.remaining:Hide()
 		end
-	else
-		restedXP = GetXPExhaustion()
-		if restedXP == nil then
+	else -- if bar == Bars.XP
+		local xp, restedXP = Data.xp, GetXPExhaustion() or 0 -- GetXPExhaustion() returns nil when no bonus present and 0 on max level
+		currXP, maxXP = xp.curr, xp.max
+		if restedXP == 0 then
 			if self.frame.remaining:IsVisible() then
 				self.frame.remaining:Hide()
 			end
 			barColor = db.bars.normal
 		else
-			self.frame.remaining:SetMinMaxValues(math_min(0, self.cXP), self.nXP)
-			self.frame.remaining:SetValue(self.cXP + restedXP)
+			self.frame.remaining:SetMinMaxValues(math_min(0, currXP), maxXP)
+			self.frame.remaining:SetValue(currXP + restedXP)
 
 			local remaining = db.bars.remaining
 			self.frame.remaining:SetStatusBarColor(remaining.r, remaining.g, remaining.b, remaining.a)
@@ -1613,7 +893,7 @@ function XPMultiBar:UpdateXPBar()
 			end
 		end
 
-		currXP, maxXP, xpText = self.cXP, self.nXP, GetXPText(self.cXP, self.nXP, self.remXP, restedXP)
+		xpText = GetXPText(xp.curr, xp.max, xp.rem, restedXP)
 	end
 
 	self.frame.xpbar:SetMinMaxValues(math_min(0, currXP), maxXP)
@@ -1622,41 +902,22 @@ function XPMultiBar:UpdateXPBar()
 
 	-- Set the color of the bar text
 	local txtcol = db.bars.xptext
-	self.frame.bartext:SetTextColor(txtcol.r, txtcol.g, txtcol.b, txtcol.a)
 
-	-- Hide the text or not?
-	if not db.general.hidetext then
-		self.frame.bartext:SetText(xpText)
-	else
-		self.frame.bartext:SetText("")
-	end
+	self.frame.bartext:SetTextColor(txtcol.r, txtcol.g, txtcol.b, txtcol.a)
+	self.frame.bartext:SetText(xpText)
 end
 
--- When max level is hit, show only the rep bar.
-function XPMultiBar:LevelUp(event, level)
-	if not db.bars.showazerbar and level == maxPlayerLevel then
-		db.bars.showrepbar = true
-		db.general.mouseover = false
-	end
-
+function UI:LevelUp(event, level)
+	self:SetBars(false, level)
 	self:UpdateXPBar()
 end
 
--- Dynamic bars, switch between rep/level when using a single profile for all char.s
-function XPMultiBar:UpdateDynamicBars()
-	if not db.bars.showazerbar and UnitLevel("player") == maxPlayerLevel then
-		db.bars.showrepbar = true
-		db.general.mouseover = false
-	else
-		db.bars.showrepbar = false
-		db.general.mouseover = true
-	end
-end
-
-function XPMultiBar:MakeReputationTooltip()
+function UI:MakeReputationTooltip()
 	if not LQT:IsAcquired("XPMultiBarTT") then
 		repTooltip = LQT:Acquire("XPMultiBarTT", 2, "CENTER", "LEFT")
 	end
+
+	local db = Config.GetDB()
 
 	repTooltip:SetClampedToScreen(true)
 	repTooltip:SetScale(db.repmenu.scale)
@@ -1670,7 +931,7 @@ function XPMultiBar:MakeReputationTooltip()
 	self:DrawReputationMenu()
 end
 
-function XPMultiBar:DrawReputationMenu()
+function UI:DrawReputationMenu()
 	local linenum = nil
 	local checkIcon = "|TInterface\\Buttons\\UI-CheckBox-Check:16:16:1:-1|t"
 	local normalFont = repTooltip:GetFont()
@@ -1712,9 +973,9 @@ function XPMultiBar:DrawReputationMenu()
 				top = top - friendThresh
 			else
 				if hasBonusRep or isFactionParagon then
-					standingText = ("%s+"):format(factionStandingLabel[standing])
+					standingText = ("%s+"):format(Config.GetFactionStandingLabel(standing))
 				else
-					standingText = factionStandingLabel[standing]
+					standingText = Config.GetFactionStandingLabel(standing)
 				end
 			end
 
@@ -1734,10 +995,10 @@ function XPMultiBar:DrawReputationMenu()
 
 				linenum = repTooltip:AddLine(nil)
 				repTooltip:SetCell(linenum, 1, isWatched and checkIcon or " ", normalFont)
-				repTooltip:SetCell(linenum, 2, ("|cff%s%s (%s)|r"):format(repHexColor[standing], name, standingText), GameTooltipTextSmall)
-				repTooltip:SetLineScript(linenum, "OnMouseUp", XPMultiBar.SetWatchedFactionIndex, faction)
-				repTooltip:SetLineScript(linenum, "OnEnter", XPMultiBar.SetTooltip, {name,tipText})
-				repTooltip:SetLineScript(linenum, "OnLeave", XPMultiBar.HideTooltip)
+				repTooltip:SetCell(linenum, 2, ("|cff%s%s (%s)|r"):format(Config.GetRepHexColor(standing), name, standingText), GameTooltipTextSmall)
+				repTooltip:SetLineScript(linenum, "OnMouseUp", UI.SetWatchedFactionIndex, faction)
+				repTooltip:SetLineScript(linenum, "OnEnter", UI.SetTooltip, {name,tipText})
+				repTooltip:SetLineScript(linenum, "OnLeave", UI.HideTooltip)
 			end
 		else
 			-- Header
@@ -1759,9 +1020,9 @@ function XPMultiBar:DrawReputationMenu()
 			if hasRep then
 				local standingText
 				if hasBonusRep then
-					standingText = ("%s+"):format(factionStandingLabel[standing])
+					standingText = ("%s+"):format(Config.GetFactionStandingLabel(standing))
 				else
-					standingText = factionStandingLabel[standing]
+					standingText = Config.GetFactionStandingLabel(standing)
 				end
 
 				repTooltip:SetCell(linenum, 2, ("%s (%s)"):format(name, standingText), normalFont)
@@ -1773,9 +1034,9 @@ function XPMultiBar:DrawReputationMenu()
 			else
 				repTooltip:SetCell(linenum, 2, name, normalFont)
 			end
-			repTooltip:SetLineScript(linenum, "OnMouseUp", XPMultiBar.ToggleCollapse, {repTooltip,faction,name,hasRep,isCollapsed})
-			repTooltip:SetLineScript(linenum, "OnEnter", XPMultiBar.SetTooltip, {name,tipText})
-			repTooltip:SetLineScript(linenum, "OnLeave", XPMultiBar.HideTooltip)
+			repTooltip:SetLineScript(linenum, "OnMouseUp", UI.ToggleCollapse, {repTooltip,faction,name,hasRep,isCollapsed})
+			repTooltip:SetLineScript(linenum, "OnEnter", UI.SetTooltip, {name,tipText})
+			repTooltip:SetLineScript(linenum, "OnLeave", UI.HideTooltip)
 		end
 	end
 
@@ -1784,9 +1045,10 @@ function XPMultiBar:DrawReputationMenu()
 end
 
 -- Bar positioning.
-function XPMultiBar:SavePosition()
+function UI:SavePosition()
 	local x, y = self.frame:GetLeft(), self.frame:GetTop()
 	local s = self.frame:GetEffectiveScale()
+	local db = Config.GetDB()
 
 	x, y = x*s, y*s
 
@@ -1794,7 +1056,8 @@ function XPMultiBar:SavePosition()
 	db.general.posy = y
 end
 
-function XPMultiBar:RestorePosition()
+function UI:RestorePosition()
+	local db = Config.GetDB()
 	local x = db.general.posx
 	local y = db.general.posy
 

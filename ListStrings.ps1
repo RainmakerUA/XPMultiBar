@@ -1,7 +1,7 @@
 ﻿# Generate locale files from the source
 
 $projName = 'XPMultiBar'
-$localeSources = @("$projName.lua", 'utils.lua')
+$localeSources = @("$projName.lua", "$($projName)_Bars.lua", "$($projName)_Config.lua", "$($projName)_Data.lua", "$($projName)_Utils.lua")
 $locales = @('enUS', 'ruRU')
 $baseLocale = 'enUS'
 $localeDir = 'Locales'

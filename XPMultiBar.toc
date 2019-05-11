@@ -13,5 +13,8 @@
 Locales\locales.xml
 libs.xml
 
-Utils.lua
 XPMultiBar.lua
+XPMultiBar_Bars.lua
+XPMultiBar_Data.lua
+XPMultiBar_Config.lua
+XPMultiBar_Utils.lua
