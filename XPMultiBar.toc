@@ -6,7 +6,7 @@
 ## Version: @project-version@
 ## SavedVariables: XPMultiBarDB
 ## OptionalDeps: Ace3, LibQTip-1.0, LibSharedMedia-3.0
-## X-Category: Interface Enhancements
+## X-Category: Miscellaneous, Artwork, Combat, Quests & Leveling
 ## X-Website: https://github.com/RainmakerUA/XPMultiBar
 ## X-Embeds: Ace3, LibQTip-1.0, LibSharedMedia-3.0
 
