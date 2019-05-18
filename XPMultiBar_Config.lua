@@ -1,4 +1,5 @@
 --[=====[
+		## XP MultiBar ver. @@release-version@@
 		## XPMultiBar_Config.lua - module
 		Configuration and initialization for XPMultiBar addon
 --]=====]

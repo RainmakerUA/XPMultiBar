@@ -1,4 +1,5 @@
 --[=====[
+		## XP MultiBar ver. @@release-version@@
 		## XPMultiBar_Bars.lua - module
 		Bar displaying logic for XPMultiBar addon
 --]=====]

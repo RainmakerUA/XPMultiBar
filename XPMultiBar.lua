@@ -1,4 +1,5 @@
 --[=====[
+		## XP MultiBar ver. @@release-version@@
 		## XPMultiBar.lua - module
 		Main module (UI) for XPMultiBar addon
 --]=====]
