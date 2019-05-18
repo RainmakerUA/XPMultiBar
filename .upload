@@ -1,0 +1,38 @@
+{
+	"apiRoot": "https://wow.curseforge.com/api/",
+	"token": "replace!:151623176520186612666519671219656818122416216512661523201716641722232065",
+	"libStore": "D:\\DEV\\Lua\\Libs",
+	"release": {
+		"projectID": 320567,
+		"author": "RainmakerUA",
+		"version": "unknown",
+		"type": "alpha",
+		"log": "No changes provided",
+		"gameVersions": [
+			"8.0.1",
+			"8.1.0",
+			"8.1.5"
+		]
+	},
+	"exclude": [
+		"ListStrings.ps1",
+		"README.md",
+		"*.new",
+		"*~"
+	],
+	"libs": [
+		"LibStub",
+		"CallbackHandler-1.0",
+		"AceAddon-3.0",
+		"AceConfig-3.0",
+		"AceConsole-3.0",
+		"AceGUI-3.0",
+		"AceDB-3.0",
+		"AceHook-3.0",
+		"AceLocale-3.0",
+		"LibSharedMedia-3.0",
+		"AceGUI-3.0-SharedMediaWidgets",
+		"AceEvent-3.0",
+		"LibQTip-1.0"
+	]
+}
