@@ -535,6 +535,8 @@ function UI:RefreshConfig(db)
 	self:ShowBubbles(db.general.bubbles)
 	self:SetClamp(db.general.clamptoscreen)
 	self:RestorePosition()
+	self:UpdateBarSettings(db.bars)
+	self:SetBars(false)
 	self:UpdateXPBar()
 end
 
