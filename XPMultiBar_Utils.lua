@@ -80,14 +80,15 @@ function U.MultiReplace(text, replacements)
 	return result
 end
 
-function U.PrintThru(label, text)
+function U.PrintThru(value, label)
 	--@debug@
-	if not text then
-		label, text = nil, label
+	local text = tostring(value)
+	if label then
+		text = label .. ": " .. text
 	end
-	print(label and label..": "..text or text)
+	print(text)
 	--@end-debug@
-	return text
+	return value
 end
 
 function U.PrintTable(t, name, maxLevel)

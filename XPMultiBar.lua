@@ -85,7 +85,10 @@ local function commify(num)
 end
 
 local function isPlayerMaxLevel(level)
-	return (level or UnitLevel("player")) == Config.MAX_PLAYER_LEVEL
+	if not level then
+		level = UnitLevel("player")
+	end
+	return level == Config.MAX_PLAYER_LEVEL
 end
 
 local function GetXPText(cXP, nXP, remXP, restedXP)
@@ -247,6 +250,15 @@ function UI:OnInitialize()
 	Config = XPMultiBar:GetModule("Config")
 	Data = XPMultiBar:GetModule("Data")
 	Utils = XPMultiBar:GetModule("Utils")
+
+	--@debug@
+	_G["XPMultiBar"] = XPMultiBar
+	XPMultiBar.Bars = Bars
+	XPMultiBar.Config = Config
+	XPMultiBar.Data = Data
+	XPMultiBar.Utils = Utils
+	XPMultiBar.UI = self
+	--@end-debug@
 
 	Utils.ForEach(
 		{

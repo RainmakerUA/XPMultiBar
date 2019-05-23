@@ -92,6 +92,8 @@ end
 local currentBars = nil
 local currentStateBar = nil
 
+local currentState = nil
+
 local visibleBar = nil
 local mouseOverWithShift = nil
 
@@ -105,7 +107,7 @@ function B.UpdateBarState(hasAzerite, isMaxLevel, isOver, isAlt, isShift)
 
 	if currentState then
 		local oldHasAzerite, oldIsMaxLevel = unpack(currentState)
-		isNewState = oldHasAzerite == hasAzerite and oldIsMaxLevel == isMaxLevel
+		isNewState = oldHasAzerite ~= hasAzerite or oldIsMaxLevel ~= isMaxLevel
 	else
 		isNewState = true
 	end
