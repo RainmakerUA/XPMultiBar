@@ -644,6 +644,7 @@ C.EVENT_CONFIG_UPDATED = "ConfigUpdated"
 C.EVENT_REFRESH_CONFIG = "RefreshConfig"
 
 C.MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL_TABLE[GetExpansionLevel()]
+C.STANDING_EXALTED = STANDING_EXALTED
 
 C.OpenSettings = openSettings
 

@@ -798,10 +798,9 @@ function UI:UpdateReputationData()
 		repMin = 0
 	else
 		hasBonusRep,canBeLFGBonus = select(15, GetFactionInfoByID(factionID))
-
 		-- Check faction with Exalted standing to have paragon reputation.
 		-- If so, adjust values to show bar to next paragon bonus.
-		if repStanding == STANDING_EXALTED then
+		if repStanding == Config.STANDING_EXALTED then
 			if isFactionParagon then
 				local parValue, parThresh = GetFactionParagonInfo(factionID)
 				-- parValue is cumulative. We need to get modulo by the current threshold.
@@ -829,7 +828,7 @@ function UI:UpdateReputationData()
 
 	-- Use our own color for exalted.
 	local repColor
-	if repStanding == STANDING_EXALTED then
+	if repStanding == Config.STANDING_EXALTED then
 		repColor = db.bars.exalted
 	else
 		repColor = FACTION_BAR_COLORS[repStanding]
@@ -959,7 +958,7 @@ function UI:DrawReputationMenu()
 				hasRep, isWatched, isChild, repID, hasBonusRep, canBeLFGBonus = GetFactionInfo(faction)
 
 		-- Set these to previous max values for exalted. Legion changed how exalted works.
-		if standing == STANDING_EXALTED then
+		if standing == Config.STANDING_EXALTED then
 			bottom = 0
 			top = 1000
 			earned = 999
