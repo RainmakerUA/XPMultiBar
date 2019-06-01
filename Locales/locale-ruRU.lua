@@ -1,7 +1,7 @@
 -- This file is generated with ListStrings.ps1
 local L = LibStub("AceLocale-3.0"):NewLocale("XPMultiBar", "ruRU")
 if not L then return end
----------- Total: 90 ----------
+---------- Total: 92 ----------
 L["Standing: %s\nRep: %s/%s [%.1f%%]"] = "Отношение: %s\nРеп.: %s/%s [%.1f%%]"
 L["You need to select a faction to watch."] = "Выберите фракцию для отображения."
 L["Azerite item not found!"] = "Азеритовый предмет не найден!"
@@ -43,6 +43,8 @@ L["Commify"] = "Разделять тысячи"
 L["Insert thousands separators into long numbers."] = "Добавлять разделители тысяч в длинные числа."
 L["Show Zero"] = "Отображать нули"
 L["Show zero values in the various Need tags, instead of an empty string"] = "Отображать нулевые значения в тегах оставшихся значений вместо пустых строк."
+L["Hide WoW standard bars"] = "Скрыть стандартные полосы WoW"
+L["Hide WoW standard bars for XP, Artifact power and reputation."] = "Скрыть стандартные полосы опыта, силы артефакта и репутации WoW"
 L["Bars"] = "Полосы"
 L["Options for XP / reputation / azerite power bars."] = "Настройки полос опыта / репутации / азерита."
 L["Experience"] = "Полоса опыта"

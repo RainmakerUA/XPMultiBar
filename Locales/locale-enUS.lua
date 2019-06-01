@@ -1,7 +1,7 @@
 -- This file is generated with ListStrings.ps1
 local L = LibStub("AceLocale-3.0"):NewLocale("XPMultiBar", "enUS", true)
 if not L then return end
----------- Total: 90 ----------
+---------- Total: 92 ----------
 L["Standing: %s\nRep: %s/%s [%.1f%%]"] = true
 L["You need to select a faction to watch."] = true
 L["Azerite item not found!"] = true
@@ -43,6 +43,8 @@ L["Commify"] = true
 L["Insert thousands separators into long numbers."] = true
 L["Show Zero"] = true
 L["Show zero values in the various Need tags, instead of an empty string"] = true
+L["Hide WoW standard bars"] = true
+L["Hide WoW standard bars for XP, Artifact power and reputation."] = true
 L["Bars"] = true
 L["Options for XP / reputation / azerite power bars."] = true
 L["Experience"] = true

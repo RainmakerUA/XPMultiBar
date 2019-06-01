@@ -57,8 +57,9 @@ local IsAltKeyDown = IsAltKeyDown
 local IsControlKeyDown = IsControlKeyDown
 local IsResting = IsResting
 local IsShiftKeyDown = IsShiftKeyDown
-local SetWatchedFactionIndex = SetWatchedFactionIndex
 local IsXPUserDisabled = IsXPUserDisabled
+local SetWatchedFactionIndex = SetWatchedFactionIndex
+local StatusTrackingBarManager = StatusTrackingBarManager
 local UIParent = UIParent
 local UnitLevel = UnitLevel
 local UnitXP = UnitXP
@@ -84,6 +85,8 @@ local Utils
 
 -- Reputation menu tooltip
 local repTooltip
+
+local previousStatusTrackingBarVisibility
 
 local function commify(num)
 	local db = Config.GetDB()
@@ -308,6 +311,7 @@ function UI:OnInitialize()
 		bubbles = self.ShowBubbles,
 		border = self.ShowBorder,
 		textposition = self.SetTextPosition,
+		hidestatus = self.SetStatusTrackingBarHidden,
 		autowatchrep = function(self, value)
 			if value then
 				self:RegisterEvent("COMBAT_TEXT_UPDATE")
@@ -526,16 +530,21 @@ function UI:OnEnable()
 		end
 	end)
 
-	-- Update bars.
+	-- Hide standard WoW bar
+	self:SetStatusTrackingBarHidden(db.general.hidestatus)
+
+	-- Update bars
 	self:UpdateBarSettings(db.bars)
 	self:SetBars(false)
 
-	-- Show the bar.
+	-- Show the bar
 	self:UpdateXPData()
 	self.frame:Show()
 end
 
 function UI:OnDisable()
+	-- Restore standard WoW bar
+	self:SetStatusTrackingBarHidden(false)
 	self.frame:Hide()
 	LSM3.UnregisterAllCallbacks(self)
 end
@@ -553,9 +562,24 @@ function UI:RefreshConfig(db)
 	self:ShowBubbles(db.general.bubbles)
 	self:SetClamp(db.general.clamptoscreen)
 	self:RestorePosition()
+	self:SetStatusTrackingBarHidden(db.general.hidestatus)
 	self:UpdateBarSettings(db.bars)
 	self:SetBars(false)
 	self:UpdateXPBar()
+end
+
+function UI:SetStatusTrackingBarHidden(hide)
+	if not StatusTrackingBarManager then
+		return
+	end
+
+	if hide then
+		previousStatusTrackingBarVisibility = StatusTrackingBarManager:IsVisible()
+		StatusTrackingBarManager:Hide()
+	elseif previousStatusTrackingBarVisibility then
+		previousStatusTrackingBarVisibility = false
+		StatusTrackingBarManager:Show()
+	end
 end
 
 function UI:SetFontOptions(general)

@@ -127,6 +127,7 @@ local defaults = {
 			border = false,
 			textposition = 50,
 			commify = true,
+			hidestatus = true,
 			posx = nil,
 			posy = nil,
 		},
@@ -369,6 +370,13 @@ local function getOptions(uiTypes, uiName, appName)
 							desc = L["Show zero values in the various Need tags, instead of an empty string"],
 						},]]
 					},
+				},
+				hidestatus = {
+					type = "toggle",
+					order = 60,
+					width = "full",
+					name = L["Hide WoW standard bars"],
+					desc = L["Hide WoW standard bars for XP, Artifact power and reputation."],
 				},
 			},
 		}
