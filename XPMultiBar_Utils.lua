@@ -18,24 +18,25 @@ local type = type
 
 local BreakUpLargeNumbers = BreakUpLargeNumbers
 
-function U.AsReadOnly(t)
-	local proxy = {}
-	local mt = {
-		__index = t,
-		__ipairs = function(tbl)
-			return ipairs(t)
-		end,
-		__pairs = function(tbl)
-			return pairs(t)
-		end,
-		__newindex = function (t, k, v)
-			error("attempt to update a read-only table", 2)
-		end,
-		__metatable = {},
-	}
-	setmetatable(proxy, mt)
-	return proxy
-  end
+local function u_merge(target, source)
+	if not source then
+		target, source = {}, target
+	elseif type(target) ~= "table" then
+		target = {}
+	end
+	for k,v in pairs(source) do
+		if type(v) == "table" then
+			target[k] = self.Merge(target[k], v)
+		elseif target[k] == nil then
+			target[k] = v
+		end
+	end
+	return target
+end
+
+function u_clone(source)
+	return u_merge(source)
+end
 
 function U.ForEach(t, forEachFunc)
 	for k, v in pairs(t) do
@@ -65,11 +66,14 @@ function U.Map(t, mapFunc)
 	return res
 end
 
+U.Merge = u_merge
+
+U.Clone = u_clone
+
 function U.MultiReplace(text, replacements)
 	if not text or text == "" then
 		return ""
 	end
-
 	local result = text
 	U.ForEach(
 		replacements,

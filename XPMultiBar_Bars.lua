@@ -10,6 +10,8 @@ local Bars = XPMultiBar:NewModule("Bars")
 
 local B = Bars
 
+local Utils
+
 local unpack = unpack
 
 -- Bar indices
@@ -97,12 +99,16 @@ local currentState = nil
 local visibleBar = nil
 local mouseOverWithShift = nil
 
+function B:OnInitialize()
+	Utils = XPMultiBar:GetModule("Utils")
+end
+
 function B.UpdateBarSettings(showAtMaxLevel, showRepPrio, showAzerite)
 	currentBars = barVisibiilty[boolToIndex(showAtMaxLevel)][boolToIndex(showRepPrio)][boolToIndex(showAzerite)]
+	currentState = nil
 end
 
 function B.UpdateBarState(hasAzerite, isMaxLevel, isOver, isAlt, isShift)
-	local u = XPMultiBar:GetModule("Utils")
 	local isNewState
 
 	if currentState then
@@ -115,7 +121,7 @@ function B.UpdateBarState(hasAzerite, isMaxLevel, isOver, isAlt, isShift)
 	if isNewState or not currentStateBar then
 		local index = boolToZeroIndex(hasAzerite) * 2 + boolToZeroIndex(isMaxLevel) + 1
 		currentState = { hasAzerite, isMaxLevel }
-		currentStateBar = u.Map(currentBars, function(v, k)
+		currentStateBar = Utils.Map(currentBars, function(v, k)
 			return bars[strind(v, index)]
 		end)
 	end

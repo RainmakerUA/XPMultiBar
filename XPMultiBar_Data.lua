@@ -26,7 +26,15 @@ local xp = {
 	diff = 0 -- last XP increment
 }
 
-function Data.GetKTL()
+function D:OnInitialize()
+	Utils = XPMultiBar:GetModule("Utils")
+end
+
+function D.GetXP()
+	return Utils.Clone(xp)
+end
+
+function D.GetKTL()
 	if #lastXPValues == 0 then
 		return 0
 	end
@@ -46,12 +54,7 @@ function Data.GetKTL()
 	return math_ceil(xp.rem / avgxp)
 end
 
-function Data:OnInitialize()
-	Utils = XPMultiBar:GetModule("Utils")
-	self.xp = Utils.AsReadOnly(xp)
-end
-
-function Data.UpdateXP(current, maximum)
+function D.UpdateXP(current, maximum)
 	local prevXP = xp.curr or 0
 	xp.curr = current
 	xp.max = maximum

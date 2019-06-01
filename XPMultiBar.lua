@@ -4,6 +4,12 @@
 		Main module (UI) for XPMultiBar addon
 --]=====]
 
+--[[
+	StatusTrackingBarManager:IsVisible() -- !!!
+	StatusTrackingBarManager:Hide()
+	StatusTrackingBarManager:Show()
+]]
+
 local addonName = ...
 local XPMultiBar = LibStub("AceAddon-3.0"):NewAddon(addonName)
 local UI = XPMultiBar:NewModule("UI", "AceEvent-3.0")
@@ -879,7 +885,7 @@ function UI:UpdateXPBar()
 			self.frame.remaining:Hide()
 		end
 	else -- if bar == Bars.XP
-		local xp, restedXP = Data.xp, GetXPExhaustion() or 0 -- GetXPExhaustion() returns nil when no bonus present and 0 on max level
+		local xp, restedXP = Data.GetXP(), GetXPExhaustion() or 0 -- GetXPExhaustion() returns nil when no bonus present and 0 on max level
 		currXP, maxXP = xp.curr, xp.max
 		if restedXP == 0 then
 			if self.frame.remaining:IsVisible() then
