@@ -17,6 +17,7 @@ Highly customizable bar displaying XP, reputation and azerite artifact power
 - **Azerite Bar:**
   * Text display configuration using templates.
   * Color configuration.
+- **Optional hiding standard XP/Artifact/Reputation bars**
 - **Mouse click combos:**
   * _Shift + Left mouse button click_ - copy bar text to current / last used chat window.
   * _Shift + Right mouse button click_ - open addon settings.
