@@ -645,6 +645,12 @@ local function getOptions(uiTypes, uiName, appName)
 end
 
 local function openSettings()
+	--[[
+		First opening Bars subcategory should expand addon options,
+		but it does not work now. Although this is required
+		for addon main category to be selected in Options dialog.
+	]]
+	InterfaceOptionsFrame_OpenToCategory(L["Bars"])
 	InterfaceOptionsFrame_OpenToCategory(md.title)
 end
 

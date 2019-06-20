@@ -35,6 +35,7 @@ local math_min = math.min
 local ChatEdit_GetActiveWindow = ChatEdit_GetActiveWindow
 local ChatEdit_GetLastActiveWindow = ChatEdit_GetLastActiveWindow
 local CollapseFactionHeader = CollapseFactionHeader
+local CreateFrame = CreateFrame
 local ExpandFactionHeader = ExpandFactionHeader
 local GameFontNormal = GameFontNormal
 local GameTooltip = GameTooltip
@@ -290,6 +291,10 @@ function UI:OnInitialize()
 
 	Config.RegisterDefaultReceiver(self)
 
+	local setFontOptions = function(ui)
+		return ui:SetFontOptions()
+	end
+
 	local onBarSettingsUpdated = {
 		function(self, value)
 			self:UpdateBarSettings()
@@ -304,9 +309,9 @@ function UI:OnInitialize()
 		width = { self.SetWidth, true },
 		height = { self.SetHeight, true },
 		scale = self.SetScale,
-		font = self.SetFontOptions,
-		fontsize = self.SetFontOptions,
-		fontoutline = self.SetFontOptions,
+		font = setFontOptions,
+		fontsize = setFontOptions,
+		fontoutline = setFontOptions,
 		texture = self.SetTexture,
 		bubbles = self.ShowBubbles,
 		border = self.ShowBorder,
