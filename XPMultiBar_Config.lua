@@ -8,8 +8,9 @@ local addonName = ...
 local XPMultiBar = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local Config = XPMultiBar:NewModule("Config", "AceConsole-3.0")
 
-local C = Config
+local Event
 
+local C = Config
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 local tinsert = tinsert
@@ -22,35 +23,15 @@ local md = {
 	notes = GetAddOnMetadata(addonName, "Notes")
 }
 
--- Event handlers
-local events = {}
+local xpLockedReasons = {
+	MAX_EXPANSION_LEVEL = 0,
+	MAX_TRIAL_LEVEL = 1,
+	LOCKED_XP = 2,
+}
 
-local function onEvent(name, ...)
-	local handlers = events[name]
-	if handlers then
-		for _, v in ipairs(handlers) do
-			local recv, method = v.self, v.method
-			if not recv then
-				if type(method) == "function" then
-					method(...)
-				else
-					error("Cannot invoke method by name when receiver is absent.", 2)
-				end
-			else
-				if type(method) == "function" then
-					method(recv, ...)
-				else
-					recv[method](recv, ...)
-				end
-			end
-		end
-	elseif events[0] then
-		local method = events[0][name]
-		if type(method) == "function" then
-			method(events[0], ...)
-		end
-	end
-end
+-- Event handlers
+local configChangedEvent
+local profileChangedEvent
 
 -- Current settings
 local db
@@ -123,6 +104,7 @@ local defaults = {
 			fontsize = 14,
 			fontoutline = false,
 			texture = "Smooth",
+			horizTile = false,
 			bubbles = false,
 			border = false,
 			textposition = 50,
@@ -134,17 +116,21 @@ local defaults = {
 		bars = {
 			-- XP bar
 			xpstring = "Exp: [curXP]/[maxXP] ([restPC]) :: [curPC] through level [pLVL] :: [needXP] XP left :: [KTL] kills to level",
+			xpicons = true,
 			indicaterest = true,
 			showremaining = true,
 			showmaxlevel = false,
+			-- Azerite bar
+			azerstr = "[name]: [curXP]/[maxXP] :: [curPC] through level [pLVL] :: [needXP] AP left",
+			azicons = true,
+			-- showazerbar = true,
+			showmaxazerite = false,
 			-- Reputation bar
 			repstring = "Rep: [faction] ([standing]) [curRep]/[maxRep] :: [repPC]",
+			repicons = true,
 			showrepbar = false,
 			autowatchrep = true,
 			autotrackguild = false,
-			-- Azerite bar
-			azerstr = "[name]: [curXP]/[maxXP] :: [curPC] through level [pLVL] :: [needXP] AP left",
-			showazerbar = true,
 		-- Bar colors
 			normal = { r = 0.8, g = 0, b = 1, a = 1 },
 			rested = { r = 0, g = 0.4, b = 1, a = 1 },
@@ -157,13 +143,39 @@ local defaults = {
 			reptext = { r = 1, g = 1, b = 1, a = 1 },
 			azertext = { r = 1, g = 1, b = 1, a = 1 },
 		},
-		-- Reputation menu options
-		repmenu = {
-			scale = 1,
-			autohidedelay = 1,
-		},
 	}
 }
+
+local function createGroupItems(description, items, keyMap)
+	local result = {
+		text = {
+			name = description,
+			type = "description",
+			order = 10,
+			fontSize = "medium",
+		},
+	}
+
+	for i, v in ipairs(items) do
+		local k, vv = unpack(v)
+		result[k] = {
+			name = keyMap and keyMap(k, vv) or k,
+			type = "group",
+			order = (i + 1) * 10,
+			width = "full",
+			guiInline = true,
+			args = {
+				text = {
+					name = vv,
+					type = "description",
+					fontSize = "medium",
+				},
+			}
+		}
+	end
+
+	return result
+end
 
 --[[
 	Position: lock, screen clamp, frame strata
@@ -176,7 +188,7 @@ local defaults = {
 
 local function getOptions(uiTypes, uiName, appName)
 	local function onConfigChanged(key, value)
-		onEvent(C.EVENT_CONFIG_UPDATED, key, value)
+		configChangedEvent(key, value)
 	end
 	local function getColor(info)
 		local col = db.bars[info[#info]]
@@ -213,19 +225,19 @@ local function getOptions(uiTypes, uiName, appName)
 							type = "toggle",
 							order = 100,
 							name = L["Lock"],
-							desc = L["Toggle the locking."],
+							desc = L["Lock bar movement"],
 						},
 						clamptoscreen = {
 							type = "toggle",
 							order = 200,
-							name = L["Screen Clamp"],
-							desc = L["Toggle screen clamping."],
+							name = L["Screen clamp"],
+							desc = L["Clamp bar with screen borders"],
 						},
 						strata = {
 							type = "select",
 							order = 300,
-							name = L["Frame Strata"],
-							desc = L["Set the frame strata."],
+							name = L["Frame strata"],
+							desc = L["Set the frame strata (z-order position)"],
 							style = "dropdown",
 							values = {
 								HIGH = "High",
@@ -248,7 +260,7 @@ local function getOptions(uiTypes, uiName, appName)
 							type = "range",
 							order = 100,
 							name = L["Width"],
-							desc = L["Set the bar width."],
+							desc = L["Set the bar width"],
 							min = 100,
 							max = 5000,
 							step = 1,
@@ -258,7 +270,7 @@ local function getOptions(uiTypes, uiName, appName)
 							type = "range",
 							order = 200,
 							name = L["Height"],
-							desc = L["Set the bar height."],
+							desc = L["Set the bar height"],
 							min = 10,
 							max = 100,
 							step = 1,
@@ -268,7 +280,7 @@ local function getOptions(uiTypes, uiName, appName)
 							type = "range",
 							order = 300,
 							name = L["Scale"],
-							desc = L["Set the bar scale."],
+							desc = L["Set the bar scale"],
 							min = 0.5,
 							max = 2,
 						},
@@ -285,8 +297,8 @@ local function getOptions(uiTypes, uiName, appName)
 						font = {
 							type = "select",
 							order = 100,
-							name = L["Font Face"],
-							desc = L["Set the font face."],
+							name = L["Font face"],
+							desc = L["Set the font face"],
 							style = "dropdown",
 							dialogControl = "LSM30_Font",
 							values = AceGUIWidgetLSMlists.font,
@@ -294,8 +306,8 @@ local function getOptions(uiTypes, uiName, appName)
 						fontsize = {
 							type = "range",
 							order = 200,
-							name = L["Font Size"],
-							desc = L["Change the size of the text."],
+							name = L["Font size"],
+							desc = L["Set bar text font size"],
 							min = 5,
 							max = 30,
 							step = 1,
@@ -303,8 +315,8 @@ local function getOptions(uiTypes, uiName, appName)
 						fontoutline = {
 							type = "toggle",
 							order = 300,
-							name = L["Font Outline"],
-							desc = L["Toggles the font outline."],
+							name = L["Font outline"],
+							desc = L["Show font outline"],
 						},
 					},
 				},
@@ -316,59 +328,51 @@ local function getOptions(uiTypes, uiName, appName)
 					guiInline = true,
 					width = "full",
 					args = {
+						border = {
+							type = "toggle",
+							order = 10,
+							name = L["Border"],
+							desc = L["Show bar border"],
+						},
+						bubbles = {
+							type = "toggle",
+							order = 20,
+							name = L["Bubbles"],
+							desc = L["Show ticks on the bar"],
+						},
+						commify = {
+							type = "toggle",
+							order = 30,
+							name = L["Commify"],
+							desc = L["Insert thousands separators into long numbers"],
+						},
+					},
+				},
+				-- Texture
+				texGroup = {
+					type = "group",
+					order = 50,
+					name = L["Texture"],
+					guiInline = true,
+					width = "full",
+					args = {
 						texture = {
 							type = "select",
-							order = 100,
+							order = 10,
+							width = 1.5,
 							name = L["Texture"],
-							desc = L["Set the bar texture."],
+							desc = L["Set bar texture"],
 							style = "dropdown",
 							dialogControl = "LSM30_Statusbar",
 							values = AceGUIWidgetLSMlists.statusbar,
 						},
-						bubbles = {
+						horizTile = {
 							type = "toggle",
-							order = 200,
-							name = L["Bubbles"],
-							desc = L["Toggle bubbles on the XP bar."],
+							order = 20,
+							width = 1.5,
+							name = L["Texture tiling"],
+							desc = L["Tile texture instead of stretching"],
 						},
-						border = {
-							type = "toggle",
-							order = 300,
-							name = L["Border"],
-							desc = L["Toggle the border."],
-						},
-					},
-				},
-				-- Text
-				textGroup = {
-					type = "group",
-					order = 50,
-					name = L["Text Display"],
-					guiInline = true,
-					width = "full",
-					args = {
-						textposition = {
-							type = "range",
-							order = 100,
-							name = L["Text Position"],
-							desc = L["Select the position of the text on XP MultiBar."],
-							min = 0,
-							max = 100,
-							step = 1,
-							bigStep = 5,
-						},
-						commify = {
-							type = "toggle",
-							order = 200,
-							name = L["Commify"],
-							desc = L["Insert thousands separators into long numbers."],
-						},
-						--[[showzerorep = {
-							type = "toggle",
-							order = 300,
-							name = L["Show Zero"],
-							desc = L["Show zero values in the various Need tags, instead of an empty string"],
-						},]]
 					},
 				},
 				hidestatus = {
@@ -376,7 +380,7 @@ local function getOptions(uiTypes, uiName, appName)
 					order = 60,
 					width = "full",
 					name = L["Hide WoW standard bars"],
-					desc = L["Hide WoW standard bars for XP, Artifact power and reputation."],
+					desc = L["Hide WoW standard bars for XP, Artifact power and reputation"],
 				},
 			},
 		}
@@ -386,6 +390,7 @@ local function getOptions(uiTypes, uiName, appName)
 		return {
 			type = "group",
 			name = L["Bars"],
+			childGroups = "tab",
 			get = function(info) return db.bars[info[#info]] end,
 			set = function(info, value)
 				local key = info[#info]
@@ -396,44 +401,53 @@ local function getOptions(uiTypes, uiName, appName)
 				bardesc = {
 					type = "description",
 					order = 0,
-					name = L["Options for XP / reputation / azerite power bars."],
+					name = L["Options for XP / reputation / azerite power bars"],
 				},
 				xpgroup = {
 					type = "group",
 					order = 10,
-					name = L["Experience"],
-					guiInline = true,
+					name = L["Experience Bar"],
 					width = "full",
 					args = {
 						xpdesc = {
 							type = "description",
 							order = 0,
-							name = L["Experience Bar related options"],
+							name = L["Experience bar related options"],
 						},
 						xpstring = {
 							type = "input",
 							order = 10,
-							name = L["Customise Text"],
-							desc = L["Customise the XP text string."],
+							name = L["Text format"],
+							desc = L["Set XP bar text format"],
 							width = "full",
+						},
+						xpicons = {
+							type = "toggle",
+							order = 15,
+							width = 1.5,
+							name = L["Display XP bar icons"],
+							desc = L["Display icons for max. level, disabled XP gain and level cap due to limited account"]
+						},
+						showmaxlevel = {
+							type = "toggle",
+							order = 20,
+							width = 1.5,
+							name = L["Show at max. level"],
+							desc = L["Show XP bar at player maximum level"],
 						},
 						indicaterest = {
 							type = "toggle",
-							order = 20,
-							name = L["Rest Indication"],
-							desc = L["Toggle the rest indication."],
+							order = 25,
+							width = 1.5,
+							name = L["Indicate resting"],
+							desc = L["Indicate character resting with XP bar color"],
 						},
 						showremaining = {
 							type = "toggle",
 							order = 30,
-							name = L["Remaining Rested XP"],
-							desc = L["Toggle the display of remaining rested XP."],
-						},
-						showmaxlevel = {
-							type = "toggle",
-							order = 35,
-							name = L["Show at max. level"],
-							desc = L["Show XP bar at payer maximum level"],
+							width = 1.5,
+							name = L["Show rested XP bonus"],
+							desc = L["Toggle the display of remaining rested XP"],
 						},
 						xpcolorgroup = {
 							type = "group",
@@ -447,43 +461,110 @@ local function getOptions(uiTypes, uiName, appName)
 								xptext = {
 									type = "color",
 									order = 10,
-									name = L["XP Text"],
-									desc = L["Set the color of the XP text."],
-									hasAlpha = true,
-								},
-								background = {
-									type = "color",
-									order = 20,
-									name = BACKGROUND,
-									desc = L["Set the color of the background bar."],
+									width = 1.5,
+									name = L["XP text"],
+									desc = L["Set XP text color"],
 									hasAlpha = true,
 								},
 								normal = {
 									type = "color",
-									order = 30,
+									order = 20,
+									width = 1.5,
 									name = L["Normal"],
-									desc = L["Set the color of the normal bar."],
+									desc = L["Set normal bar color"],
+									hasAlpha = true,
+								},
+								background = {
+									type = "color",
+									order = 30,
+									width = 1.5,
+									name = BACKGROUND,
+									desc = L["Set background bar color"],
 									hasAlpha = true,
 								},
 								rested = {
 									type = "color",
 									order = 40,
-									name = L["Rested"],
-									desc = L["Set the color of the rested bar."],
+									width = 1.5,
+									name = L["Rested bonus"],
+									desc = L["Set XP bar color when character has rested XP bonus"],
 									hasAlpha = true,
 								},
 								resting = {
 									type = "color",
 									order = 50,
-									name = L["Resting"],
-									desc = L["Set the color of the resting bar."],
+									width = 1.5,
+									name = L["Resting area"],
+									desc = L["Set XP bar color when character is resting"],
 									hasAlpha = true,
 								},
 								remaining = {
 									type = "color",
 									order = 60,
-									name = L["Remaining"],
-									desc = L["Set the color of the remaining bar."],
+									width = 1.5,
+									name = L["Remaining rest bonus"],
+									desc = L["Set remaining XP rest bonus bar color"],
+									hasAlpha = true,
+								},
+							},
+						},
+					},
+				},
+				azergroup = {
+					type = "group",
+					order = 20,
+					name = L["Azerite Bar"],
+					width = "full",
+					args = {
+						azerdesc = {
+							type = "description",
+							order = 0,
+							name = L["Azerite bar related options"],
+						},
+						azerstr = {
+							name = L["Text format"],
+							desc = L["Set Azerite bar text format"],
+							type = "input",
+							order = 10,
+							width = "full",
+						},
+						azicons = {
+							type = "toggle",
+							order = 20,
+							width = 1.5,
+							name = L["Display icons"],
+							desc = L["Display icons for maximum Heart level"]
+						},
+						showmaxazerite = {
+							type = "toggle",
+							order = 30,
+							width = 1.5,
+							name = L["Show at max. level"],
+							desc = L["Show azerite bar at Heart maximum level"],
+						},
+						azercolorgroup = {
+							type = "group",
+							order = 40,
+							name = "",
+							guiInline = true,
+							width = "full",
+							get = getColor,
+							set = setColor,
+							args = {
+								azertext = {
+									type = "color",
+									order = 10,
+									width = 1.5,
+									name = L["Azerite text"],
+									desc = L["Set Azerite text color"],
+									hasAlpha = true,
+								},
+								azerite = {
+									type = "color",
+									order = 20,
+									width = 1.5,
+									name = L["Azerite bar"],
+									desc = L["Set Azerite power bar color"],
 									hasAlpha = true,
 								},
 							},
@@ -492,40 +573,49 @@ local function getOptions(uiTypes, uiName, appName)
 				},
 				repgroup = {
 					type = "group",
-					order = 20,
+					order = 30,
 					name = L["Reputation Bar"],
-					guiInline = true,
 					width = "full",
 					args = {
 						repdesc = {
 							type = "description",
 							order = 0,
-							name = L["Reputation Bar related options"],
+							name = L["Reputation bar related options"],
 						},
 						repstring = {
 							type = "input",
 							order = 10,
-							name = L["Customise Text"],
-							desc = L["Customise the Reputation text string."],
 							width = "full",
+							name = L["Text format"],
+							desc = L["Set reputation bar text format"],
+						},
+						repicons = {
+							type = "toggle",
+							order = 15,
+							width = 1.5,
+							name = L["Display icons"],
+							desc = L["Display icons for paragon reputation and reputation bonuses"],
 						},
 						showrepbar = {
 							type = "toggle",
 							order = 20,
-							name = L["Rep. Priority"],
-							desc = L["Show the reputation bar over the XP / Azerite bar."],
+							width = 1.5,
+							name = L["Reputation bar priority"],
+							desc = L["Show the reputation bar over the XP / Azerite bar"],
 						},
 						autowatchrep = {
 							type = "toggle",
 							order = 30,
-							name = L["Auto Watch Reputation"],
-							desc = L["Automatically watch the factions you gain reputation with."],
+							width = 1.5,
+							name = L["Auto watch reputation"],
+							desc = L["Automatically switch watched faction to one you gain reputation with"],
 						},
 						autotrackguild = {
 							type = "toggle",
 							order = 40,
-							name = L["Auto Track Guild Reputation"],
-							desc = L["Automatically track your guild reputation increases."],
+							width = 1.5,
+							name = L["Auto watch guild reputation"],
+							desc = L["Automatically track your guild reputation increases"],
 						},
 						repcolorgroup = {
 							type = "group",
@@ -539,67 +629,17 @@ local function getOptions(uiTypes, uiName, appName)
 								reptext = {
 									type = "color",
 									order = 10,
-									name = L["Reputation Text"],
-									desc = L["Set the color of the Reputation text."],
+									width = 1.5,
+									name = L["Reputation text"],
+									desc = L["Set reputation text color"],
 									hasAlpha = true,
 								},
 								exalted = {
 									type = "color",
 									order = 20,
+									width = 1.5,
 									name = _G.FACTION_STANDING_LABEL8,
-									desc = L["Set the color of the Exalted reputation bar."],
-									hasAlpha = true,
-								},
-							},
-						},
-					},
-				},
-				azergroup = {
-					type = "group",
-					order = 30,
-					name = L["Azerite Bar"],
-					guiInline = true,
-					width = "full",
-					args = {
-						azerdesc = {
-							type = "description",
-							order = 0,
-							name = L["Azerite Bar related options"],
-						},
-						azerstr = {
-							name = L["Customise Text"],
-							desc = L["Customise the Azerite text string."],
-							type = "input",
-							order = 10,
-							width = "full",
-						},
-						showazerbar = {
-							type = "toggle",
-							order = 20,
-							name = L["Show Azerite"],
-							desc = L["Show the azerite bar instead of the XP bar when on max level."],
-						},
-						azercolorgroup = {
-							type = "group",
-							order = 30,
-							name = "",
-							guiInline = true,
-							width = "full",
-							get = getColor,
-							set = setColor,
-							args = {
-								azertext = {
-									type = "color",
-									order = 10,
-									name = L["Azerite Text"],
-									desc = L["Set the color of the Azerite text."],
-									hasAlpha = true,
-								},
-								azerite = {
-									type = "color",
-									order = 20,
-									name = L["Azerite Bar"],
-									desc = L["Set the color of the Azerite Power bar."],
+									desc = L["Set exalted reputation bar color"],
 									hasAlpha = true,
 								},
 							},
@@ -609,38 +649,85 @@ local function getOptions(uiTypes, uiName, appName)
 			},
 		}
 	end
-	if appName == (addonName .. "-RepMenu") then
-		local options = {
+	if appName == (addonName .. "-Help") then
+		local function makeGroupTitle(key)
+			return "|cffffff00[" .. key .. "]|r"
+		end
+		return {
 			type = "group",
-			name = L["Reputation Menu"],
-			get = function(info) return db.repmenu[info[#info]] end,
-			set = function(info, value) db.repmenu[info[#info]] = value end,
+			name = L["Help on format"],
+			childGroups = "tab",
 			args = {
-				repmenudesc = {
+				bardesc = {
 					type = "description",
 					order = 0,
-					name = L["Configure the reputation menu."],
+					name = L["Format templates for XP / reputation / azerite power bars"],
 				},
-				scale = {
-					name = L["Scale"],
-					desc = L["Set the scale of the reputation menu."],
-					type = "range",
-					order = 100,
-					min = 0.5,
-					max = 2,
-					step = 0.5,
+				xpgroup = {
+					type = "group",
+					order = 10,
+					name = L["Experience Bar"],
+					width = "full",
+					args = createGroupItems(
+						L["HELP.XPBARTEMPLATE"],
+						{
+							{ "curXP",	L["Current XP value on the level"] },
+							{ "maxXP",	L["Maximum XP value for the current level"] },
+							{ "needXP",	L["Remaining XP value till the next level"] },
+							{ "restXP",	L["Rested XP bonus value"] },
+							{ "curPC",	L["Current XP value in percents"] },
+							{ "needPC",	L["Remaining XP value in percents"] },
+							{ "restPC",	L["Rested XP bonus value in percents of maximum XP value"] },
+							{ "pLVL",	L["Current level"] },
+							{ "nLVL",	L["Next level"] },
+							{ "mLVL",	L["Maximum character level (current level when XP gain is disabled"] },
+							{ "KTL",	L["Remaining kill number till next level"] },
+							{ "BTL",	L["Remaining bubble (scale tick) number till next level"] },
+						},
+						makeGroupTitle
+					),
 				},
-				autohidedelay = {
-					name = L["Auto Hide Delay"],
-					desc = L["Set the length of time (in seconds) it takes for the menu to disappear once you move the mouse away."],
-					type = "range",
-					order = 200,
-					min = 0,
-					max = 5,
+				azergroup = {
+					type = "group",
+					order = 20,
+					name = L["Azerite Bar"],
+					width = "full",
+					args = createGroupItems(
+						L["HELP.AZBARTEMPLATE"],
+						{
+							{ "name",	L["Name of artifact necklace: Heart of Azeroth"] },
+							{ "curXP",	L["Current azerite power value on the level"] },
+							{ "maxXP",	L["Maximum azerite power value for the current level"] },
+							{ "needXP",	L["Remaining azerite power value till the next level"] },
+							{ "curPC",	L["Current azerite power value in percents"] },
+							{ "needPC",	L["Remaining azerite power value in percents"] },
+							{ "pLVL",	L["Current azerite level"] },
+							{ "nLVL",	L["Next azerite level"] },
+						},
+						makeGroupTitle
+					),
+				},
+				repgroup = {
+					type = "group",
+					order = 30,
+					name = L["Reputation Bar"],
+					width = "full",
+					args = createGroupItems(
+						L["HELP.REPBARTEMPLATE"],
+						{
+							{ "faction",	L["Watched faction / friend / guild name"] },
+							{ "standing",	L["Faction reputation standing"] },
+							{ "curRep",		L["Current reputation value for the current standing"] },
+							{ "maxRep",		L["Maximum reputation value for the current standing"] },
+							{ "needRep",	L["Remaining reputation value till the next standing"] },
+							{ "repPC",		L["Current reputation value in percents"] },
+							{ "needPC",		L["Remaining reputation value in percents"] },
+						},
+						makeGroupTitle
+					),
 				},
 			}
 		}
-		return options
 	end
 end
 
@@ -654,9 +741,16 @@ local function openSettings()
 	InterfaceOptionsFrame_OpenToCategory(md.title)
 end
 
-C.EVENT_CONFIG_UPDATED = "ConfigUpdated"
-C.EVENT_REFRESH_CONFIG = "RefreshConfig"
+local function migrateSettings(profiles)
+	for name, data in pairs(profiles) do
+		data.repmenu = nil -- Reputation menu removed
+	end
+end
 
+C.EVENT_CONFIG_CHANGED = "ConfigChanged"
+C.EVENT_PROFILE_CHANGED = "ProfileChanged"
+
+C.XPLockedReasons = xpLockedReasons
 C.MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL_TABLE[GetExpansionLevel()]
 C.STANDING_EXALTED = STANDING_EXALTED
 
@@ -664,6 +758,17 @@ C.OpenSettings = openSettings
 
 function C.GetDB()
 	return db
+end
+
+function C.GetPlayerMaxLevel()
+	if IsXPUserDisabled() then
+		return UnitLevel("player"), xpLockedReasons.LOCKED_XP
+	elseif (GameLimitedMode_IsActive()) then
+		local capLevel = GetRestrictedAccountData()
+		return capLevel, xpLockedReasons.MAX_TRIAL_LEVEL
+	else
+		return C.MAX_PLAYER_LEVEL, xpLockedReasons.MAX_EXPANSION_LEVEL
+	end
 end
 
 function C.GetFactionStandingLabel(standing)
@@ -674,30 +779,21 @@ function C.GetRepHexColor(standing)
 	return repHexColor[standing]
 end
 
-function C.RegisterDefaultReceiver(receiver)
-	events[0] = receiver
+function C.RegisterConfigChanged(...)
+	configChangedEvent:AddHandler(...)
 end
 
-function C.RegisterEvent(name, receiver, handler)
-	local handlers = events[name]
-	if not handlers then
-		handlers = {}
-		events[name] = handlers
-	end
-	if type(receiver) == "function" and not handler then
-		receiver, handler = nil, receiver
-	end
-	if type(handler) == "function"
-			or type(handler) == "string" and receiver then
-		tinsert(handlers, {["self"] = receiver, ["method"] = handler})
-	else
-		error("Not supported handler type.", 2)
-	end
+function C.RegisterProfileChanged(...)
+	profileChangedEvent:AddHandler(...)
 end
 
 function C:OnInitialize()
+	Event = XPMultiBar:GetModule("Event")
+
 	self.db = LibStub("AceDB-3.0"):New(addonName .. "DB", defaults, true)
 	db = self.db.profile
+
+	migrateSettings(self.db.profiles)
 
 	local myName = md.title
 	local ACRegistry = LibStub("AceConfigRegistry-3.0")
@@ -705,25 +801,31 @@ function C:OnInitialize()
 
 	ACRegistry:RegisterOptionsTable(addonName, getOptions)
 	ACRegistry:RegisterOptionsTable(addonName .. "-Bars", getOptions)
-	ACRegistry:RegisterOptionsTable(addonName .. "-RepMenu", getOptions)
+	ACRegistry:RegisterOptionsTable(addonName .. "-Help", getOptions)
 
 	ACDialog:AddToBlizOptions(addonName, myName)
 	ACDialog:AddToBlizOptions(addonName .. "-Bars", L["Bars"], myName)
-	ACDialog:AddToBlizOptions(addonName .. "-RepMenu", L["Reputation Menu"], myName)
 
 	local popts = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
 	ACRegistry:RegisterOptionsTable(addonName .. "-Profiles", popts)
 	ACDialog:AddToBlizOptions(addonName .. "-Profiles", L["Profiles"], myName)
 
+	ACDialog:AddToBlizOptions(addonName .. "-Help", L["Help on format"], myName)
+
+	--[[ TODO: Help tab ]]
+
 	self:RegisterChatCommand("xpbar", openSettings)
 
-	self.db.RegisterCallback(self, "OnProfileChanged", self.EVENT_REFRESH_CONFIG)
-	self.db.RegisterCallback(self, "OnProfileCopied", self.EVENT_REFRESH_CONFIG)
-	self.db.RegisterCallback(self, "OnProfileReset", self.EVENT_REFRESH_CONFIG)
+	self.db.RegisterCallback(self, "OnProfileChanged", self.EVENT_PROFILE_CHANGED)
+	self.db.RegisterCallback(self, "OnProfileCopied", self.EVENT_PROFILE_CHANGED)
+	self.db.RegisterCallback(self, "OnProfileReset", self.EVENT_PROFILE_CHANGED)
+
+	configChangedEvent = Event:New(C.EVENT_CONFIG_CHANGED)
+	profileChangedEvent = Event:New(C.EVENT_PROFILE_CHANGED)
 end
 
-function C:RefreshConfig(event, database, newProfileKey)
+function C:ProfileChanged(event, database, newProfileKey)
 	db = database.profile
 	repHexColor[STANDING_EXALTED] = nil
-	onEvent(self.EVENT_REFRESH_CONFIG, db)
+	profileChangedEvent(db)
 end

@@ -1,0 +1,116 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+	<StatusBar name="XPMultiBarInnerBarTemplate" virtual="true">
+		<Anchors>
+			<Anchor point="TOPLEFT" x="2" y="-4" />
+			<Anchor point="BOTTOMLEFT" x="2" y="4" />
+			<Anchor point="TOPRIGHT" x="-2" y="-4" />
+			<Anchor point="BOTTOMRIGHT" x="-2" y="4" />
+		</Anchors>
+		<BarTexture parentKey="tex" file="Interface\TargetingFrame\UI-StatusBar"/>
+		<BarColor r="0.5" g="0.5" b="0.5" a="0.5" />
+	</StatusBar>
+	<Frame parent="UIParent" mixin="XPMultiBarFrameMixin" frameStrata="LOW" movable="true" clampedToScreen="true">
+		<Size>
+			<AbsDimension x="1280" y="20" />
+		</Size>
+		<Anchors>
+			<Anchor point="CENTER" />
+		</Anchors>
+		<Backdrop edgeFile = "Interface\DialogFrame\UI-DialogBox-Border">
+			<EdgeSize val="12" />
+			<BackgroundInsets left="5" right="5" top="5" bottom="5" />
+		</Backdrop>
+		<Scripts>
+			<OnLoad method="OnLoad" />
+		</Scripts>
+		<Frames>
+			<StatusBar parentKey="background" inherits="XPMultiBarInnerBarTemplate" />
+			<StatusBar parentKey="remaining" inherits="XPMultiBarInnerBarTemplate" />
+			<StatusBar parentKey="xpbar" inherits="XPMultiBarInnerBarTemplate" />
+			<StatusBar parentKey="bubbles" inherits="XPMultiBarInnerBarTemplate">
+				<BarTexture parentKey="tex" file="Interface\AddOns\XPMultiBar\Textures\bubbles" />
+				<BarColor r="0" g="0" b="0" a="0.5" />
+			</StatusBar>
+			<Button parentKey="button" mixin="XPMultiBarButtonMixin" setAllPoints="true">
+				<Layers>
+					<Layer level="BACKGROUND">
+						<FontString parentKey="text" inherits="GameFontNormal">
+							<Anchors>
+								<Anchor point="CENTER" />
+							</Anchors>
+						</FontString>
+						<Texture parentKey="piGlow" atlas="ParagonReputation_Glow" useAtlasSize="true">
+							<Anchors>
+								<Anchor point="CENTER" relativeKey="$parent.text" relativePoint="LEFT" x="-16" y="0" />
+							</Anchors>
+						</Texture>
+					</Layer>
+					<Layer level="ARTWORK">
+						<Texture parentKey="piIcon" atlas="ParagonReputation_Bag" useAtlasSize="true">
+							<Anchors>
+								<Anchor point="CENTER" relativeKey="$parent.text" relativePoint="LEFT" x="-15" y="0" />
+							</Anchors>
+						</Texture>
+						<Texture parentKey="lfgBonusIcon" file="Interface\Common\ReputationStar">
+							<Size x="16" y="16" />
+							<TexCoords left="0" right="0.5" top="0" bottom="0.5" />
+							<Anchors>
+								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
+							</Anchors>
+						</Texture>
+						<Texture parentKey="expMaxIcon" file="interface\pvprankbadges\pvprank14.blp">
+							<Size x="16" y="16" />
+							<Anchors>
+								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
+							</Anchors>
+						</Texture>
+						<!-- <Texture parentKey="expStopIcon" file="Interface\TargetingFrame\UI-RaidTargetingIcon_7">
+							<Size x="16" y="16" /> -->
+						<Texture parentKey="expStopIcon" atlas="Map-MarkedDefeated" useAtlasSize="true">
+							<Anchors>
+								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
+							</Anchors>
+						</Texture>
+						<Texture parentKey="expCapIcon" file="interface\icons\spell_holy_borrowedtime.blp">
+							<Size x="16" y="16" />
+							<Anchors>
+								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
+							</Anchors>
+						</Texture>
+						<Texture parentKey="azerMaxIcon" file="interface/icons/inv_radientazeriteheart.blp">
+							<Size x="16" y="16" />
+							<Anchors>
+								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
+							</Anchors>
+						</Texture>
+					</Layer>
+					<Layer level="OVERLAY">
+						<Texture parentKey="piCheck" atlas="ParagonReputation_Checkmark" useAtlasSize="true">
+							<Anchors>
+								<Anchor point="CENTER" relativeKey="$parent.text" relativePoint="LEFT" x="-10" y="-2" />
+							</Anchors>
+						</Texture>
+						<Texture parentKey="repBonusIcon" file="Interface\Common\ReputationStar">
+							<Size x="16" y="16" />
+							<TexCoords left="0.5" right="1" top="0.5" bottom="1"/>
+							<Anchors>
+								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnLoad method="OnLoad" />
+					<OnClick method="OnClick" />
+					<OnDragStart method="OnDragStart" />
+					<OnDragStop method="OnDragStop" />
+					<OnEnter method="OnEnter" />
+					<OnLeave method="OnLeave" />
+					<OnUpdate method="OnUpdate" />
+				</Scripts>
+			</Button>
+		</Frames>
+	</Frame>
+</Ui>

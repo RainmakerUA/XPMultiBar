@@ -1,3 +1,6 @@
 {
-    "editor.fontLigatures": false
+    "editor.fontLigatures": false,
+	"files.associations": {
+		".upload": "json"
+	}
 }

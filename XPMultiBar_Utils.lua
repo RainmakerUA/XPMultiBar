@@ -13,20 +13,74 @@ local U = Utils
 local ipairs = ipairs
 local pairs = pairs
 local print = print
-local tinsert = tinsert
+local tinsert = table.insert
+local tostring = tostring
 local type = type
+local math_floor = math.floor
 
 local BreakUpLargeNumbers = BreakUpLargeNumbers
+local GetLocale = GetLocale
 
-local function u_merge(target, source)
+local thousandSeparator = {
+	deDE = ".",
+	frFR = "\194\160", -- NBSP
+	esES = ".",
+	ptBR = ".",
+	ruRU = "\194\160", -- NBSP
+}
+
+do
+	local bigNum = 1234567890
+	local breakCount = 3
+
+	if BreakUpLargeNumbers(bigNum) == tostring(bigNum) then
+		-- BreakUpLargeNumbers does nothing as of 8.2.0 start
+		-- providing custom function
+		BreakUpLargeNumbers = function(num)
+			if type(num) ~= "number" then
+				return num
+			end
+
+			local strnum = tostring(num)
+			local _, _, minus, whole, dot, fraction = strnum:find("^(%-?)(%d+)(%.?)(%d*)")
+
+			if #whole <= breakCount then
+				return strnum
+			end
+
+			local separator = thousandSeparator[GetLocale()] or ","
+			local fullBreaks = math_floor(#whole / breakCount)
+			local remain = #whole % breakCount
+			local broken = ""
+
+			for i = 0, fullBreaks - 1 do
+				if #broken > 0 then
+					broken = separator .. broken
+				end
+				local ind1, ind2 = - (i * 3 + 3), - (i * 3 + 1)
+				broken = whole:sub(ind1, ind2) .. broken
+			end
+
+			if remain > 0 then
+				broken = whole:sub(1, remain) .. separator .. broken
+			end
+
+			return minus .. broken .. dot .. fraction
+		end
+	end
+end
+
+local u_merge, u_clone
+
+function u_merge(target, source)
 	if not source then
 		target, source = {}, target
 	elseif type(target) ~= "table" then
 		target = {}
 	end
-	for k,v in pairs(source) do
+	for k, v in pairs(source) do
 		if type(v) == "table" then
-			target[k] = self.Merge(target[k], v)
+			target[k] = u_merge(target[k], v)
 		elseif target[k] == nil then
 			target[k] = v
 		end
@@ -62,6 +116,27 @@ function U.Map(t, mapFunc)
 	local res = {}
 	for k, v in pairs(t) do
 		res[k] = mapFunc(v, k, t)
+	end
+	return res
+end
+
+function U.Append(...)
+	local result, num, tbl = {}, 1, {...}
+	for i = 1, #tbl do
+		local t = tbl[i]
+		if t then
+			for i = 1, #t do
+				result[n], n = t[i], n + 1
+			end
+		end
+	end
+	return result
+end
+
+function U.Values(t)
+	local res = {}
+	for k, v in pairs(t) do
+		tinsert(res, v)
 	end
 	return res
 end
@@ -128,7 +203,7 @@ function U.PrintTable(t, name, maxLevel)
 end
 
 function U.Commify(num, doCommify)
-	if not doCommify or type(num) ~= "number" or tostring(num):len() <= 3 then
+	if type(num) ~= "number" then
 		return num
 	end
 	return BreakUpLargeNumbers(num)

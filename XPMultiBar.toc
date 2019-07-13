@@ -1,4 +1,4 @@
-## Interface: 80100
+## Interface: 80200
 ## Title: XP MultiBar
 ## Notes: XP / Reputation / Azerite power bar
 ## Notes-ruRU: Полоса опыта / репутации / силы азерита
@@ -8,13 +8,18 @@
 ## OptionalDeps: Ace3, LibQTip-1.0, LibSharedMedia-3.0
 ## X-Category: Miscellaneous, Artwork, Combat, Quests & Leveling
 ## X-Website: https://github.com/RainmakerUA/XPMultiBar
-## X-Embeds: Ace3, LibQTip-1.0, LibSharedMedia-3.0
+## X-Embeds: Ace3, LibSharedMedia-3.0
 
 Locales\locales.xml
 libs.xml
 
 XPMultiBar.lua
-XPMultiBar_Bars.lua
-XPMultiBar_Data.lua
-XPMultiBar_Config.lua
 XPMultiBar_Utils.lua
+XPMultiBar_Event.lua
+XPMultiBar_Data.lua
+XPMultiBar_Bars.lua
+XPMultiBar_Config.lua
+XPMultiBar_Frame.lua
+XPMultiBar_Main.lua
+
+XPMultiBar_Frame.xml

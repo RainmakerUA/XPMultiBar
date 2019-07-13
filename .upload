@@ -8,6 +8,7 @@
 		"version": "unknown",
 		"type": "alpha",
 		"log": "No changes provided",
+		"date": "Recenly",
 		"gameVersions": [
 			"8.1.0",
 			"8.1.5",
@@ -32,7 +33,6 @@
 		"AceLocale-3.0",
 		"LibSharedMedia-3.0",
 		"AceGUI-3.0-SharedMediaWidgets",
-		"AceEvent-3.0",
-		"LibQTip-1.0"
+		"AceEvent-3.0"
 	]
 }
