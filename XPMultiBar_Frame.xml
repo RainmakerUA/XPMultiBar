@@ -66,8 +66,6 @@
 								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
 							</Anchors>
 						</Texture>
-						<!-- <Texture parentKey="expStopIcon" file="Interface\TargetingFrame\UI-RaidTargetingIcon_7">
-							<Size x="16" y="16" /> -->
 						<Texture parentKey="expStopIcon" atlas="Map-MarkedDefeated" useAtlasSize="true">
 							<Anchors>
 								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />

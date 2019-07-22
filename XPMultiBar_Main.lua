@@ -43,6 +43,7 @@ local GetMouseButtonClicked = GetMouseButtonClicked
 local GetNumFactions = GetNumFactions
 local GetWatchedFactionInfo = GetWatchedFactionInfo
 local GetXPExhaustion = GetXPExhaustion
+local InCombatLockdown = InCombatLockdown
 local IsAltKeyDown = IsAltKeyDown
 local IsControlKeyDown = IsControlKeyDown
 local IsPlayerAtEffectiveMaxLevel = IsPlayerAtEffectiveMaxLevel
@@ -396,7 +397,7 @@ function M:OnButtonClick(button, ctrl, alt, shift)
 	end
 
 	-- Display Reputation menu on Ctrl-RightClick
-	if ctrl and button == "RightButton" then
+	if ctrl and button == "RightButton" and not InCombatLockdown() then
 		-- Temporary opens Rep Window until reworked
 		ToggleCharacter("ReputationFrame")
 	end
@@ -684,5 +685,6 @@ function M:LevelUp(event, level)
 	Bars.UpdateBarSettings({
 		isMaxLevelXP = IsPlayerAtEffectiveMaxLevel(),
 	})
+	Bars.UpdateBarState(false)
 	self:UpdateXPBar()
 end

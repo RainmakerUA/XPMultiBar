@@ -47,5 +47,5 @@ function mod:New(name)
 		AddHandler = addHandler,
 		RemoveAllHandlers = removeAllHandlers,
 		Raise = raise
-	}, { __call = raise})
+	}, { __call = raise })
 end
