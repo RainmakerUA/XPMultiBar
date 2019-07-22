@@ -530,6 +530,7 @@ function M:UpdateReputationData()
 	if repName == nil then
 		UI:SetMainBarVisible(false)
 		UI:SetBarText(L["You need to select a faction to watch"])
+		UI:SetFactionInfo(nil, nil)
 		return
 	end
 
