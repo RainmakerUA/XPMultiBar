@@ -1,7 +1,7 @@
 -- This file is generated with ListStrings.ps1
 local L = LibStub("AceLocale-3.0"):NewLocale("XPMultiBar", "ruRU")
 if not L then return end
----------- Total: 118 ----------
+---------- Total: 120 ----------
 L["Position"] = "Расположение"
 L["Lock"] = "Блокировка"
 L["Lock bar movement"] = "Заблокировать перемещение панели"
@@ -117,6 +117,8 @@ L["Profiles"] = "Профили"
 L["Heart of Azeroth"] = "Сердце Азерот"
 L["You need to select a faction to watch"] = "Выберите фракцию для отображения"
 L["Azerite item not found!"] = "Азеритовый предмет не найден!"
+L["ERROR.RETAIL_ON_CLASSIC"] = "|cFFFFFF00[XPMultiBar]:|r |cFFFF4040Вы используете версию для текущей версии в WoW Classic! Пожалуйста, установите версию для Classic!|r"
+L["MESSAGE.WELCOME"] = "|cFFFFFF00[XPMultiBar]: Спасибо, что используете XPMultiBar!|r"
 L["HELP.XPBARTEMPLATE"] = "Шаблоны формата используются для вставки различных значений в текст полосы опыта"
 L["HELP.AZBARTEMPLATE"] = "Шаблоны формата используются для вставки различных значений в текст полосы азерита"
 L["HELP.REPBARTEMPLATE"] = "Шаблоны формата используются для вставки различных значений в текст полосы репутации"

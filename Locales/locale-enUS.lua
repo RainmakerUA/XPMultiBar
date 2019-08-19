@@ -1,7 +1,7 @@
 -- This file is generated with ListStrings.ps1
 local L = LibStub("AceLocale-3.0"):NewLocale("XPMultiBar", "enUS", true)
 if not L then return end
----------- Total: 118 ----------
+---------- Total: 120 ----------
 L["Position"] = true
 L["Lock"] = true
 L["Lock bar movement"] = true
@@ -117,6 +117,8 @@ L["Profiles"] = true
 L["Heart of Azeroth"] = true
 L["You need to select a faction to watch"] = true
 L["Azerite item not found!"] = true
+L["ERROR.RETAIL_ON_CLASSIC"] = "|cFFFFFF00[XPMultiBar]:|r |cFFFF4040You are using Retail version on WoW Classic! Please install version for Classic!|r"
+L["MESSAGE.WELCOME"] = "|cFFFFFF00[XPMultiBar]: Thank you for using XPMultiBar!|r"
 L["HELP.XPBARTEMPLATE"] = "Format templates are used to insert specific values into XP text string"
 L["HELP.AZBARTEMPLATE"] = "Format templates are used to insert specific values into Azerite power text string"
 L["HELP.REPBARTEMPLATE"] = "Format templates are used to insert specific values into reputation text string"

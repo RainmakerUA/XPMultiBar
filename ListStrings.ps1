@@ -12,7 +12,7 @@ if not L then return end
 ---------- Total: {2} ----------"
 $trueParam = ', true'
 $loc_re = '(?<=L\[")([^"]+?)(?="\])'
-$ext_re = '^[A-Z.]+$'
+$ext_re = '^[A-Z._]+$'
 $old_re = '(?m)^L\["([^"]+?)"\]\s*=\s*"([^"]+?)"'
 
 $localeSources | %{$strings = @()} {$strings += (Get-Content $_ -Raw | Select-String $loc_re -AllMatches | %{ $_.matches.Value } | Select-Object -Unique)} {$strings} | Out-Null
