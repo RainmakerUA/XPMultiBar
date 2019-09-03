@@ -23,6 +23,8 @@ local type = type
 local math_ceil = math.ceil
 local math_min = math.min
 
+local emptyFun = function() end
+
 -- WoW globals
 local ChatEdit_GetActiveWindow = ChatEdit_GetActiveWindow
 local ChatEdit_GetLastActiveWindow = ChatEdit_GetLastActiveWindow
@@ -50,19 +52,32 @@ local IsPlayerAtEffectiveMaxLevel = IsPlayerAtEffectiveMaxLevel
 local IsResting = IsResting
 local IsShiftKeyDown = IsShiftKeyDown
 local IsXPUserDisabled = IsXPUserDisabled
+local Item = Item
 local SetWatchedFactionIndex = SetWatchedFactionIndex
-local StatusTrackingBarManager = StatusTrackingBarManager
 local UIParent = UIParent
 local UnitLevel = UnitLevel
 local UnitXP = UnitXP
 local UnitXPMax = UnitXPMax
-local FindActiveAzeriteItem = C_AzeriteItem.FindActiveAzeriteItem
-local GetAzeriteItemXPInfo = C_AzeriteItem.GetAzeriteItemXPInfo
-local GetAzeritePowerLevel = C_AzeriteItem.GetPowerLevel
-local HasActiveAzeriteItem = C_AzeriteItem.HasActiveAzeriteItem
-local IsAzeriteItemAtMaxLevel = C_AzeriteItem.IsAzeriteItemAtMaxLevel
-local GetFactionParagonInfo = C_Reputation.GetFactionParagonInfo
-local IsFactionParagon = C_Reputation.IsFactionParagon
+
+local GetFriendshipReputation = GetFriendshipReputation or emptyFun
+
+local GetFactionParagonInfo = emptyFun
+local IsFactionParagon = emptyFun
+local FindActiveAzeriteItem = emptyFun
+local GetAzeriteItemXPInfo = emptyFun
+local GetAzeritePowerLevel = emptyFun
+local HasActiveAzeriteItem = emptyFun
+local IsAzeriteItemAtMaxLevel = emptyFun
+
+if not wowClassic then
+	GetFactionParagonInfo = C_Reputation.GetFactionParagonInfo
+	IsFactionParagon = C_Reputation.IsFactionParagon
+	FindActiveAzeriteItem = C_AzeriteItem.FindActiveAzeriteItem
+	GetAzeriteItemXPInfo = C_AzeriteItem.GetAzeriteItemXPInfo
+	GetAzeritePowerLevel = C_AzeriteItem.GetPowerLevel
+	HasActiveAzeriteItem = C_AzeriteItem.HasActiveAzeriteItem
+	IsAzeriteItemAtMaxLevel = C_AzeriteItem.IsAzeriteItemAtMaxLevel
+end
 
 local FACTION_ALLIANCE = FACTION_ALLIANCE
 local FACTION_BAR_COLORS = FACTION_BAR_COLORS
@@ -75,12 +90,12 @@ local Config
 local Data
 local Utils
 
-local function commify(num)
+local function Commify(num)
 	local db = Config.GetDB()
 	return db.general.commify and Utils.Commify(num) or tostring(num)
 end
 
-local function getPlayerXP()
+local function GetPlayerXP()
 	if GameLimitedMode_IsActive() then
 		local rLevel = GetRestrictedAccountData();
 		if UnitLevel("player") >= rLevel then
@@ -99,17 +114,17 @@ local function GetXPText(cXP, nXP, remXP, restedXP, level, maxLevel)
 	return Utils.MultiReplace(
 		db.bars.xpstring,
 		{
-			["%[curXP%]"] = commify(cXP),
-			["%[maxXP%]"] = commify(nXP),
-			["%[restXP%]"] = commify(restedXP),
+			["%[curXP%]"] = Commify(cXP),
+			["%[maxXP%]"] = Commify(nXP),
+			["%[restXP%]"] = Commify(restedXP),
 			["%[restPC%]"] = Utils.FormatPercents(restedXP, nXP),
 			["%[curPC%]"] = Utils.FormatPercents(cXP, nXP),
 			["%[needPC%]"] = Utils.FormatRemainingPercents(cXP, nXP),
 			["%[pLVL%]"] = level,
 			["%[nLVL%]"] = nextLevel,
 			["%[mLVL%]"] = maxLevel,
-			["%[needXP%]"] = commify(remXP),
-			["%[KTL%]"] = ktl > 0 and commify(ktl) or "?",
+			["%[needXP%]"] = Commify(remXP),
+			["%[KTL%]"] = ktl > 0 and Commify(ktl) or "?",
 			["%[BTL%]"] = ("%d"):format(math_ceil(20 - ((cXP / nXP * 100) / 5)))
 		}
 	)
@@ -121,35 +136,67 @@ local function GetAzerText(name, currAP, maxAP, level)
 		db.bars.azerstr,
 		{
 			["%[name%]"] = name,
-			["%[curXP%]"] = commify(currAP),
-			["%[maxXP%]"] = commify(maxAP),
+			["%[curXP%]"] = Commify(currAP),
+			["%[maxXP%]"] = Commify(maxAP),
 			["%[curPC%]"] = Utils.FormatPercents(currAP, maxAP),
 			["%[needPC%]"] = Utils.FormatRemainingPercents(currAP, maxAP),
 			["%[pLVL%]"] = level,
 			["%[nLVL%]"] = level + 1,
-			["%[needXP%]"] = commify(maxAP - currAP)
+			["%[needXP%]"] = Commify(maxAP - currAP)
 		}
 	)
 end
 
-local function GetAzeriteItemName(item)
-	local name = nil
-	if item then
-		local itemID
-		if item:IsBagAndSlot() then
-			itemID = select(10, GetContainerItemInfo(item:GetBagAndSlot()))
-		else
-			itemID = GetInventoryItemID("player", item:GetEquipmentSlot())
+local GetHeartOfAzerothInfo
+
+do
+	local heartOfAzerothItemID = 158075
+	local itemName
+
+	-- Since GetItemInfo function can be async, callback can be provided
+	GetHeartOfAzerothInfo = function(callback, callbackReceiver)
+		local name = nil
+		local item = FindActiveAzeriteItem()
+
+		if itemName then
+			name = itemName
+		elseif item then
+			local itemID
+
+			if item:IsBagAndSlot() then
+				itemID = select(10, GetContainerItemInfo(item:GetBagAndSlot()))
+			else
+				itemID = GetInventoryItemID("player", item:GetEquipmentSlot())
+			end
+
+			if not itemID or itemID == 0 then
+				print("|cFFFFFF00[XPMultiBar]:|r |cFFFF0000Heart of Azeroth item ID is ", itemID or "<nil>", "|r")
+			elseif itemID == heartOfAzerothItemID then
+				name = GetItemInfo(itemID)
+				if name then
+					itemName = name
+				else
+					--[[
+						If the item hasn't been encountered since the game client was last started, this function will initially return nil,
+							but will asynchronously query the server to obtain the missing data,
+							triggering GET_ITEM_INFO_RECEIVED when the information is available.
+						ItemMixin:ContinueOnItemLoad() provides a convenient callback once item data has been queried
+					]]
+					local item = Item:CreateFromItemID(itemID)
+					item:ContinueOnItemLoad(function()
+						itemName = GetItemInfo(itemID)
+						if callback then
+							callback(callbackReceiver)
+						end
+					end)
+				end
+			end
+
 		end
-		-- HACK: When first entering world, script gets itemID = nil|0
-		-- Just hardcode Heart of Azeroth ID in this case
-		if not itemID or itemID == 0 then
-			itemID = 158075 --Heart of Azeroth ID = 158075
-		end
-		-- Also name is not retrieved in this case
-		name = GetItemInfo(itemID)
+
+		local currXP, maxXP = GetAzeriteItemXPInfo(item)
+		return name or "???", GetAzeritePowerLevel(item), currXP, maxXP
 	end
-	return name or L["Heart of Azeroth"]
 end
 
 local function SetWatchedFactionByName(faction)
@@ -187,10 +234,10 @@ local function GetReputationText(repInfo)
 		{
 			["%[faction%]"] = repName,
 			["%[standing%]"] = standingText,
-			["%[curRep%]"] = commify(repValue),
-			["%[maxRep%]"] = commify(repMax),
+			["%[curRep%]"] = Commify(repValue),
+			["%[maxRep%]"] = Commify(repMax),
 			["%[repPC%]"] = Utils.FormatPercents(repValue, repMax),
-			["%[needRep%]"] = commify(repMax - repValue),
+			["%[needRep%]"] = Commify(repMax - repValue),
 			["%[needPC%]"] = Utils.FormatRemainingPercents(repValue, repMax),
 		}
 	)
@@ -308,20 +355,24 @@ function M:OnEnable()
 
 	self:OnProfileChanged(db, true)
 
-	self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateXPBar")
+	--self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateXPBar") -- not gonna need it
 	self:RegisterEvent("PLAYER_XP_UPDATE", "UpdateXPData")
 	self:RegisterEvent("PLAYER_LEVEL_UP", "LevelUp")
 	self:RegisterEvent("PLAYER_UPDATE_RESTING", "UpdateXPData")
 	self:RegisterEvent("UPDATE_EXHAUSTION", "UpdateXPBar")
 	self:RegisterEvent("UPDATE_FACTION", "UpdateXPBar")
-	self:RegisterEvent("AZERITE_ITEM_EXPERIENCE_CHANGED", "UpdateXPBar")
+	if not wowClassic then
+		self:RegisterEvent("AZERITE_ITEM_EXPERIENCE_CHANGED", "UpdateXPBar")
+	end
 
 	if db.bars.autowatchrep then
 		self:RegisterEvent("COMBAT_TEXT_UPDATE")
 	end
 
-	self:RegisterEvent("PET_BATTLE_OPENING_START")
-	self:RegisterEvent("PET_BATTLE_CLOSE")
+	if not wowClassic then
+		self:RegisterEvent("PET_BATTLE_OPENING_START")
+		self:RegisterEvent("PET_BATTLE_CLOSE")
+	end
 
 	-- Register some LSM3 callbacks
 	LSM3.RegisterCallback(self, "LibSharedMedia_SetGlobal", function(callback, mtype, override)
@@ -513,7 +564,7 @@ end
 
 -- Update XP bar data
 function M:UpdateXPData()
-	Data.UpdateXP(getPlayerXP(), UnitXPMax("player"))
+	Data.UpdateXP(GetPlayerXP(), UnitXPMax("player"))
 	self:UpdateXPBar()
 end
 
@@ -594,13 +645,7 @@ function M:UpdateReputationData()
 
 	UI:SetMainBarValues(math_min(0, repValue), repMax, repValue)
 
-	-- Use our own color for exalted.
-	local repColor
-	if repStanding == Config.STANDING_EXALTED then
-		repColor = db.bars.exalted
-	else
-		repColor = FACTION_BAR_COLORS[repStanding]
-	end
+	local repColor = Config.GetReputationColor(repStanding)
 
 	UI:SetMainBarColor(repColor)
 	UI:SetBarText(
@@ -625,14 +670,14 @@ function M:UpdateXPBar()
 	local xpText, currXP, maxXP, barColor, txtcol
 
 	if bar == Bars.AZ then
-		local item = FindActiveAzeriteItem()
-		if item then
-			local name = GetAzeriteItemName(item)
-			currXP, maxXP = GetAzeriteItemXPInfo(item)
-			xpText = GetAzerText(name, currXP, maxXP, GetAzeritePowerLevel(item))
+		local name, azeriteLevel
+		name, azeriteLevel, currXP, maxXP = GetHeartOfAzerothInfo(item, self.UpdateXPBar, self)
+		if name then
+			xpText = GetAzerText(name, currXP, maxXP, azeriteLevel)
 		else
 			currXP, maxXP, xpText = 0, 1, L["Azerite item not found!"]
 		end
+
 		barColor = db.bars.azerite
 		UI:SetRemainingBarVisible(false)
 		txtcol = db.bars.azertext

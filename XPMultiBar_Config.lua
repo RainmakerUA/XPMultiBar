@@ -51,11 +51,11 @@ end
 
 -- Reputation colors
 local STANDING_EXALTED = 8
-local repHexColor
+local reputationColors
 
--- repHex colors are automatically generated and cached when first looked up.
+-- Reputation colors are automatically generated and cached when first looked up.
 do
-	repHexColor = setmetatable({}, {
+	reputationColors = setmetatable({}, {
 		__index = function(t, k)
 			local fbc
 
@@ -65,10 +65,8 @@ do
 				fbc = FACTION_BAR_COLORS[k]
 			end
 
-			local hex = ("%02x%02x%02x"):format(fbc.r * 255, fbc.g * 255, fbc.b * 255)
-			t[k] = hex
-
-			return hex
+			t[k] = fbc
+			return fbc
 		end,
 	})
 end
@@ -197,7 +195,7 @@ local function getOptions(uiTypes, uiName, appName)
 	local function setColor(info, r, g, b, a)
 		local col = db.bars[info[#info]]
 		col.r, col.g, col.b, col.a = r, g, b, a
-		repHexColor[STANDING_EXALTED] = nil
+		reputationColors[STANDING_EXALTED] = nil
 		local bgc = db.bars.background
 		onConfigChanged("bgColor", bgc)
 	end
@@ -775,8 +773,8 @@ function C.GetFactionStandingLabel(standing)
 	return factionStandingLabel[standing]
 end
 
-function C.GetRepHexColor(standing)
-	return repHexColor[standing]
+function C.GetReputationColor(standing)
+	return reputationColors[standing]
 end
 
 function C.RegisterConfigChanged(...)
@@ -826,6 +824,6 @@ end
 
 function C:ProfileChanged(event, database, newProfileKey)
 	db = database.profile
-	repHexColor[STANDING_EXALTED] = nil
+	reputationColors[STANDING_EXALTED] = nil
 	profileChangedEvent(db)
 end
