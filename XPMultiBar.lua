@@ -1,20 +1,20 @@
 --[=====[
 		## XP MultiBar ver. @@release-version@@
-		## XPMultiBar_Init.lua - module
+		## XPMultiBar.lua - module
 		Initialization module for XPMultiBar addon
 --]=====]
 
 local addonName = ...
 local XPMultiBar = LibStub("AceAddon-3.0"):NewAddon(addonName)
+local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
-XPMultiBar.IsWoWClassic = select(4, GetBuildInfo()) < 20000
+if WOW_PROJECT_ID and WOW_PROJECT_CLASSIC then
+	XPMultiBar.IsWoWClassic = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
+else
+	XPMultiBar.IsWoWClassic = select(4, GetBuildInfo()) < 20000
+end
 
 function XPMultiBar:OnInitialize()
-	if self.IsWoWClassic then
-		print(L["ERROR.RETAIL_ON_CLASSIC"])
-	else
-		print(L["MESSAGE.WELCOME"])
-	end
 	--@debug@
 	_G["XPMultiBar"] = XPMultiBar
 
@@ -22,4 +22,12 @@ function XPMultiBar:OnInitialize()
 		XPMultiBar[k] = v
 	end
 	--@end-debug@
+end
+
+function XPMultiBar:OnEnable()
+	if self.IsWoWClassic then
+		print(L["ERROR.RETAIL_ON_CLASSIC"])
+	else
+		print(L["MESSAGE.WELCOME"])
+	end
 end

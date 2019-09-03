@@ -19,6 +19,8 @@ local IsAltKeyDown = IsAltKeyDown
 local IsControlKeyDown = IsControlKeyDown
 local IsShiftKeyDown = IsShiftKeyDown
 local StatusTrackingBarManager = StatusTrackingBarManager
+local MainMenuExpBar = MainMenuExpBar
+local ReputationWatchBar = ReputationWatchBar
 
 local Event
 local Utils
@@ -379,16 +381,52 @@ function UI:ShowBubbles(value)
 	end
 end
 
-function UI:SetStatusTrackingBarHidden(hide)
-	if not StatusTrackingBarManager then
-		return
+function UI:HideBlizzFrame(frame)
+	if not self.uiHider then
+		self.uiHider = CreateFrame("Frame")
+		self.uiHider:Hide()
 	end
-	if hide then
-		previousStatusTrackingBarVisibility = StatusTrackingBarManager:IsVisible()
-		StatusTrackingBarManager:Hide()
-	elseif previousStatusTrackingBarVisibility then
-		previousStatusTrackingBarVisibility = false
-		StatusTrackingBarManager:Show()
+	if frame then
+		frame._parent = frame:GetParent()
+		frame:Hide()
+		frame:SetParent(self.uiHider)
+
+
+	end
+end
+
+function UI:UnhideBlizzFrame(frame)
+	if frame then
+		frame:Show()
+		if frame._parent then
+			frame:SetParent(frame._parent)
+		end
+	end
+end
+
+function UI:SetStatusTrackingBarHidden(hide)
+	-- WoW Classic
+	if MainMenuExpBar and ReputationWatchBar then
+		if hide then
+			previousStatusTrackingBarVisibility = MainMenuExpBar:IsVisible()
+			self:HideBlizzFrame(MainMenuExpBar)
+			self:HideBlizzFrame(ReputationWatchBar)
+		elseif previousStatusTrackingBarVisibility then
+			previousStatusTrackingBarVisibility = false
+			self:UnhideBlizzFrame(MainMenuExpBar)
+			self:UnhideBlizzFrame(ReputationWatchBar)
+		end
+	end
+	-- WoW Retail
+	if StatusTrackingBarManager then
+		if hide then
+			previousStatusTrackingBarVisibility = StatusTrackingBarManager:IsVisible()
+			-- do not reparent, because some specific parent method is called (and reparenting is not required)
+			StatusTrackingBarManager:Hide()
+		elseif previousStatusTrackingBarVisibility then
+			previousStatusTrackingBarVisibility = false
+			StatusTrackingBarManager:Show()
+		end
 	end
 end
 
