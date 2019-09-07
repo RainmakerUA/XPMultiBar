@@ -1,6 +1,6 @@
 --[=====[
 		## XP MultiBar ver. @@release-version@@
-		## XPMultiBar.lua - module
+		## XPMultiBar_Main.lua - module
 		Main module for XPMultiBar addon
 --]=====]
 
@@ -28,13 +28,9 @@ local emptyFun = function() end
 -- WoW globals
 local ChatEdit_GetActiveWindow = ChatEdit_GetActiveWindow
 local ChatEdit_GetLastActiveWindow = ChatEdit_GetLastActiveWindow
-local CollapseFactionHeader = CollapseFactionHeader
-local CreateFrame = CreateFrame
-local ExpandFactionHeader = ExpandFactionHeader
 local GameFontNormal = GameFontNormal
 local GetContainerItemInfo = GetContainerItemInfo
 local GetCurrentCombatTextEventInfo = GetCurrentCombatTextEventInfo
-local GetCursorPosition = GetCursorPosition
 local GetFactionInfo = GetFactionInfo
 local GetFactionInfoByID = GetFactionInfoByID
 local GetFriendshipReputation = GetFriendshipReputation
@@ -291,6 +287,7 @@ function M:OnInitialize()
 
 	local eventMap = {
 		_self = self,
+		position = self.SetPosition,
 		locked = uiHandler("SetLocked"),
 		clamptoscreen = uiHandler("SetClamp"),
 		strata = uiHandler("SetStrata"),
@@ -355,7 +352,6 @@ function M:OnEnable()
 
 	self:OnProfileChanged(db, true)
 
-	--self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateXPBar") -- not gonna need it
 	self:RegisterEvent("PLAYER_XP_UPDATE", "UpdateXPData")
 	self:RegisterEvent("PLAYER_LEVEL_UP", "LevelUp")
 	self:RegisterEvent("PLAYER_UPDATE_RESTING", "UpdateXPData")
@@ -406,7 +402,7 @@ function M:OnProfileChanged(db, skipBarUpdate)
 	UI:SetStrata(db.general.strata)
 	UI:SetScale(db.general.scale)
 	UI:SetSize(db.general.width, db.general.height)
-	UI:SetPosition(db.general.posx, db.general.posy)
+	self:SetPosition(db.general)
 	UI:ShowBorder(db.general.border)
 	UI:ShowBubbles(db.general.bubbles)
 	self:SetTexture(db.general.texture)
@@ -454,11 +450,32 @@ function M:OnButtonClick(button, ctrl, alt, shift)
 	end
 end
 
-function M:OnSavePosition(x, y)
-	local db = Config.GetDB()
+function M:OnSavePosition(position)
+	local gen = Config.GetDB().general
 
-	db.general.posx = x
-	db.general.posy = y
+	gen.anchor = position.anchor
+	gen.anchorRelative = (position.anchor == position.anchorRel)
+							and Config.NoAnchor
+							or position.anchorRel
+	gen.posx = position.x
+	gen.posy = position.y
+end
+
+function M:SetPosition(general)
+	if type(general) ~= "table" then
+		general = Config.GetDB().general
+	end
+
+	local position = {
+		anchor = general.anchor,
+		anchorRel = general.anchorRelative == Config.NoAnchor
+							and general.anchor
+							or general.anchorRelative,
+		x = general.posx,
+		y = general.posy
+	}
+
+	UI:SetPosition(position)
 end
 
 function M:SetFontOptions(general)

@@ -13,10 +13,15 @@ local Event
 local C = Config
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
+local Utils
+
 local tinsert = tinsert
 local error = error
 
 local BACKGROUND = BACKGROUND
+
+local DB_VERSION_NUM = 821
+local DB_VERSION = "V" .. tostring(DB_VERSION_NUM) .. (XPMultiBar.IsWoWClassic and "C" or "")
 
 local md = {
 	title = GetAddOnMetadata(addonName, "Title"),
@@ -87,14 +92,44 @@ do
 	})
 end
 
+local frameAnchors = {
+	CENTER = "CENTER",
+	LEFT = "LEFT",
+	RIGHT = "RIGHT",
+	TOP = "TOP",
+	TOPLEFT = "TOPLEFT",
+	TOPRIGHT = "TOPRIGHT",
+	BOTTOM = "BOTTOM",
+	BOTTOMLEFT = "BOTTOMLEFT",
+	BOTTOMRIGHT = "BOTTOMRIGHT",
+}
+
+--[[
+	-- Localization
+	CENTER = L["ANCHOR.CENTER"],
+	LEFT = L["ANCHOR.LEFT"],
+	RIGHT = L["ANCHOR.RIGHT"],
+	TOP = L["ANCHOR.TOP"],
+	TOPLEFT = L["ANCHOR.TOPLEFT"],
+	TOPRIGHT = L["ANCHOR.TOPRIGHT"],
+	BOTTOM = L["ANCHOR.BOTTOM"],
+	BOTTOMLEFT = L["ANCHOR.BOTTOMLEFT"],
+	BOTTOMRIGHT = L["ANCHOR.BOTTOMRIGHT"],
+]]
+
 -- Default settings
 local defaults = {
 	profile = {
 		-- General
 		general = {
+			advPosition = false,
 			locked = false,
 			clamptoscreen = true,
 			strata = "LOW",
+			anchor = frameAnchors.BOTTOM,
+			anchorRelative = "",
+			posx = 0,
+			posy = 0,
 			width = 1028,
 			height = 20,
 			scale = 1,
@@ -105,11 +140,8 @@ local defaults = {
 			horizTile = false,
 			bubbles = false,
 			border = false,
-			textposition = 50,
 			commify = true,
 			hidestatus = true,
-			posx = nil,
-			posy = nil,
 		},
 		bars = {
 			-- XP bar
@@ -121,7 +153,6 @@ local defaults = {
 			-- Azerite bar
 			azerstr = "[name]: [curXP]/[maxXP] :: [curPC] through level [pLVL] :: [needXP] AP left",
 			azicons = true,
-			-- showazerbar = true,
 			showmaxazerite = false,
 			-- Reputation bar
 			repstring = "Rep: [faction] ([standing]) [curRep]/[maxRep] :: [repPC]",
@@ -129,7 +160,7 @@ local defaults = {
 			showrepbar = false,
 			autowatchrep = true,
 			autotrackguild = false,
-		-- Bar colors
+			-- Bar colors
 			normal = { r = 0.8, g = 0, b = 1, a = 1 },
 			rested = { r = 0, g = 0.4, b = 1, a = 1 },
 			resting = { r = 1.0, g = 0.82, b = 0.25, a = 1 },
@@ -144,7 +175,7 @@ local defaults = {
 	}
 }
 
-local function createGroupItems(description, items, keyMap)
+local function CreateGroupItems(description, items, keyMap)
 	local result = {
 		text = {
 			name = description,
@@ -184,10 +215,20 @@ end
 	Text: text position, separate thousands, show zero rest xp
 --]]
 
-local function getOptions(uiTypes, uiName, appName)
+local function GetOptions(uiTypes, uiName, appName)
 	local function onConfigChanged(key, value)
 		configChangedEvent(key, value)
 	end
+	local function getCoord(info)
+		local key = info[#info]
+		return tostring(db.general[key])
+	end
+	local function setPosition(info, value)
+		local key = info[#info]
+		db.general[key] = value
+		onConfigChanged("position", db.general)
+	end
+
 	local function getColor(info)
 		local col = db.bars[info[#info]]
 		return col.r, col.g, col.b, col.a or 1
@@ -201,10 +242,19 @@ local function getOptions(uiTypes, uiName, appName)
 	end
 
 	if appName == addonName then
+		local anchors = Utils.Clone(frameAnchors)
+		local anchorValues = Utils.Map(anchors, function(val)
+			return ("%s (%s)"):format(L["ANCHOR." .. val], val)
+		end)
+		local relAnchorValues = Utils.Merge({ [C.NoAnchor] = L["Same as Anchor"] }, anchorValues)
 		local options = {
 			type = "group",
 			name = md.title,
-			get = function(info) return db.general[info[#info]] end,
+			childGroups = "tab",
+			get = function(info)
+				local key = info[#info]
+				return db.general[key]
+			end,
 			set = function(info, value)
 				local key = info[#info]
 				db.general[key] = value
@@ -216,24 +266,26 @@ local function getOptions(uiTypes, uiName, appName)
 					type = "group",
 					order = 10,
 					name = L["Position"],
-					guiInline = true,
 					width = "full",
 					args = {
 						locked = {
 							type = "toggle",
 							order = 100,
-							name = L["Lock"],
+							width = 1.5,
+							name = L["Lock movement"],
 							desc = L["Lock bar movement"],
 						},
 						clamptoscreen = {
 							type = "toggle",
 							order = 200,
+							width = 1.5,
 							name = L["Screen clamp"],
 							desc = L["Clamp bar with screen borders"],
 						},
 						strata = {
 							type = "select",
 							order = 300,
+							width = 1.5,
 							name = L["Frame strata"],
 							desc = L["Set the frame strata (z-order position)"],
 							style = "dropdown",
@@ -244,44 +296,105 @@ local function getOptions(uiTypes, uiName, appName)
 								BACKGROUND = "Background",
 							},
 						},
-					},
-				},
-				-- Size
-				sizeGroup = {
-					type = "group",
-					order = 20,
-					name = L["Size"],
-					guiInline = true,
-					width = "full",
-					args = {
-						width = {
-							type = "range",
-							order = 100,
-							name = L["Width"],
-							desc = L["Set the bar width"],
-							min = 100,
-							max = 5000,
-							step = 1,
-							bigStep = 50,
+						advPosition = {
+							type = "toggle",
+							order = 400,
+							width = 1.5,
+							name = L["Advanced positioning"],
+							desc = L["Show advanced positioning options"],
 						},
-						height = {
-							type = "range",
-							order = 200,
-							name = L["Height"],
-							desc = L["Set the bar height"],
-							min = 10,
-							max = 100,
-							step = 1,
-							bigStep = 5,
+						advPosGroup = {
+							type = "group",
+							order = 500,
+							name = L["Advanced positioning"],
+							guiInline = true,
+							width = "full",
+							hidden = function() return not db.general.advPosition end,
+							set = setPosition,
+							args = {
+								anchor = {
+									order = 1000,
+									type = "select",
+									width = 1.5,
+									name = L["Anchor"],
+									desc = L["Change the current anchor point of the bar"],
+									values = anchorValues,
+								},
+								anchorRelative = {
+									order = 2000,
+									type = "select",
+									width = 1.5,
+									name = L["Relative anchor"],
+									desc = L["Change the relative anchor point on the screen"],
+									values = relAnchorValues,
+								},
+								posx = {
+									order = 3000,
+									type = "input",
+									width = 1.5,
+									name = L["X Offset"],
+									desc = L["Offset in X direction (horizontal) from the given anchor point"],
+									dialogControl = "NumberEditBox",
+									get = getCoord,
+								},
+								posy = {
+									order = 4000,
+									type = "input",
+									width = 1.5,
+									name = L["Y Offset"],
+									desc = L["Offset in Y direction (vertical) from the given anchor point"],
+									dialogControl = "NumberEditBox",
+									get = getCoord,
+								},
+							},
 						},
-						scale = {
-							type = "range",
-							order = 300,
-							name = L["Scale"],
-							desc = L["Set the bar scale"],
-							min = 0.5,
-							max = 2,
+						sizeGroup = {
+							type = "group",
+							order = 500,
+							name = L["Size"],
+							guiInline = true,
+							width = "full",
+							args = {
+								width = {
+									type = "range",
+									order = 1000,
+									width = 1.5,
+									name = L["Width"],
+									desc = L["Set the bar width"],
+									min = 100,
+									max = 5000,
+									step = 1,
+									bigStep = 50,
+								},
+								height = {
+									type = "range",
+									order = 2000,
+									width = 1.5,
+									name = L["Height"],
+									desc = L["Set the bar height"],
+									min = 10,
+									max = 100,
+									step = 1,
+									bigStep = 5,
+								},
+								scale = {
+									type = "range",
+									order = 3000,
+									width = 1.5,
+									name = L["Scale"],
+									desc = L["Set the bar scale"],
+									min = 0.5,
+									max = 2,
+								},
+							},
 						},
+						hidestatus = {
+							type = "toggle",
+							order = 600,
+							width = "full",
+							name = L["Hide WoW standard bars"],
+							desc = L["Hide WoW standard bars for XP, Artifact power and reputation"],
+						}
 					},
 				},
 				-- Font
@@ -289,7 +402,7 @@ local function getOptions(uiTypes, uiName, appName)
 					type = "group",
 					order = 30,
 					name = L["Font"],
-					guiInline = true,
+					--guiInline = true,
 					width = "full",
 					args = {
 						font = {
@@ -323,7 +436,7 @@ local function getOptions(uiTypes, uiName, appName)
 					type = "group",
 					order = 40,
 					name = L["Visuals"],
-					guiInline = true,
+					--guiInline = true,
 					width = "full",
 					args = {
 						border = {
@@ -351,7 +464,7 @@ local function getOptions(uiTypes, uiName, appName)
 					type = "group",
 					order = 50,
 					name = L["Texture"],
-					guiInline = true,
+					--guiInline = true,
 					width = "full",
 					args = {
 						texture = {
@@ -372,13 +485,6 @@ local function getOptions(uiTypes, uiName, appName)
 							desc = L["Tile texture instead of stretching"],
 						},
 					},
-				},
-				hidestatus = {
-					type = "toggle",
-					order = 60,
-					width = "full",
-					name = L["Hide WoW standard bars"],
-					desc = L["Hide WoW standard bars for XP, Artifact power and reputation"],
 				},
 			},
 		}
@@ -666,7 +772,7 @@ local function getOptions(uiTypes, uiName, appName)
 					order = 10,
 					name = L["Experience Bar"],
 					width = "full",
-					args = createGroupItems(
+					args = CreateGroupItems(
 						L["HELP.XPBARTEMPLATE"],
 						{
 							{ "curXP",	L["Current XP value on the level"] },
@@ -690,7 +796,7 @@ local function getOptions(uiTypes, uiName, appName)
 					order = 20,
 					name = L["Azerite Bar"],
 					width = "full",
-					args = createGroupItems(
+					args = CreateGroupItems(
 						L["HELP.AZBARTEMPLATE"],
 						{
 							{ "name",	L["Name of artifact necklace: Heart of Azeroth"] },
@@ -710,7 +816,7 @@ local function getOptions(uiTypes, uiName, appName)
 					order = 30,
 					name = L["Reputation Bar"],
 					width = "full",
-					args = createGroupItems(
+					args = CreateGroupItems(
 						L["HELP.REPBARTEMPLATE"],
 						{
 							{ "faction",	L["Watched faction / friend / guild name"] },
@@ -729,7 +835,7 @@ local function getOptions(uiTypes, uiName, appName)
 	end
 end
 
-local function openSettings()
+local function OpenSettings()
 	--[[
 		First opening Bars subcategory should expand addon options,
 		but it does not work now. Although this is required
@@ -739,10 +845,23 @@ local function openSettings()
 	InterfaceOptionsFrame_OpenToCategory(md.title)
 end
 
-local function migrateSettings(profiles)
-	for name, data in pairs(profiles) do
-		data.repmenu = nil -- Reputation menu removed
+local function MigrateSettings(sv)
+	local function getDBVersion(svVer)
+		local ver = svVer or ""
+		local verText, c = ver:match("^V(%d+)(C?)$")
+		return tonumber(verText) or 0, c and #c > 0
 	end
+	local dbVer, dbClassic = getDBVersion(sv.VER)
+
+	for name, data in pairs(sv.profiles) do
+		-- new positioning mode
+		if dbVer < DB_VERSION_NUM then
+			data.general.anchor = "TOPLEFT"
+			data.general.anchorRelative = "BOTTOMLEFT"
+		end
+	end
+
+	sv.VER = DB_VERSION
 end
 
 C.EVENT_CONFIG_CHANGED = "ConfigChanged"
@@ -751,8 +870,10 @@ C.EVENT_PROFILE_CHANGED = "ProfileChanged"
 C.XPLockedReasons = xpLockedReasons
 C.MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL_TABLE[GetExpansionLevel()]
 C.STANDING_EXALTED = STANDING_EXALTED
+C.Anchors = frameAnchors
+C.NoAnchor = ""
 
-C.OpenSettings = openSettings
+C.OpenSettings = OpenSettings
 
 function C.GetDB()
 	return db
@@ -787,19 +908,21 @@ end
 
 function C:OnInitialize()
 	Event = XPMultiBar:GetModule("Event")
+	Utils = XPMultiBar:GetModule("Utils")
 
 	self.db = LibStub("AceDB-3.0"):New(addonName .. "DB", defaults, true)
-	db = self.db.profile
 
-	migrateSettings(self.db.profiles)
+	MigrateSettings(self.db.sv)
+
+	db = self.db.profile
 
 	local myName = md.title
 	local ACRegistry = LibStub("AceConfigRegistry-3.0")
 	local ACDialog = LibStub("AceConfigDialog-3.0")
 
-	ACRegistry:RegisterOptionsTable(addonName, getOptions)
-	ACRegistry:RegisterOptionsTable(addonName .. "-Bars", getOptions)
-	ACRegistry:RegisterOptionsTable(addonName .. "-Help", getOptions)
+	ACRegistry:RegisterOptionsTable(addonName, GetOptions)
+	ACRegistry:RegisterOptionsTable(addonName .. "-Bars", GetOptions)
+	ACRegistry:RegisterOptionsTable(addonName .. "-Help", GetOptions)
 
 	ACDialog:AddToBlizOptions(addonName, myName)
 	ACDialog:AddToBlizOptions(addonName .. "-Bars", L["Bars"], myName)
@@ -812,7 +935,7 @@ function C:OnInitialize()
 
 	--[[ TODO: Help tab ]]
 
-	self:RegisterChatCommand("xpbar", openSettings)
+	self:RegisterChatCommand("xpbar", OpenSettings)
 
 	self.db.RegisterCallback(self, "OnProfileChanged", self.EVENT_PROFILE_CHANGED)
 	self.db.RegisterCallback(self, "OnProfileCopied", self.EVENT_PROFILE_CHANGED)

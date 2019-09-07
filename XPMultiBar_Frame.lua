@@ -283,23 +283,24 @@ function UI:GetBarText()
 end
 
 function UI:GetPosition()
-	local x, y = self.bar:GetLeft(), self.bar:GetTop()
+	local anchor, parent, anchorRel, x, y = self.bar:GetPoint()
 	local s = self.bar:GetEffectiveScale()
 
-	return x * s, y * s
+	return { anchor = anchor, anchorRel = anchorRel, x = x * s, y = y * s }
 end
 
-function UI:SetPosition(x, y)
-	if not x or not y then
-		return
-	end
-
+function UI:SetPosition(position)
+	local anchor, anchorRel, x, y = position.anchor, position.anchorRel, position.x, position.y
 	local s = self.bar:GetEffectiveScale()
 
 	x, y = x / s, y / s
 
+	if anchorRel == "" then
+		anchorRel = anchor
+	end
+
 	self.bar:ClearAllPoints()
-	self.bar:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x, y)
+	self.bar:SetPoint(anchor, UIParent, anchorRel, x, y)
 end
 
 function UI:SetLocked(value)
@@ -328,10 +329,10 @@ function UI:SetHeight(height)
 end
 
 function UI:SetScale(scale)
-	local x, y = self:GetPosition()
+	local pos = self:GetPosition()
 	self.bar:SetScale(scale)
-	self:SetPosition(x, y)
-	onBarEvent("set-position", x, y)
+	self:SetPosition(pos)
+	onBarEvent("set-position", pos)
 end
 
 function UI:SetFontOptions(font, size, outline)
@@ -390,8 +391,6 @@ function UI:HideBlizzFrame(frame)
 		frame._parent = frame:GetParent()
 		frame:Hide()
 		frame:SetParent(self.uiHider)
-
-
 	end
 end
 
