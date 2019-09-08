@@ -10,6 +10,9 @@ local Config = XPMultiBar:NewModule("Config", "AceConsole-3.0")
 
 local Event
 
+local emptyFn = XPMultiBar.EmptyFun
+local wowClassic = XPMultiBar.IsWoWClassic
+
 local C = Config
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
@@ -17,6 +20,12 @@ local tinsert = tinsert
 local error = error
 
 local BACKGROUND = BACKGROUND
+
+local IsXPUserDisabled = IsXPUserDisabled
+
+if wowClassic then
+	IsXPUserDisabled = emptyFn
+end
 
 local md = {
 	title = GetAddOnMetadata(addonName, "Title"),
@@ -37,7 +46,7 @@ local profileChangedEvent
 local db
 
 -- Artifact item title color
-local artColor
+--[[local artColor
 
 do
 	local color = ITEM_QUALITY_COLORS[LE_ITEM_QUALITY_ARTIFACT]
@@ -47,7 +56,7 @@ do
 		b = color.b,
 		a = color.a
 	}
-end
+end]]
 
 -- Reputation colors
 local STANDING_EXALTED = 8
@@ -114,18 +123,18 @@ local defaults = {
 		bars = {
 			-- XP bar
 			xpstring = "Exp: [curXP]/[maxXP] ([restPC]) :: [curPC] through level [pLVL] :: [needXP] XP left :: [KTL] kills to level",
-			xpicons = true,
+			--xpicons = true,
 			indicaterest = true,
 			showremaining = true,
 			showmaxlevel = false,
 			-- Azerite bar
-			azerstr = "[name]: [curXP]/[maxXP] :: [curPC] through level [pLVL] :: [needXP] AP left",
-			azicons = true,
+			--azerstr = "[name]: [curXP]/[maxXP] :: [curPC] through level [pLVL] :: [needXP] AP left",
+			--azicons = true,
 			-- showazerbar = true,
-			showmaxazerite = false,
+			--showmaxazerite = false,
 			-- Reputation bar
 			repstring = "Rep: [faction] ([standing]) [curRep]/[maxRep] :: [repPC]",
-			repicons = true,
+			--repicons = true,
 			showrepbar = false,
 			autowatchrep = true,
 			autotrackguild = false,
@@ -136,10 +145,10 @@ local defaults = {
 			remaining = { r = 0.82, g = 0, b = 0, a = 1 },
 			background = { r = 0.5, g = 0.5, b = 0.5, a = 0.5 },
 			exalted = { r = 0, g = 0.77, b = 0.63, a = 1 },
-			azerite = artColor, -- azerite bar default color is a color of artifact item title
+			--azerite = artColor, -- azerite bar default color is a color of artifact item title
 			xptext = { r = 1, g = 1, b = 1, a = 1 },
 			reptext = { r = 1, g = 1, b = 1, a = 1 },
-			azertext = { r = 1, g = 1, b = 1, a = 1 },
+			--azertext = { r = 1, g = 1, b = 1, a = 1 },
 		},
 	}
 }
@@ -419,13 +428,13 @@ local function getOptions(uiTypes, uiName, appName)
 							desc = L["Set XP bar text format"],
 							width = "full",
 						},
-						xpicons = {
+						--[[xpicons = {
 							type = "toggle",
 							order = 15,
 							width = 1.5,
 							name = L["Display XP bar icons"],
 							desc = L["Display icons for max. level, disabled XP gain and level cap due to limited account"]
-						},
+						},]]
 						showmaxlevel = {
 							type = "toggle",
 							order = 20,
@@ -508,7 +517,7 @@ local function getOptions(uiTypes, uiName, appName)
 						},
 					},
 				},
-				azergroup = {
+				--[[azergroup = {
 					type = "group",
 					order = 20,
 					name = L["Azerite Bar"],
@@ -568,7 +577,7 @@ local function getOptions(uiTypes, uiName, appName)
 							},
 						},
 					},
-				},
+				},]]
 				repgroup = {
 					type = "group",
 					order = 30,
@@ -587,13 +596,13 @@ local function getOptions(uiTypes, uiName, appName)
 							name = L["Text format"],
 							desc = L["Set reputation bar text format"],
 						},
-						repicons = {
+						--[[repicons = {
 							type = "toggle",
 							order = 15,
 							width = 1.5,
 							name = L["Display icons"],
 							desc = L["Display icons for paragon reputation and reputation bonuses"],
-						},
+						},]]
 						showrepbar = {
 							type = "toggle",
 							order = 20,
@@ -685,7 +694,7 @@ local function getOptions(uiTypes, uiName, appName)
 						makeGroupTitle
 					),
 				},
-				azergroup = {
+				--[[azergroup = {
 					type = "group",
 					order = 20,
 					name = L["Azerite Bar"],
@@ -704,7 +713,7 @@ local function getOptions(uiTypes, uiName, appName)
 						},
 						makeGroupTitle
 					),
-				},
+				},]]
 				repgroup = {
 					type = "group",
 					order = 30,

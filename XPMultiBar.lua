@@ -14,6 +14,8 @@ else
 	XPMultiBar.IsWoWClassic = select(4, GetBuildInfo()) < 20000
 end
 
+XPMultiBar.EmptyFun = function() end
+
 function XPMultiBar:OnInitialize()
 	--@debug@
 	_G["XPMultiBar"] = XPMultiBar
@@ -25,8 +27,8 @@ function XPMultiBar:OnInitialize()
 end
 
 function XPMultiBar:OnEnable()
-	if self.IsWoWClassic then
-		print(L["ERROR.RETAIL_ON_CLASSIC"])
+	if not self.IsWoWClassic then
+		print(L["ERROR.CLASSIC_ON_RETAIL"])
 	else
 		print(L["MESSAGE.WELCOME"])
 	end

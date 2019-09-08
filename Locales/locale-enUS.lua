@@ -118,6 +118,7 @@ L["Heart of Azeroth"] = true
 L["You need to select a faction to watch"] = true
 L["Azerite item not found!"] = true
 L["ERROR.RETAIL_ON_CLASSIC"] = "|cFFFFFF00[XPMultiBar]:|r |cFFFF4040You are using Retail version on WoW Classic! Please install version for Classic!|r"
+L["ERROR.CLASSIC_ON_RETAIL"] = "|cFFFFFF00[XPMultiBar]:|r |cFFFF4040You are using Classic version on WoW Mainline version! Please install version for Mainline WoW!|r"
 L["MESSAGE.WELCOME"] = "|cFFFFFF00[XPMultiBar]: Thank you for using XPMultiBar!|r"
 L["HELP.XPBARTEMPLATE"] = "Format templates are used to insert specific values into XP text string"
 L["HELP.AZBARTEMPLATE"] = "Format templates are used to insert specific values into Azerite power text string"

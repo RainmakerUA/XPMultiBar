@@ -1,7 +1,7 @@
-## Interface: 80200
+## Interface: 11302
 ## Title: XP MultiBar
-## Notes: XP / Reputation / Azerite power bar
-## Notes-ruRU: Полоса опыта / репутации / силы азерита
+## Notes: XP / Reputation bar
+## Notes-ruRU: Полоса опыта / репутации
 ## Author: @@release-author@@
 ## Version: @@release-version@@
 ## SavedVariables: XPMultiBarDB

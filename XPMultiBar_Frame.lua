@@ -96,11 +96,11 @@ end
 --[[ Button object mixin methods ]]
 
 function bx:OnLoad()
-	self.xpIcons = { self.expMaxIcon, self.expStopIcon, self.expCapIcon }
+	--[[self.xpIcons = { self.expMaxIcon, self.expStopIcon, self.expCapIcon }
 	self.azerIcons = { self.azerMaxIcon }
 	self.repIcons = { self.piGlow, self.piIcon, self.piCheck, self.lfgBonusIcon, self.repBonusIcon }
 	self.icons = tappend(self.xpIcons, self.azerIcons, self.repIcons)
-	self:HideAllIcons()
+	self:HideAllIcons()]]
 end
 
 function bx:OnClick(button, down)
@@ -131,7 +131,7 @@ function bx:OnDragStop()
 end
 
 function bx:OnUpdate()
-	if self.piGlow:IsShown() then
+	--[[if self.piGlow:IsShown() then
 		local alpha
 		local time = GetTime()
 		local value = time - math_floor(time)
@@ -144,15 +144,15 @@ function bx:OnUpdate()
 		end
 
 		self.piGlow:SetAlpha(alpha)
-	end
+	end]]
 end
 
 function bx:GetVisibleIconWidth()
-	for _, icon in ipairs(self.icons) do
+	--[[for _, icon in ipairs(self.icons) do
 		if icon ~= self.piGlow and icon ~= self.piCheck and icon:IsVisible() then
 			return icon == self.piIcon and 20 or icon:GetWidth()
 		end
-	end
+	end]]
 	return 0
 end
 
@@ -161,9 +161,9 @@ function bx:AdjustTextPoint()
 	local iconWidth = self:GetVisibleIconWidth()
 	local offset = 5 -- default icon offset
 
-	if self.repBonusIcon:IsVisible() and self.lfgBonusIcon:IsVisible() then
+	--[[if self.repBonusIcon:IsVisible() and self.lfgBonusIcon:IsVisible() then
 		offset = 10
-	end
+	end]]
 	local textOffset = iconWidth > 0 and (iconWidth + offset) / 2.0 or 0
 
 	if textOffset ~= text.offset then
@@ -174,13 +174,13 @@ function bx:AdjustTextPoint()
 end
 
 function bx:HideAllIcons()
-	for _, icon in ipairs(self.icons) do
+	--[[for _, icon in ipairs(self.icons) do
 		icon:Hide()
-	end
+	end]]
 end
 
 function bx:SetXPIcons(info)
-	self:HideAllIcons()
+	--[[self:HideAllIcons()
 	if type(info) == "table" then
 		local isMaxLevel, isXPStopped, isLevelCap = unpack(info)
 		if isMaxLevel then
@@ -191,22 +191,22 @@ function bx:SetXPIcons(info)
 			self.expCapIcon:Show()
 		end
 	end
-	self:AdjustTextPoint()
+	self:AdjustTextPoint()]]
 end
 
 function bx:SetAzeriteIcons(info)
-	self:HideAllIcons()
+	--[[self:HideAllIcons()
 	if type(info) == "table" then
 		local isHeartMaxLevel = unpack(info)
 		if isHeartMaxLevel then
 			self.azerMaxIcon:Show()
 		end
 	end
-	self:AdjustTextPoint()
+	self:AdjustTextPoint()]]
 end
 
 function bx:SetFactionIcons(info)
-	self:HideAllIcons()
+	--[[self:HideAllIcons()
 	if type(info) == "table" then
 		local hasBonus, hasLfgBonus, isParagon, hasParagonReward = unpack(info)
 		if hasBonus then
@@ -229,7 +229,7 @@ function bx:SetFactionIcons(info)
 			self.piCheck:SetShown(hasParagonReward)
 		end
 	end
-	self:AdjustTextPoint()
+	self:AdjustTextPoint()]]
 end
 
 --[[ Module methods ]]

@@ -23,7 +23,8 @@ local type = type
 local math_ceil = math.ceil
 local math_min = math.min
 
-local emptyFun = function() end
+local emptyFun = XPMultiBar.EmptyFun
+local wowClassic = XPMultiBar.IsWoWClassic
 
 -- WoW globals
 local ChatEdit_GetActiveWindow = ChatEdit_GetActiveWindow
@@ -130,7 +131,7 @@ local function GetXPText(cXP, nXP, remXP, restedXP, level, maxLevel)
 	)
 end
 
-local function GetAzerText(name, currAP, maxAP, level)
+--[[local function GetAzerText(name, currAP, maxAP, level)
 	local db = Config.GetDB()
 	return Utils.MultiReplace(
 		db.bars.azerstr,
@@ -145,9 +146,9 @@ local function GetAzerText(name, currAP, maxAP, level)
 			["%[needXP%]"] = Commify(maxAP - currAP)
 		}
 	)
-end
+end]]
 
-local GetHeartOfAzerothInfo
+--[==[local GetHeartOfAzerothInfo
 
 do
 	local heartOfAzerothItemID = 158075
@@ -197,7 +198,7 @@ do
 		local currXP, maxXP = GetAzeriteItemXPInfo(item)
 		return name or "???", GetAzeritePowerLevel(item), currXP, maxXP
 	end
-end
+end]==]
 
 local function SetWatchedFactionByName(faction)
 	for i = 1, GetNumFactions() do
@@ -670,7 +671,7 @@ function M:UpdateXPBar()
 	local xpText, currXP, maxXP, barColor, txtcol
 
 	if bar == Bars.AZ then
-		local name, azeriteLevel
+		--[[ocal name, azeriteLevel
 		name, azeriteLevel, currXP, maxXP = GetHeartOfAzerothInfo(item, self.UpdateXPBar, self)
 		if name then
 			xpText = GetAzerText(name, currXP, maxXP, azeriteLevel)
@@ -682,7 +683,7 @@ function M:UpdateXPBar()
 		UI:SetRemainingBarVisible(false)
 		txtcol = db.bars.azertext
 
-		UI:SetAzeriteInfo(db.bars.azicons and { IsAzeriteItemAtMaxLevel() } or nil)
+		UI:SetAzeriteInfo(db.bars.azicons and { IsAzeriteItemAtMaxLevel() } or nil)]]
 	else -- if bar == Bars.XP
 		-- GetXPExhaustion() returns nil when no bonus present and 0 on max level
 		local xp, restedXP = Data.GetXP(), GetXPExhaustion() or 0
