@@ -1,7 +1,7 @@
 {
 	"apiRoot": "https://wow.curseforge.com/api/",
 	"token": "replace!:151623176520186612666519671219656818122416216512661523201716641722232065",
-	"libStore": "D:\\DEV\\Lua\\Libs",
+	"libStore": "D:\\DEV\\Lua\\!Libs",
 	"release": {
 		"projectID": 320567,
 		"author": "RainmakerUA",

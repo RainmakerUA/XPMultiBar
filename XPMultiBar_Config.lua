@@ -138,8 +138,11 @@ local defaults = {
 			fontoutline = false,
 			texture = "Smooth",
 			horizTile = false,
-			bubbles = false,
 			border = false,
+			borderStyle = 1,
+			borderDynamicColor = true,
+			borderColor = { r = 0.5, g  = 0.5, b = 0.5, a = 1 },
+			bubbles = false,
 			commify = true,
 			hidestatus = true,
 		},
@@ -206,15 +209,6 @@ local function CreateGroupItems(description, items, keyMap)
 	return result
 end
 
---[[
-	Position: lock, screen clamp, frame strata
-	Size: width, height, scale
-	Font: font face, font size, outline
-	?: texture, bubbles, show border
-	OFF: ?: hide text, dynamic bars, mouseover
-	Text: text position, separate thousands, show zero rest xp
---]]
-
 local function GetOptions(uiTypes, uiName, appName)
 	local function onConfigChanged(key, value)
 		configChangedEvent(key, value)
@@ -227,6 +221,21 @@ local function GetOptions(uiTypes, uiName, appName)
 		local key = info[#info]
 		db.general[key] = value
 		onConfigChanged("position", db.general)
+	end
+
+	local function getBorderColor(info)
+		local col = db.general[info[#info]]
+		return col.r, col.g, col.b, col.a
+	end
+	local function setBorder(info, r, g, b, a)
+		local key = info[#info]
+		if key == "borderColor" then
+			local dbCol = db.general[key]
+			dbCol.r, dbCol.g, dbCol.b, dbCol.a = r, g, b, a
+		else
+			db.general[key] = r
+		end
+		onConfigChanged("border", db.general)
 	end
 
 	local function getColor(info)
@@ -247,6 +256,10 @@ local function GetOptions(uiTypes, uiName, appName)
 			return ("%s (%s)"):format(L["ANCHOR." .. val], val)
 		end)
 		local relAnchorValues = Utils.Merge({ [C.NoAnchor] = L["Same as Anchor"] }, anchorValues)
+		local isBorderOptionsDisabled = function() return not db.general.border end
+		local isBorderColorDisabled = function()
+			return not db.general.border or db.general.borderDynamicColor
+		end
 		local options = {
 			type = "group",
 			name = md.title,
@@ -397,17 +410,102 @@ local function GetOptions(uiTypes, uiName, appName)
 						}
 					},
 				},
-				-- Font
-				fontGroup = {
+				-- Visuals
+				visGroup = {
+					type = "group",
+					order = 20,
+					name = L["Visuals"],
+					width = "full",
+					args = {
+						-- Texture
+						texGroup = {
+							type = "group",
+							order = 100,
+							name = L["Texture"],
+							guiInline = true,
+							width = "full",
+							args = {
+								texture = {
+									type = "select",
+									order = 1000,
+									name = L["Choose texture"],
+									desc = L["Choose bar texture"],
+									style = "dropdown",
+									dialogControl = "LSM30_Statusbar",
+									values = AceGUIWidgetLSMlists.statusbar,
+								},
+								horizTile = {
+									type = "toggle",
+									order = 2000,
+									name = L["Texture tiling"],
+									desc = L["Tile texture instead of stretching"],
+								},
+								bubbles = {
+									type = "toggle",
+									order = 3000,
+									name = L["Bubbles"],
+									desc = L["Show ticks on the bar"],
+								},
+							},
+						},
+						borderGroup = {
+							type = "group",
+							order = 200,
+							name = L["Bar border"],
+							guiInline = true,
+							width = "full",
+							set = setBorder,
+							args = {
+								border = {
+									type = "toggle",
+									order = 1000,
+									width = 1.5,
+									name = L["Show border"],
+									desc = L["Show bar border"],
+								},
+								borderStyle = {
+									type = "select",
+									order = 2000,
+									width = 1.5,
+									disabled = isBorderOptionsDisabled,
+									name = L["Border style"],
+									desc = L["Set border style (texture)"],
+									values = { "1. Dialog box border", "2. Toast border", "3. Tooltip border" },
+								},
+								borderDynamicColor = {
+									type = "toggle",
+									order = 3000,
+									width = 1.5,
+									disabled = isBorderOptionsDisabled,
+									name = L["Dynamic color"],
+									desc = L["Border color is set to bar color"],
+								},
+								borderColor = {
+									type = "color",
+									order = 4000,
+									width = 1.5,
+									disabled = isBorderColorDisabled,
+									name = L["Border color"],
+									desc = L["Set bar border color"],
+									hasAlpha = false,
+									get = getBorderColor,
+								},
+							},
+						},
+					},
+				},
+				-- Text
+				textGroup = {
 					type = "group",
 					order = 30,
-					name = L["Font"],
+					name = L["Text"],
 					--guiInline = true,
 					width = "full",
 					args = {
 						font = {
 							type = "select",
 							order = 100,
+							width = 1.5,
 							name = L["Font face"],
 							desc = L["Set the font face"],
 							style = "dropdown",
@@ -417,6 +515,7 @@ local function GetOptions(uiTypes, uiName, appName)
 						fontsize = {
 							type = "range",
 							order = 200,
+							width = 1.5,
 							name = L["Font size"],
 							desc = L["Set bar text font size"],
 							min = 5,
@@ -426,63 +525,16 @@ local function GetOptions(uiTypes, uiName, appName)
 						fontoutline = {
 							type = "toggle",
 							order = 300,
+							width = 1.5,
 							name = L["Font outline"],
 							desc = L["Show font outline"],
 						},
-					},
-				},
-				-- Visuals
-				visGroup = {
-					type = "group",
-					order = 40,
-					name = L["Visuals"],
-					--guiInline = true,
-					width = "full",
-					args = {
-						border = {
-							type = "toggle",
-							order = 10,
-							name = L["Border"],
-							desc = L["Show bar border"],
-						},
-						bubbles = {
-							type = "toggle",
-							order = 20,
-							name = L["Bubbles"],
-							desc = L["Show ticks on the bar"],
-						},
 						commify = {
 							type = "toggle",
-							order = 30,
+							order = 400,
+							width = 1.5,
 							name = L["Commify"],
 							desc = L["Insert thousands separators into long numbers"],
-						},
-					},
-				},
-				-- Texture
-				texGroup = {
-					type = "group",
-					order = 50,
-					name = L["Texture"],
-					--guiInline = true,
-					width = "full",
-					args = {
-						texture = {
-							type = "select",
-							order = 10,
-							width = 1.5,
-							name = L["Texture"],
-							desc = L["Set bar texture"],
-							style = "dropdown",
-							dialogControl = "LSM30_Statusbar",
-							values = AceGUIWidgetLSMlists.statusbar,
-						},
-						horizTile = {
-							type = "toggle",
-							order = 20,
-							width = 1.5,
-							name = L["Texture tiling"],
-							desc = L["Tile texture instead of stretching"],
 						},
 					},
 				},
@@ -672,6 +724,12 @@ local function GetOptions(uiTypes, uiName, appName)
 									hasAlpha = true,
 								},
 							},
+						},
+						azerdesc = {
+							type = "description",
+							order = 50,
+							fontSize = "medium",
+							name = L["HELP.AZBARDISPLAY"],
 						},
 					},
 				},

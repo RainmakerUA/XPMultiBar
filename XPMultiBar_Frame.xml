@@ -1,12 +1,10 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/"
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
-	<StatusBar name="XPMultiBarInnerBarTemplate" virtual="true">
+	<StatusBar name="XPMultiBarInnerBarTemplate" mixin="XPMultiBarInnerBarFrameMixin" virtual="true">
 		<Anchors>
-			<Anchor point="TOPLEFT" x="2" y="-4" />
-			<Anchor point="BOTTOMLEFT" x="2" y="4" />
-			<Anchor point="TOPRIGHT" x="-2" y="-4" />
-			<Anchor point="BOTTOMRIGHT" x="-2" y="4" />
+			<Anchor point="TOPLEFT" x="2" y="-3" />
+			<Anchor point="BOTTOMRIGHT" x="-2" y="3" />
 		</Anchors>
 		<BarTexture parentKey="tex" file="Interface\TargetingFrame\UI-StatusBar"/>
 		<BarColor r="0.5" g="0.5" b="0.5" a="0.5" />
@@ -18,10 +16,6 @@
 		<Anchors>
 			<Anchor point="CENTER" />
 		</Anchors>
-		<Backdrop edgeFile = "Interface\DialogFrame\UI-DialogBox-Border">
-			<EdgeSize val="12" />
-			<BackgroundInsets left="5" right="5" top="5" bottom="5" />
-		</Backdrop>
 		<Scripts>
 			<OnLoad method="OnLoad" />
 		</Scripts>
@@ -34,6 +28,12 @@
 				<BarColor r="0" g="0" b="0" a="0.5" />
 			</StatusBar>
 			<Button parentKey="button" mixin="XPMultiBarButtonMixin" setAllPoints="true">
+				<Backdrop edgeFile="Interface\FriendsFrame\UI-Toast-Border" alphaMode="BLEND">
+					<EdgeSize>
+						<AbsValue val="10"/>
+					</EdgeSize>
+					<BackgroundInsets left="5" right="5" top="5" bottom="5" />
+				</Backdrop>
 				<Layers>
 					<Layer level="BACKGROUND">
 						<FontString parentKey="text" inherits="GameFontNormal">
