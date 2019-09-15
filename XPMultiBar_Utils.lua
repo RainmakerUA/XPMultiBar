@@ -21,21 +21,29 @@ local math_floor = math.floor
 local BreakUpLargeNumbers = BreakUpLargeNumbers
 local GetLocale = GetLocale
 
-local thousandSeparator = {
-	deDE = ".",
-	frFR = "\194\160", -- NBSP
-	esES = ".",
-	ptBR = ".",
-	ruRU = "\194\160", -- NBSP
-}
-
 do
 	local bigNum = 1234567890
 	local breakCount = 3
 
+	local thousandSeparator = {
+		deDE = ".",
+		frFR = "\194\160", -- NBSP
+		esES = ".",
+		ptBR = ".",
+		ruRU = "\194\160", -- NBSP
+	}
+
+	local LARGE_NUMBER_SEPERATOR = LARGE_NUMBER_SEPERATOR
+
+	if not LARGE_NUMBER_SEPERATOR or LARGE_NUMBER_SEPERATOR:len() == 0 then
+		LARGE_NUMBER_SEPERATOR = thousandSeparator[GetLocale()] or ","
+	end
+
 	if BreakUpLargeNumbers(bigNum) == tostring(bigNum) then
 		-- BreakUpLargeNumbers does nothing as of 8.2.0 start
-		-- providing custom function
+		-- due to wrong value for LARGE_NUMBER_SEPERATOR global in ruRU/frFR locale (Mainline)
+		-- and foul implementation in Classic.
+		-- Providing fallback function
 		BreakUpLargeNumbers = function(num)
 			if type(num) ~= "number" then
 				return num
@@ -48,7 +56,7 @@ do
 				return strnum
 			end
 
-			local separator = thousandSeparator[GetLocale()] or ","
+			local separator = LARGE_NUMBER_SEPERATOR
 			local fullBreaks = math_floor(#whole / breakCount)
 			local remain = #whole % breakCount
 			local broken = ""
