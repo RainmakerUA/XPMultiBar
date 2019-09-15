@@ -483,7 +483,7 @@ end
 function M:SetFontOptions(general)
 	local font, size, flags
 
-	if not general then
+	if type(general) ~= "table" then
 		general = Config.GetDB().general
 	end
 
