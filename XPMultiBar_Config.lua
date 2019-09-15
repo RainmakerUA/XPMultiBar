@@ -921,11 +921,13 @@ local function MigrateSettings(sv)
 	end
 	local dbVer, dbClassic = getDBVersion(sv.VER)
 
-	for name, data in pairs(sv.profiles) do
-		-- new positioning mode
-		if dbVer < DB_VERSION_NUM then
-			data.general.anchor = "TOPLEFT"
-			data.general.anchorRelative = "BOTTOMLEFT"
+	if sv.profiles then
+		for name, data in pairs(sv.profiles) do
+			-- new positioning mode
+			if dbVer < DB_VERSION_NUM then
+				data.general.anchor = "TOPLEFT"
+				data.general.anchorRelative = "BOTTOMLEFT"
+			end
 		end
 	end
 

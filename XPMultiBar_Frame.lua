@@ -425,7 +425,6 @@ function UI:SetMargin(x, y)
 end
 
 function UI:SetBorder(style, color)
-	--Utils.PrintTable({style, color}, "UI:SetBorder1")
 	local bTexture, bMargins, bColor
 	if not style then
 		bColor = noBorderColor
@@ -437,9 +436,9 @@ function UI:SetBorder(style, color)
 		bMargins = styleTable.margin
 		bColor = color or defaultBorderColor
 	end
-	--Utils.PrintTable({bTexture, bMargins, bColor}, "UI:SetBorder2")
+
 	if bTexture then
-		self.bar.button:SetBorderTexture(bTexture--[[, bColor]])
+		self.bar.button:SetBorderTexture(bTexture)
 		self.bar.button:SetBorderColor(bColor)
 	elseif bColor then
 		self.bar.button:SetBorderColor(bColor)
@@ -518,7 +517,7 @@ end
 function UI:SetMainBarVisible(visible, setBorder)
 	self.bar:SetBarVisible("xpbar", visible)
 	if not visible and setBorder then
-		self.SetBorder(true, defaultBorderColor)
+		self:SetBorder(true, defaultBorderColor)
 	end
 end
 
