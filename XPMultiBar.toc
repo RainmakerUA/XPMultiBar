@@ -2,7 +2,7 @@
 ## Title: XP MultiBar
 ## Notes: XP / Reputation / Azerite power bar
 ## Notes-ruRU: Полоса опыта / репутации / силы азерита
-## Author: @@release-author@@
+## Author: @@author@@
 ## Version: @@release-version@@
 ## SavedVariables: XPMultiBarDB
 ## OptionalDeps: Ace3, LibQTip-1.0, LibSharedMedia-3.0
