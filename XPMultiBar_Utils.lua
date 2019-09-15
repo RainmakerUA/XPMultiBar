@@ -170,6 +170,19 @@ function U.PrintThru(value, label)
 	return value
 end
 
+function U.PrintTypes(tbl, title)
+	if title and #title > 0 then
+		print(title)
+	end
+	if type(tbl) == "table" then
+		for k, v in pairs(tbl) do
+			print(k, "(" .. type(v) .. "):", v)
+		end
+	else
+		print("value (" .. type(v) .. "):", tbl)
+	end
+end
+
 function U.PrintTable(t, name, maxLevel)
 	--@debug@
 	local function indent(i)
@@ -180,6 +193,10 @@ function U.PrintTable(t, name, maxLevel)
 	end
 	local function printTableImpl(t, name, level, max)
 		if level > max then
+			return
+		elseif t == nil then
+			-- this is possible only for top level value
+			printIndent(level, name .. " = nil,")
 			return
 		end
 

@@ -2,7 +2,7 @@
 ## Title: XP MultiBar
 ## Notes: XP / Reputation bar
 ## Notes-ruRU: Полоса опыта / репутации
-## Author: @@release-author@@
+## Author: @@author@@
 ## Version: @@release-version@@
 ## SavedVariables: XPMultiBarDB
 ## OptionalDeps: Ace3, LibQTip-1.0, LibSharedMedia-3.0

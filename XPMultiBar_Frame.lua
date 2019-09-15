@@ -11,6 +11,7 @@ local UI = XPMultiBar:NewModule("UI", "AceEvent-3.0")
 
 local geterrorhandler = geterrorhandler
 local type = type
+local unpack = unpack
 local xpcall = xpcall
 local math_floor = math.floor
 
@@ -34,9 +35,19 @@ end
 
 local previousStatusTrackingBarVisibility
 
+local borders = {
+	{ name = [[Interface\DialogFrame\UI-DialogBox-Border]], margin = { 2, 3 } },
+	{ name = [[Interface\FriendsFrame\UI-Toast-Border]], margin = { 3, 3 } },
+	{ name = [[Interface\Tooltips\UI-Tooltip-Border]], margin = { 2, 2 } },
+}
+local defaultBorderColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 }
+local noBorderColor = { r = 0, g = 0, b = 0, a = 0 }
+
+XPMultiBarInnerBarFrameMixin = {}
 XPMultiBarFrameMixin = {}
 XPMultiBarButtonMixin = {}
 
+local ibx = XPMultiBarInnerBarFrameMixin
 local fx = XPMultiBarFrameMixin
 local bx = XPMultiBarButtonMixin
 
@@ -93,6 +104,32 @@ function fx:SetBarVisible(barKey, visible)
 	self[barKey]:SetShown(visible)
 end
 
+--[[ Inner bar object mixin methods ]]
+
+function ibx:SetMargin(x, y)
+	if type(x) ~= "number" then
+		x = 0
+	elseif x < 0 then
+		x = -x
+	end
+	if type(y) ~= "number" then
+		y = 0
+	elseif y < 0 then
+		y = -y
+	end
+
+	self:ClearAllPoints()
+	self:SetPoint("TOPLEFT", x, -y)
+	self:SetPoint("BOTTOMRIGHT", -x, y)
+end
+
+function ibx:SetTexture(texturePath, horizTile)
+	local texture = self:GetStatusBarTexture()
+	texture:SetTexture(texturePath, horizTile and "REPEAT" or "CLAMP", "CLAMP", "TRILINEAR")
+	texture:SetHorizTile(horizTile or false)
+	texture:SetVertTile(false)
+end
+
 --[[ Button object mixin methods ]]
 
 function bx:OnLoad()
@@ -145,6 +182,21 @@ function bx:OnUpdate()
 
 		self.piGlow:SetAlpha(alpha)
 	end]]
+end
+
+function bx:SetBorderTexture(texture, color)
+	local bd = self:GetBackdrop()
+	bd.edgeFile = texture
+	if color then
+		-- Probably a bug: it is always set to 1,1,1,1
+		bd.backdropBorderColor = color
+	end
+
+	self:SetBackdrop(bd)
+end
+
+function bx:SetBorderColor(color)
+	self:SetBackdropBorderColor(color.r, color.g, color.b, color.a)
 end
 
 function bx:GetVisibleIconWidth()
@@ -283,23 +335,24 @@ function UI:GetBarText()
 end
 
 function UI:GetPosition()
-	local x, y = self.bar:GetLeft(), self.bar:GetTop()
+	local anchor, parent, anchorRel, x, y = self.bar:GetPoint()
 	local s = self.bar:GetEffectiveScale()
 
-	return x * s, y * s
+	return { anchor = anchor, anchorRel = anchorRel, x = x * s, y = y * s }
 end
 
-function UI:SetPosition(x, y)
-	if not x or not y then
-		return
-	end
-
+function UI:SetPosition(position)
+	local anchor, anchorRel, x, y = position.anchor, position.anchorRel, position.x, position.y
 	local s = self.bar:GetEffectiveScale()
 
 	x, y = x / s, y / s
 
+	if anchorRel == "" then
+		anchorRel = anchor
+	end
+
 	self.bar:ClearAllPoints()
-	self.bar:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x, y)
+	self.bar:SetPoint(anchor, UIParent, anchorRel, x, y)
 end
 
 function UI:SetLocked(value)
@@ -328,10 +381,10 @@ function UI:SetHeight(height)
 end
 
 function UI:SetScale(scale)
-	local x, y = self:GetPosition()
+	local pos = self:GetPosition()
 	self.bar:SetScale(scale)
-	self:SetPosition(x, y)
-	onBarEvent("set-position", x, y)
+	self:SetPosition(pos)
+	onBarEvent("set-position", pos)
 end
 
 function UI:SetFontOptions(font, size, outline)
@@ -350,10 +403,7 @@ function UI:SetTexture(texturePath, horizTile, bgColor)
 	Utils.ForEach(
 		{ self.bar.background, self.bar.remaining, self.bar.xpbar },
 		function(bar)
-			local texture = bar:GetStatusBarTexture()
-			texture:SetTexture(texturePath, horizTile and "REPEAT" or "CLAMP", "CLAMP", "TRILINEAR")
-			texture:SetHorizTile(horizTile or false)
-			texture:SetVertTile(false)
+			bar:SetTexture(texturePath, horizTile)
 		end
 	)
 	self:SetBackgroundColor(bgColor)
@@ -365,11 +415,37 @@ function UI:SetBackgroundColor(color)
 	end
 end
 
-function UI:ShowBorder(value)
-	if value then
-		self.bar:SetBackdropBorderColor(1, 1, 1, 1)
+function UI:SetMargin(x, y)
+	Utils.ForEach(
+		{ self.bar.background, self.bar.remaining, self.bar.xpbar, self.bar.bubbles },
+		function(bar)
+			bar:SetMargin(x, y)
+		end
+	)
+end
+
+function UI:SetBorder(style, color)
+	--Utils.PrintTable({style, color}, "UI:SetBorder1")
+	local bTexture, bMargins, bColor
+	if not style then
+		bColor = noBorderColor
+	elseif style == true then
+		bColor = color or defaultBorderColor
 	else
-		self.bar:SetBackdropBorderColor(0, 0, 0, 0)
+		local styleTable = borders[style]
+		bTexture = styleTable.name
+		bMargins = styleTable.margin
+		bColor = color or defaultBorderColor
+	end
+	--Utils.PrintTable({bTexture, bMargins, bColor}, "UI:SetBorder2")
+	if bTexture then
+		self.bar.button:SetBorderTexture(bTexture--[[, bColor]])
+		self.bar.button:SetBorderColor(bColor)
+	elseif bColor then
+		self.bar.button:SetBorderColor(bColor)
+	end
+	if bMargins then
+		self:SetMargin(unpack(bMargins))
 	end
 end
 
@@ -390,8 +466,6 @@ function UI:HideBlizzFrame(frame)
 		frame._parent = frame:GetParent()
 		frame:Hide()
 		frame:SetParent(self.uiHider)
-
-
 	end
 end
 
@@ -434,12 +508,18 @@ function UI:SetMainBarValues(min, max, value)
 	self.bar:SetBarValues("xpbar", min, max, value)
 end
 
-function UI:SetMainBarColor(color)
+function UI:SetMainBarColor(color, setBorder)
 	self.bar:SetBarColor("xpbar", color)
+	if setBorder then
+		self:SetBorder(true, color)
+	end
 end
 
-function UI:SetMainBarVisible(visible)
+function UI:SetMainBarVisible(visible, setBorder)
 	self.bar:SetBarVisible("xpbar", visible)
+	if not visible and setBorder then
+		self.SetBorder(true, defaultBorderColor)
+	end
 end
 
 function UI:SetRemainingBarValues(min, max, value)

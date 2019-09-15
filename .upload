@@ -1,10 +1,7 @@
 {
-	"apiRoot": "https://wow.curseforge.com/api/",
-	"token": "replace!:151623176520186612666519671219656818122416216512661523201716641722232065",
-	"libStore": "D:\\DEV\\Lua\\!Libs",
+	"author": "RainmakerUA",
+	"projectID": 320567,
 	"release": {
-		"projectID": 320567,
-		"author": "RainmakerUA",
 		"version": "unknown",
 		"type": "alpha",
 		"log": "No changes provided",
@@ -32,6 +29,7 @@
 		"AceLocale-3.0",
 		"LibSharedMedia-3.0",
 		"AceGUI-3.0-SharedMediaWidgets",
+		"AceGUIWidget-NumberEditBox",
 		"AceEvent-3.0"
 	]
 }

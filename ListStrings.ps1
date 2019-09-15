@@ -33,6 +33,6 @@ $locales | %{
 	Set-Content $file ([string]::Format($headerFmt, $locale, $(if($locale -eq $baseLocale){ $trueParam } else { "" }), $total))
 
 	@($strings, $ext_strings) | %{
-		Add-Content $file ($_ | %{ if($locale -eq "enUS" -and !$oldStrings[$_]){ "L[`"$_`"] = true" } else { "L[`"{0}`"] = `"{1}`"" -f $_, $oldStrings[$_] } })
+		Add-Content $file ($_ | %{ if($locale -eq "enUS" -and !$oldStrings[$_]){ "L[`"$_`"] = true" } else { "L[`"{0}`"] = `"{1}`"" -f $_, $(if($oldStrings[$_]) { $oldStrings[$_] } else { $_ }) } })
 	}
 }

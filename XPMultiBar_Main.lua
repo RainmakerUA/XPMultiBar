@@ -1,6 +1,6 @@
 --[=====[
 		## XP MultiBar ver. @@release-version@@
-		## XPMultiBar.lua - module
+		## XPMultiBar_Main.lua - module
 		Main module for XPMultiBar addon
 --]=====]
 
@@ -29,13 +29,9 @@ local wowClassic = XPMultiBar.IsWoWClassic
 -- WoW globals
 local ChatEdit_GetActiveWindow = ChatEdit_GetActiveWindow
 local ChatEdit_GetLastActiveWindow = ChatEdit_GetLastActiveWindow
-local CollapseFactionHeader = CollapseFactionHeader
-local CreateFrame = CreateFrame
-local ExpandFactionHeader = ExpandFactionHeader
 local GameFontNormal = GameFontNormal
 local GetContainerItemInfo = GetContainerItemInfo
 local GetCurrentCombatTextEventInfo = GetCurrentCombatTextEventInfo
-local GetCursorPosition = GetCursorPosition
 local GetFactionInfo = GetFactionInfo
 local GetFactionInfoByID = GetFactionInfoByID
 local GetFriendshipReputation = GetFriendshipReputation
@@ -244,6 +240,11 @@ local function GetReputationText(repInfo)
 	)
 end
 
+local function DoSetBorderColor(db_general)
+	return db_general.border and db_general.borderDynamicColor
+end
+
+
 function M:OnInitialize()
 	Bars = XPMultiBar:GetModule("Bars")
 	Config = XPMultiBar:GetModule("Config")
@@ -276,10 +277,6 @@ function M:OnInitialize()
 		return { UI[methodName], updateBar, ["self"] = UI }
 	end
 
-	local setFontOptions = function(main)
-		return main:SetFontOptions()
-	end
-
 	local onBarSettingsUpdated = {
 		function(localSelf, value)
 			localSelf:UpdateBarSettings()
@@ -292,6 +289,7 @@ function M:OnInitialize()
 
 	local eventMap = {
 		_self = self,
+		position = self.SetPosition,
 		locked = uiHandler("SetLocked"),
 		clamptoscreen = uiHandler("SetClamp"),
 		strata = uiHandler("SetStrata"),
@@ -299,13 +297,13 @@ function M:OnInitialize()
 		width = uiHandler("SetWidth", true),
 		height = uiHandler("SetHeight", true),
 		scale = uiHandler("SetScale"),
-		font = setFontOptions,
-		fontsize = setFontOptions,
-		fontoutline = setFontOptions,
+		font = self.SetFontOptions,
+		fontsize = self.SetFontOptions,
+		fontoutline = self.SetFontOptions,
 		texture = self.SetTexture,
 		horizTile = self.SetTexture,
 		bubbles = uiHandler("ShowBubbles"),
-		border = uiHandler("ShowBorder"),
+		border = { self.SetBorder, true },
 		hidestatus = uiHandler("SetStatusTrackingBarHidden"),
 		autowatchrep = function(localSelf, value)
 			if value then
@@ -356,7 +354,6 @@ function M:OnEnable()
 
 	self:OnProfileChanged(db, true)
 
-	--self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateXPBar") -- not gonna need it
 	self:RegisterEvent("PLAYER_XP_UPDATE", "UpdateXPData")
 	self:RegisterEvent("PLAYER_LEVEL_UP", "LevelUp")
 	self:RegisterEvent("PLAYER_UPDATE_RESTING", "UpdateXPData")
@@ -407,8 +404,9 @@ function M:OnProfileChanged(db, skipBarUpdate)
 	UI:SetStrata(db.general.strata)
 	UI:SetScale(db.general.scale)
 	UI:SetSize(db.general.width, db.general.height)
-	UI:SetPosition(db.general.posx, db.general.posy)
-	UI:ShowBorder(db.general.border)
+	self:SetPosition(db.general)
+	--UI:ShowBorder(db.general.border)
+	self:SetBorder(db.general)
 	UI:ShowBubbles(db.general.bubbles)
 	self:SetTexture(db.general.texture)
 	self:SetFontOptions(db.general)
@@ -455,11 +453,32 @@ function M:OnButtonClick(button, ctrl, alt, shift)
 	end
 end
 
-function M:OnSavePosition(x, y)
-	local db = Config.GetDB()
+function M:OnSavePosition(position)
+	local gen = Config.GetDB().general
 
-	db.general.posx = x
-	db.general.posy = y
+	gen.anchor = position.anchor
+	gen.anchorRelative = (position.anchor == position.anchorRel)
+							and Config.NoAnchor
+							or position.anchorRel
+	gen.posx = position.x
+	gen.posy = position.y
+end
+
+function M:SetPosition(general)
+	if type(general) ~= "table" then
+		general = Config.GetDB().general
+	end
+
+	local position = {
+		anchor = general.anchor,
+		anchorRel = general.anchorRelative == Config.NoAnchor
+							and general.anchor
+							or general.anchorRelative,
+		x = general.posx,
+		y = general.posy
+	}
+
+	UI:SetPosition(position)
 end
 
 function M:SetFontOptions(general)
@@ -511,6 +530,13 @@ function M:SetTexture(texture)
 	local horizTile, bgColor = db.general.horizTile, db.bars.background
 
 	UI:SetTexture(texturePath, horizTile, bgColor)
+end
+
+function M:SetBorder(general)
+	UI:SetBorder(
+		general.border and general.borderStyle or nil,
+		(not general.borderDynamicColor) and general.borderColor or nil
+	)
 end
 
 -- LSM3 Updates.
@@ -581,7 +607,7 @@ function M:UpdateReputationData()
 	UI:SetBarTextColor(txtcol)
 
 	if repName == nil then
-		UI:SetMainBarVisible(false)
+		UI:SetMainBarVisible(false, DoSetBorderColor(db.general))
 		UI:SetBarText(L["You need to select a faction to watch"])
 		UI:SetFactionInfo(nil, nil)
 		return
@@ -648,7 +674,7 @@ function M:UpdateReputationData()
 
 	local repColor = Config.GetReputationColor(repStanding)
 
-	UI:SetMainBarColor(repColor)
+	UI:SetMainBarColor(repColor, DoSetBorderColor(db.general))
 	UI:SetBarText(
 		GetReputationText( {
 			repName, repStanding, repMin, repMax,
@@ -672,7 +698,7 @@ function M:UpdateXPBar()
 
 	if bar == Bars.AZ then
 		--[[ocal name, azeriteLevel
-		name, azeriteLevel, currXP, maxXP = GetHeartOfAzerothInfo(item, self.UpdateXPBar, self)
+		name, azeriteLevel, currXP, maxXP = GetHeartOfAzerothInfo(self.UpdateXPBar, self)
 		if name then
 			xpText = GetAzerText(name, currXP, maxXP, azeriteLevel)
 		else
@@ -721,7 +747,7 @@ function M:UpdateXPBar()
 	end
 
 	UI:SetMainBarValues(math_min(0, currXP), maxXP, currXP)
-	UI:SetMainBarColor(barColor)
+	UI:SetMainBarColor(barColor, DoSetBorderColor(db.general))
 
 	UI:SetBarText(xpText)
 	UI:SetBarTextColor(txtcol)
