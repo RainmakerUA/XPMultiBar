@@ -12,7 +12,6 @@ local B = Bars
 
 local Utils
 
-local unpack = unpack
 local tconcat = table.concat
 
 -- Bar consts

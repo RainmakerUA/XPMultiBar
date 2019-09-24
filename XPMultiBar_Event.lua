@@ -32,7 +32,7 @@ local function removeAllHandlers(event)
 end
 
 local function raise(event, ...)
-	for i, v in ipairs(event.handlers or {}) do
+	for _, v in ipairs(event.handlers or {}) do
 		if type(v.receiver) == "table" then
 			v.func(v.receiver, ...)
 		else

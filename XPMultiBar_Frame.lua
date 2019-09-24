@@ -15,6 +15,7 @@ local unpack = unpack
 local xpcall = xpcall
 local math_floor = math.floor
 
+local CreateFrame = CreateFrame
 local GameFontNormal = GameFontNormal
 local IsAltKeyDown = IsAltKeyDown
 local IsControlKeyDown = IsControlKeyDown
@@ -22,11 +23,12 @@ local IsShiftKeyDown = IsShiftKeyDown
 local StatusTrackingBarManager = StatusTrackingBarManager
 local MainMenuExpBar = MainMenuExpBar
 local ReputationWatchBar = ReputationWatchBar
+local UIParent = UIParent
 
 local Event
 local Utils
 
-local bar
+local barFrame
 local barEvent
 
 local function onBarEvent(...)
@@ -39,6 +41,7 @@ local borders = {
 	{ name = [[Interface\DialogFrame\UI-DialogBox-Border]], margin = { 2, 3 } },
 	{ name = [[Interface\FriendsFrame\UI-Toast-Border]], margin = { 3, 3 } },
 	{ name = [[Interface\Tooltips\UI-Tooltip-Border]], margin = { 2, 2 } },
+	{ name = [[interface\minimap\tooltipbackdrop]], margin = { 4, 4 } },
 }
 local defaultBorderColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 }
 local noBorderColor = { r = 0, g = 0, b = 0, a = 0 }
@@ -58,8 +61,8 @@ local function tappend(...)
 	for i = 1, #tbl do
 		local t = tbl[i]
 		if t then
-			for i = 1, #t do
-				result[num], num = t[i], num + 1
+			for j = 1, #t do
+				result[num], num = t[j], num + 1
 			end
 		end
 	end
@@ -69,7 +72,7 @@ end
 --[[ Frame object mixin methods ]]
 
 function fx:OnLoad()
-	bar = self
+	barFrame = self
 
 	self:Hide()
 
@@ -290,20 +293,20 @@ function UI:OnInitialize()
 	Event = XPMultiBar:GetModule("Event")
 	Utils = XPMultiBar:GetModule("Utils")
 
-	self.bar = bar
+	self.barFrame = barFrame
 
 	barEvent = Event:New("OnBarEvent")
 end
 
 function UI:OnEnable(...)
 	local hideStatusTrackingBar = ...
-	self.bar:Show()
+	self.barFrame:Show()
 	self:SetStatusTrackingBarHidden(hideStatusTrackingBar)
 end
 
 function UI:OnDisable()
 	self:SetStatusTrackingBarHidden(false)
-	self.bar:Hide()
+	self.barFrame:Hide()
 end
 
 function UI:RegisterBarEventHandler(func, receiver)
@@ -331,19 +334,19 @@ function UI:EnableEx(...)
 end
 
 function UI:GetBarText()
-	return self.bar.button.text:GetText()
+	return self.barFrame.button.text:GetText()
 end
 
 function UI:GetPosition()
-	local anchor, parent, anchorRel, x, y = self.bar:GetPoint()
-	local s = self.bar:GetEffectiveScale()
+	local anchor, parent, anchorRel, x, y = self.barFrame:GetPoint()
+	local s = self.barFrame:GetEffectiveScale()
 
 	return { anchor = anchor, anchorRel = anchorRel, x = x * s, y = y * s }
 end
 
 function UI:SetPosition(position)
 	local anchor, anchorRel, x, y = position.anchor, position.anchorRel, position.x, position.y
-	local s = self.bar:GetEffectiveScale()
+	local s = self.barFrame:GetEffectiveScale()
 
 	x, y = x / s, y / s
 
@@ -351,38 +354,38 @@ function UI:SetPosition(position)
 		anchorRel = anchor
 	end
 
-	self.bar:ClearAllPoints()
-	self.bar:SetPoint(anchor, UIParent, anchorRel, x, y)
+	self.barFrame:ClearAllPoints()
+	self.barFrame:SetPoint(anchor, UIParent, anchorRel, x, y)
 end
 
 function UI:SetLocked(value)
-	self.bar:SetMovable(not value)
-	self.bar.locked = value
+	self.barFrame:SetMovable(not value)
+	self.barFrame.locked = value
 end
 
 function UI:SetClamp(value)
-	self.bar:SetClampedToScreen(value)
+	self.barFrame:SetClampedToScreen(value)
 end
 
 function UI:SetStrata(strata)
-	self.bar:SetFrameStrata(strata)
+	self.barFrame:SetFrameStrata(strata)
 end
 
 function UI:SetSize(width, height)
-	self.bar:SetSize(width, height)
+	self.barFrame:SetSize(width, height)
 end
 
 function UI:SetWidth(width)
-	self.bar:SetWidth(width)
+	self.barFrame:SetWidth(width)
 end
 
 function UI:SetHeight(height)
-	self.bar:SetHeight(height)
+	self.barFrame:SetHeight(height)
 end
 
 function UI:SetScale(scale)
 	local pos = self:GetPosition()
-	self.bar:SetScale(scale)
+	self.barFrame:SetScale(scale)
 	self:SetPosition(pos)
 	onBarEvent("set-position", pos)
 end
@@ -396,12 +399,12 @@ function UI:SetFontOptions(font, size, outline)
 	-- TODO: normalFlags excluing OUTLINE?
 	flags = outline and "OUTLINE" or normalFlags
 
-	self.bar.button.text:SetFont(font or normalFont, size or normalSize, flags)
+	self.barFrame.button.text:SetFont(font or normalFont, size or normalSize, flags)
 end
 
 function UI:SetTexture(texturePath, horizTile, bgColor)
 	Utils.ForEach(
-		{ self.bar.background, self.bar.remaining, self.bar.xpbar },
+		{ self.barFrame.background, self.barFrame.remaining, self.barFrame.xpbar },
 		function(bar)
 			bar:SetTexture(texturePath, horizTile)
 		end
@@ -411,13 +414,13 @@ end
 
 function UI:SetBackgroundColor(color)
 	if color then
-		self.bar.background:SetStatusBarColor(color.r, color.g, color.b, color.a)
+		self.barFrame.background:SetStatusBarColor(color.r, color.g, color.b, color.a)
 	end
 end
 
 function UI:SetMargin(x, y)
 	Utils.ForEach(
-		{ self.bar.background, self.bar.remaining, self.bar.xpbar, self.bar.bubbles },
+		{ self.barFrame.background, self.barFrame.remaining, self.barFrame.xpbar, self.barFrame.bubbles },
 		function(bar)
 			bar:SetMargin(x, y)
 		end
@@ -438,10 +441,10 @@ function UI:SetBorder(style, color)
 	end
 
 	if bTexture then
-		self.bar.button:SetBorderTexture(bTexture)
-		self.bar.button:SetBorderColor(bColor)
+		self.barFrame.button:SetBorderTexture(bTexture)
+		self.barFrame.button:SetBorderColor(bColor)
 	elseif bColor then
-		self.bar.button:SetBorderColor(bColor)
+		self.barFrame.button:SetBorderColor(bColor)
 	end
 	if bMargins then
 		self:SetMargin(unpack(bMargins))
@@ -450,9 +453,9 @@ end
 
 function UI:ShowBubbles(value)
 	if value then
-		self.bar.bubbles:Show()
+		self.barFrame.bubbles:Show()
 	else
-		self.bar.bubbles:Hide()
+		self.barFrame.bubbles:Hide()
 	end
 end
 
@@ -504,55 +507,55 @@ function UI:SetStatusTrackingBarHidden(hide)
 end
 
 function UI:SetMainBarValues(min, max, value)
-	self.bar:SetBarValues("xpbar", min, max, value)
+	self.barFrame:SetBarValues("xpbar", min, max, value)
 end
 
 function UI:SetMainBarColor(color, setBorder)
-	self.bar:SetBarColor("xpbar", color)
+	self.barFrame:SetBarColor("xpbar", color)
 	if setBorder then
 		self:SetBorder(true, color)
 	end
 end
 
 function UI:SetMainBarVisible(visible, setBorder)
-	self.bar:SetBarVisible("xpbar", visible)
+	self.barFrame:SetBarVisible("xpbar", visible)
 	if not visible and setBorder then
 		self:SetBorder(true, defaultBorderColor)
 	end
 end
 
 function UI:SetRemainingBarValues(min, max, value)
-	self.bar:SetBarValues("remaining", min, max, value)
+	self.barFrame:SetBarValues("remaining", min, max, value)
 end
 
 function UI:SetRemainingBarColor(color)
-	self.bar:SetBarColor("remaining", color)
+	self.barFrame:SetBarColor("remaining", color)
 end
 
 function UI:SetRemainingBarVisible(visible)
-	self.bar:SetBarVisible("remaining", visible)
+	self.barFrame:SetBarVisible("remaining", visible)
 end
 
 function UI:SetBarText(text)
-	self.bar.button.text:SetText(text)
+	self.barFrame.button.text:SetText(text)
 end
 
 function UI:SetBarTextColor(color)
-	self.bar.button.text:SetTextColor(color.r, color.g, color.b, color.a)
+	self.barFrame.button.text:SetTextColor(color.r, color.g, color.b, color.a)
 end
 
 function UI:HideIcons()
-	self.bar.button:HideAllIcons()
+	self.barFrame.button:HideAllIcons()
 end
 
 function UI:SetXPInfo(info)
-	self.bar.button:SetXPIcons(info)
+	self.barFrame.button:SetXPIcons(info)
 end
 
 function UI:SetAzeriteInfo(info)
-	self.bar.button:SetAzeriteIcons(info)
+	self.barFrame.button:SetAzeriteIcons(info)
 end
 
 function UI:SetFactionInfo(id, factionInfo)
-	self.bar.button:SetFactionIcons(factionInfo)
+	self.barFrame.button:SetFactionIcons(factionInfo)
 end

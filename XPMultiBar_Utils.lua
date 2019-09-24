@@ -10,9 +10,9 @@ local Utils = XPMultiBar:NewModule("Utils")
 
 local U = Utils
 
-local ipairs = ipairs
 local pairs = pairs
 local print = print
+local strrep = string.rep
 local tinsert = table.insert
 local tostring = tostring
 local type = type
@@ -133,8 +133,8 @@ function U.Append(...)
 	for i = 1, #tbl do
 		local t = tbl[i]
 		if t then
-			for i = 1, #t do
-				result[n], n = t[i], n + 1
+			for j = 1, #t do
+				result[num], num = t[j], num + 1
 			end
 		end
 	end
@@ -187,7 +187,7 @@ function U.PrintTypes(tbl, title)
 			print(k, "(" .. type(v) .. "):", v)
 		end
 	else
-		print("value (" .. type(v) .. "):", tbl)
+		print("value (" .. type(tbl) .. "):", tbl)
 	end
 end
 
@@ -227,7 +227,7 @@ function U.PrintTable(t, name, maxLevel)
 	--@end-debug@
 end
 
-function U.Commify(num, doCommify)
+function U.Commify(num)
 	if type(num) ~= "number" then
 		return num
 	end
