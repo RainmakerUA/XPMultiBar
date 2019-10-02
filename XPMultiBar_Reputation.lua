@@ -47,6 +47,7 @@ local CollapseFactionHeader = CollapseFactionHeader
 local CreateColor = CreateColor
 local CreateFramePool = CreateFramePool
 local ExpandFactionHeader = ExpandFactionHeader
+local GameTooltip_AddColoredLine = GameTooltip_AddColoredLine
 local GameTooltip_AddErrorLine = GameTooltip_AddErrorLine
 local GameTooltip_AddInstructionLine = GameTooltip_AddInstructionLine
 local GameTooltip_AddNormalLine = GameTooltip_AddNormalLine
@@ -97,6 +98,13 @@ local lfgBonusRepCheckbox = ReputationDetailLFGBonusReputationCheckBox
 -- luacheck: pop
 
 --[[ Common local functions ]]
+
+if type(GameTooltip_AddErrorLine) ~= "function" then
+	-- Function is absent in Classic
+	GameTooltip_AddErrorLine = function(tooltip, text, wrap)
+		return GameTooltip_AddColoredLine(tooltip, text, RED_FONT_COLOR, wrap)
+	end
+end
 
 local function GetColorRGBA(color)
 	return color.r or 0, color.g or 0, color.b or 0, color.a or 1
