@@ -8,7 +8,6 @@ local addonName = ...
 local XPMultiBar = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local Main = XPMultiBar:NewModule("Main", "AceEvent-3.0")
 
-local wowClassic = XPMultiBar.IsWoWClassic
 local M = Main
 
 -- Libs
@@ -26,6 +25,7 @@ local unpack = unpack
 local math_ceil = math.ceil
 local math_min = math.min
 
+local wowClassic = XPMultiBar.IsWoWClassic
 local emptyFun = function() end
 
 -- WoW globals
