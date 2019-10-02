@@ -25,7 +25,7 @@ local unpack = unpack
 local math_ceil = math.ceil
 local math_min = math.min
 
-local wowClassic = XPMultiBar.IsWoWClassiclocal
+local wowClassic = XPMultiBar.IsWoWClassic
 local emptyFun = XPMultiBar.EmptyFun
 
 -- WoW globals
