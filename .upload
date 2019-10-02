@@ -30,6 +30,7 @@
 		"LibSharedMedia-3.0",
 		"AceGUI-3.0-SharedMediaWidgets",
 		"AceGUIWidget-NumberEditBox",
-		"AceEvent-3.0"
+		"AceEvent-3.0",
+		"LibQTip-1.0"
 	]
 }

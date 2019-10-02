@@ -12,8 +12,10 @@ local B = Bars
 
 local Utils
 
-local unpack = unpack
 local tconcat = table.concat
+
+-- Remove all known globals after this point
+-- luacheck: std none
 
 -- Bar consts
 B.XP = 1

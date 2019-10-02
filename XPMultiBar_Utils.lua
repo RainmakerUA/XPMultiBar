@@ -10,9 +10,11 @@ local Utils = XPMultiBar:NewModule("Utils")
 
 local U = Utils
 
-local ipairs = ipairs
 local pairs = pairs
 local print = print
+local rawget = rawget
+local strrep = string.rep
+local setmetatable = setmetatable
 local tinsert = table.insert
 local tostring = tostring
 local type = type
@@ -20,6 +22,29 @@ local math_floor = math.floor
 
 local BreakUpLargeNumbers = BreakUpLargeNumbers
 local GetLocale = GetLocale
+local LARGE_NUMBER_SEPERATOR = LARGE_NUMBER_SEPERATOR
+local BLACK_FONT_COLOR = BLACK_FONT_COLOR
+local RED_FONT_COLOR = RED_FONT_COLOR
+local ORANGE_FONT_COLOR = ORANGE_FONT_COLOR
+local LIGHTBLUE_FONT_COLOR = LIGHTBLUE_FONT_COLOR
+local GREEN_FONT_COLOR = GREEN_FONT_COLOR
+local NORMAL_FONT_COLOR = NORMAL_FONT_COLOR
+
+-- Remove all known globals after this point
+-- luacheck: std none
+
+do
+	U.DebugL = function(L)
+		return setmetatable(
+						{},
+						{
+							__index = function(self, key)
+										return L and rawget(L, key) or key
+									end
+						}
+					)
+	end
+end
 
 do
 	local bigNum = 1234567890
@@ -33,10 +58,10 @@ do
 		ruRU = "\194\160", -- NBSP
 	}
 
-	local LARGE_NUMBER_SEPERATOR = LARGE_NUMBER_SEPERATOR
+	local classSeparator = LARGE_NUMBER_SEPERATOR
 
-	if not LARGE_NUMBER_SEPERATOR or LARGE_NUMBER_SEPERATOR:len() == 0 then
-		LARGE_NUMBER_SEPERATOR = thousandSeparator[GetLocale()] or ","
+	if not classSeparator or classSeparator:len() == 0 then
+		classSeparator = thousandSeparator[GetLocale()] or ","
 	end
 
 	if BreakUpLargeNumbers(bigNum) == tostring(bigNum) then
@@ -56,26 +81,55 @@ do
 				return strnum
 			end
 
-			local separator = LARGE_NUMBER_SEPERATOR
 			local fullBreaks = math_floor(#whole / breakCount)
 			local remain = #whole % breakCount
 			local broken = ""
 
 			for i = 0, fullBreaks - 1 do
 				if #broken > 0 then
-					broken = separator .. broken
+					broken = classSeparator .. broken
 				end
 				local ind1, ind2 = - (i * 3 + 3), - (i * 3 + 1)
 				broken = whole:sub(ind1, ind2) .. broken
 			end
 
 			if remain > 0 then
-				broken = whole:sub(1, remain) .. separator .. broken
+				broken = whole:sub(1, remain) .. classSeparator .. broken
 			end
 
 			return minus .. broken .. dot .. fraction
 		end
 	end
+end
+
+do
+	local function ts(icon, color)
+		return { icon = icon, color = color }
+	end
+	local iconFormat = "|T%s:0|t\32"
+	local textSettings = {
+		fatal = ts([[interface\targetingframe\ui-raidtargetingicon_8]], BLACK_FONT_COLOR),
+		error = ts([[interface\targetingframe\ui-raidtargetingicon_7]], RED_FONT_COLOR),
+		warning = ts([[interface\targetingframe\ui-raidtargetingicon_2]], ORANGE_FONT_COLOR),
+		info = ts([[interface\targetingframe\ui-raidtargetingicon_5]], LIGHTBLUE_FONT_COLOR),
+		instruction = ts([[interface\targetingframe\ui-raidtargetingicon_4]], GREEN_FONT_COLOR),
+		normal = ts(nil, NORMAL_FONT_COLOR),
+	}
+	local function getIndex(_, index)
+		if type(index) == "string" then
+			local key = index:match("^Get(%w+)"):lower()
+			local textSetting = textSettings[key]
+			if not textSetting.func then
+				local icon, color = textSetting.icon, textSetting.color
+				textSetting.func = function(text)
+					local iconTag = icon and iconFormat:format(icon) or ""
+					return iconTag .. color:WrapTextInColorCode(text)
+				end
+			end
+			return textSetting.func
+		end
+	end
+	U.Text = setmetatable({}, { __index = getIndex })
 end
 
 local u_merge, u_clone
@@ -133,8 +187,8 @@ function U.Append(...)
 	for i = 1, #tbl do
 		local t = tbl[i]
 		if t then
-			for i = 1, #t do
-				result[n], n = t[i], n + 1
+			for j = 1, #t do
+				result[num], num = t[j], num + 1
 			end
 		end
 	end
@@ -143,7 +197,7 @@ end
 
 function U.Values(t)
 	local res = {}
-	for k, v in pairs(t) do
+	for _, v in pairs(t) do
 		tinsert(res, v)
 	end
 	return res
@@ -187,11 +241,11 @@ function U.PrintTypes(tbl, title)
 			print(k, "(" .. type(v) .. "):", v)
 		end
 	else
-		print("value (" .. type(v) .. "):", tbl)
+		print("value (" .. type(tbl) .. "):", tbl)
 	end
 end
 
-function U.PrintTable(t, name, maxLevel)
+function U.PrintTable(table, tableName, maxLevel)
 	--@debug@
 	local function indent(i)
 		return strrep("  ", i)
@@ -223,11 +277,11 @@ function U.PrintTable(t, name, maxLevel)
 		printIndent(level, "},")
 	end
 
-	printTableImpl(t, name or "<unnamed>", 0, maxLevel or 16)
+	printTableImpl(table, tableName or "<unnamed>", 0, maxLevel or 16)
 	--@end-debug@
 end
 
-function U.Commify(num, doCommify)
+function U.Commify(num)
 	if type(num) ~= "number" then
 		return num
 	end
