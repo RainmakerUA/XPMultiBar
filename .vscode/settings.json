@@ -1,6 +1,7 @@
 {
     "editor.fontLigatures": false,
 	"files.associations": {
-		".upload": "json"
+		".upload": "json",
+		".lua~": "lua"
 	}
 }

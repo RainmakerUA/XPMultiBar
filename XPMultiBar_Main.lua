@@ -8,6 +8,7 @@ local addonName = ...
 local XPMultiBar = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local Main = XPMultiBar:NewModule("Main", "AceEvent-3.0")
 
+local wowClassic = XPMultiBar.IsWoWClassic
 local M = Main
 
 -- Libs
@@ -15,9 +16,11 @@ local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local LSM3 = LibStub("LibSharedMedia-3.0")
 
 -- Lua
+local print = print
 local select = select
 local tostring = tostring
 local type = type
+local unpack = unpack
 
 -- Math
 local math_ceil = math.ceil
@@ -28,37 +31,23 @@ local emptyFun = function() end
 -- WoW globals
 local ChatEdit_GetActiveWindow = ChatEdit_GetActiveWindow
 local ChatEdit_GetLastActiveWindow = ChatEdit_GetLastActiveWindow
-local GameFontNormal = GameFontNormal
+local GameLimitedMode_IsActive = GameLimitedMode_IsActive
 local GetContainerItemInfo = GetContainerItemInfo
 local GetCurrentCombatTextEventInfo = GetCurrentCombatTextEventInfo
-local GetFactionInfo = GetFactionInfo
-local GetFactionInfoByID = GetFactionInfoByID
-local GetFriendshipReputation = GetFriendshipReputation
-local GetGuildInfo = GetGuildInfo
 local GetInventoryItemID = GetInventoryItemID
 local GetItemInfo = GetItemInfo
-local GetMouseButtonClicked = GetMouseButtonClicked
-local GetNumFactions = GetNumFactions
-local GetWatchedFactionInfo = GetWatchedFactionInfo
+local GetRestrictedAccountData = GetRestrictedAccountData
 local GetXPExhaustion = GetXPExhaustion
 local InCombatLockdown = InCombatLockdown
-local IsAltKeyDown = IsAltKeyDown
-local IsControlKeyDown = IsControlKeyDown
 local IsPlayerAtEffectiveMaxLevel = IsPlayerAtEffectiveMaxLevel
 local IsResting = IsResting
-local IsShiftKeyDown = IsShiftKeyDown
-local IsXPUserDisabled = IsXPUserDisabled
 local Item = Item
-local SetWatchedFactionIndex = SetWatchedFactionIndex
-local UIParent = UIParent
+local ToggleCharacter = ToggleCharacter
 local UnitLevel = UnitLevel
+local UnitTrialXP = UnitTrialXP
 local UnitXP = UnitXP
 local UnitXPMax = UnitXPMax
 
-local GetFriendshipReputation = GetFriendshipReputation or emptyFun
-
-local GetFactionParagonInfo = emptyFun
-local IsFactionParagon = emptyFun
 local FindActiveAzeriteItem = emptyFun
 local GetAzeriteItemXPInfo = emptyFun
 local GetAzeritePowerLevel = emptyFun
@@ -66,8 +55,6 @@ local HasActiveAzeriteItem = emptyFun
 local IsAzeriteItemAtMaxLevel = emptyFun
 
 if not wowClassic then
-	GetFactionParagonInfo = C_Reputation.GetFactionParagonInfo
-	IsFactionParagon = C_Reputation.IsFactionParagon
 	FindActiveAzeriteItem = C_AzeriteItem.FindActiveAzeriteItem
 	GetAzeriteItemXPInfo = C_AzeriteItem.GetAzeriteItemXPInfo
 	GetAzeritePowerLevel = C_AzeriteItem.GetPowerLevel
@@ -75,16 +62,16 @@ if not wowClassic then
 	IsAzeriteItemAtMaxLevel = C_AzeriteItem.IsAzeriteItemAtMaxLevel
 end
 
-local FACTION_ALLIANCE = FACTION_ALLIANCE
-local FACTION_BAR_COLORS = FACTION_BAR_COLORS
-local FACTION_HORDE = FACTION_HORDE
-local GUILD = GUILD
+-- Remove all known globals after this point
+-- luacheck: std none
 
 -- Modules late init
 local Bars
 local Config
 local Data
 local Utils
+local Reputation
+local UI
 
 local function Commify(num)
 	local db = Config.GetDB()
@@ -166,20 +153,20 @@ do
 			end
 
 			if not itemID or itemID == 0 then
-				print("|cFFFFFF00[XPMultiBar]:|r |cFFFF0000Heart of Azeroth item ID is ", itemID or "<nil>", "|r")
+				print("|cFFFFFF00[XPMultiBar]:|r", Utils.Text.GetError("Heart of Azeroth item ID is " .. (itemID or "<nil>")))
 			elseif itemID == heartOfAzerothItemID then
 				name = GetItemInfo(itemID)
 				if name then
 					itemName = name
 				else
 					--[[
-						If the item hasn't been encountered since the game client was last started, this function will initially return nil,
+						If the item hasn't been encountered since the game client was last started,
+							this function will initially return nil,
 							but will asynchronously query the server to obtain the missing data,
 							triggering GET_ITEM_INFO_RECEIVED when the information is available.
 						ItemMixin:ContinueOnItemLoad() provides a convenient callback once item data has been queried
 					]]
-					local item = Item:CreateFromItemID(itemID)
-					item:ContinueOnItemLoad(function()
+					Item:CreateFromItemID(itemID):ContinueOnItemLoad(function()
 						itemName = GetItemInfo(itemID)
 						if callback then
 							callback(callbackReceiver)
@@ -195,54 +182,25 @@ do
 	end
 end
 
-local function SetWatchedFactionByName(faction)
-	for i = 1, GetNumFactions() do
-		-- name, description, standingID, barMin, barMax, barValue, atWarWith,
-		-- canToggleAtWar, isHeader, isCollapsed, hasRep, isWatched, isChild,
-		-- factionID, hasBonusRepGain, canBeLFGBonus = GetFactionInfo(factionIndex);
-		local fi = { GetFactionInfo(i) }
-		local name, isHeader, isWatched = fi[1], fi[9], fi[12]
+local function GetReputationText(repFormat, repInfo)
+	local repID, repName, repStanding, repStandingText, repStandingColor,
+			repMin, repMax, repValue, hasBonusRep, isLFGBonus,
+			isFactionParagon, hasParagonReward = unpack(repInfo)
 
-		if name == faction then
-			-- If it is not watched and it is not a header watch it.
-			if not isWatched then
-				SetWatchedFactionIndex(i)
-			end
-			return
-		end
-	end
-end
-
-local function GetReputationText(repInfo)
-	local repName, repStanding, repMin, repMax, repValue, friendID, friendTextLevel,
-			hasBonusRep, canBeLFGBonus, isFactionParagon = unpack(repInfo)
-	local standingText
-	if friendID then
-		standingText = friendTextLevel
-	else
-		standingText = Config.GetFactionStandingLabel(repStanding)
-	end
-
-	local db = Config.GetDB()
-
-	return Utils.MultiReplace(
-		db.bars.repstring,
-		{
+	return Utils.MultiReplace(repFormat, {
 			["%[faction%]"] = repName,
-			["%[standing%]"] = standingText,
+			["%[standing%]"] = repStandingText,
 			["%[curRep%]"] = Commify(repValue),
 			["%[maxRep%]"] = Commify(repMax),
 			["%[repPC%]"] = Utils.FormatPercents(repValue, repMax),
 			["%[needRep%]"] = Commify(repMax - repValue),
 			["%[needPC%]"] = Utils.FormatRemainingPercents(repValue, repMax),
-		}
-	)
+		})
 end
 
 local function DoSetBorderColor(db_general)
 	return db_general.border and db_general.borderDynamicColor
 end
-
 
 function M:OnInitialize()
 	Bars = XPMultiBar:GetModule("Bars")
@@ -250,6 +208,7 @@ function M:OnInitialize()
 	Data = XPMultiBar:GetModule("Data")
 	Utils = XPMultiBar:GetModule("Utils")
 	UI = XPMultiBar:GetModule("UI")
+	Reputation = XPMultiBar:GetModule("Reputation")
 
 	UI:Disable()
 
@@ -272,12 +231,15 @@ function M:OnInitialize()
 		end
 	)
 
+	LSM3:Register("border", "Blizzard Minimap Tooltip", [[interface\minimap\tooltipbackdrop]])
+	LSM3:Register("border", "Blizzard Toast", [[Interface\FriendsFrame\UI-Toast-Border]])
+
 	local uiHandler = function(methodName, updateBar)
 		return { UI[methodName], updateBar, ["self"] = UI }
 	end
 
 	local onBarSettingsUpdated = {
-		function(localSelf, value)
+		function(localSelf, _)
 			localSelf:UpdateBarSettings()
 			localSelf:SetBars(false)
 		end,
@@ -317,6 +279,7 @@ function M:OnInitialize()
 		showmaxlevel = onBarSettingsUpdated,
 		showrepbar = onBarSettingsUpdated,
 		showmaxazerite = onBarSettingsUpdated,
+		exaltedColor = { Reputation.SetExaltedColor, true, ["self"] = Reputation }
 	}
 
 	Config.RegisterConfigChanged(
@@ -344,7 +307,6 @@ function M:OnInitialize()
 	)
 
 	Config.RegisterProfileChanged(self.OnProfileChanged, self)
-
 	UI:RegisterBarEventHandler(self.OnBarEvent, self)
 end
 
@@ -372,11 +334,14 @@ function M:OnEnable()
 	end
 
 	-- Register some LSM3 callbacks
-	LSM3.RegisterCallback(self, "LibSharedMedia_SetGlobal", function(callback, mtype, override)
-		if mtype == "statusbar" and override ~= nil then
-			self:SetTexture(override)
+	LSM3.RegisterCallback(
+		self, "LibSharedMedia_SetGlobal",
+		function(callback, mtype, override)
+			if mtype == "statusbar" and override ~= nil then
+				self:SetTexture(override)
+			end
 		end
-	end)
+	)
 
 	-- Show the bar
 	UI:EnableEx(db.general.hidestatus)
@@ -404,13 +369,14 @@ function M:OnProfileChanged(db, skipBarUpdate)
 	UI:SetScale(db.general.scale)
 	UI:SetSize(db.general.width, db.general.height)
 	self:SetPosition(db.general)
-	--UI:ShowBorder(db.general.border)
+	UI:SetBackgroundColor(db.bars.background)
 	self:SetBorder(db.general)
 	UI:ShowBubbles(db.general.bubbles)
 	self:SetTexture(db.general.texture)
 	self:SetFontOptions(db.general)
 	self:UpdateBarSettings(db.bars)
 	self:SetBars(false)
+	Reputation:SetExaltedColor(db.bars.exalted)
 
 	if not skipBarUpdate then
 		self:UpdateXPBar()
@@ -423,6 +389,7 @@ function M:OnBarEvent(event, ...)
 	elseif event == "button-over" then
 		self:SetBars(...)
 		self:UpdateXPBar()
+		self:ToggleBarTooltip(...)
 	elseif event == "save-position" then
 		self:OnSavePosition(...)
 	end
@@ -447,8 +414,7 @@ function M:OnButtonClick(button, ctrl, alt, shift)
 
 	-- Display Reputation menu on Ctrl-RightClick
 	if ctrl and button == "RightButton" and not InCombatLockdown() then
-		-- Temporary opens Rep Window until reworked
-		ToggleCharacter("ReputationFrame")
+		self:ShowReputationList()
 	end
 end
 
@@ -481,7 +447,7 @@ function M:SetPosition(general)
 end
 
 function M:SetFontOptions(general)
-	local font, size, flags
+	local font
 
 	if type(general) ~= "table" then
 		general = Config.GetDB().general
@@ -489,15 +455,6 @@ function M:SetFontOptions(general)
 
 	if general.font then
 		font = LSM3:Fetch("font", general.font)
-	end
-
-	-- Use regular font if we could not restore the saved one.
-	if not font then
-		font, size, flags = GameFontNormal:GetFont()
-	end
-
-	if general.fontoutline then
-		flags = "OUTLINE"
 	end
 
 	UI:SetFontOptions(font, general.fontsize, general.fontoutline)
@@ -527,15 +484,12 @@ function M:SetTexture(texture)
 	local db = Config.GetDB()
 	local texturePath = LSM3:Fetch("statusbar", type(texture) == "string" and texture or db.general.texture)
 	local horizTile, bgColor = db.general.horizTile, db.bars.background
-
 	UI:SetTexture(texturePath, horizTile, bgColor)
 end
 
 function M:SetBorder(general)
-	UI:SetBorder(
-		general.border and general.borderStyle or nil,
-		(not general.borderDynamicColor) and general.borderColor or nil
-	)
+	local texPath = general.border and LSM3:Fetch("border", general.borderTexture) or nil
+	UI:SetBorder(texPath, (not general.borderDynamicColor) and general.borderColor or nil)
 end
 
 -- LSM3 Updates.
@@ -549,33 +503,12 @@ function M:COMBAT_TEXT_UPDATE(event, msgtype)
 		return
 	end
 
-	local faction, amount = GetCurrentCombatTextEventInfo()
+	local factionName, amount = GetCurrentCombatTextEventInfo()
 	local db = Config.GetDB()
 
 	-- If we are watching reputations automatically
 	if db.bars.autowatchrep then
-		-- Do not track Horde / Alliance classic faction header
-		if faction == FACTION_HORDE or faction == FACTION_ALLIANCE then
-			return
-		end
-
-		-- We do not want to watch factions we are losing reputation with
-		if tostring(amount):match("^%-.*") then
-			return
-		end
-
-		-- Fix for auto tracking guild reputation since the COMBAT_TEXT_UPDATE does not contain
-		-- the guild name, it just contains "Guild"
-		if faction == GUILD then
-			if db.bars.autotrackguild then
-				faction = GetGuildInfo("player")
-			else
-				return
-			end
-		end
-
-		-- Everything ok? Watch the faction!
-		SetWatchedFactionByName(faction)
+		Reputation:SetWatchedFaction(factionName, amount, db.bars.autotrackguild)
 	end
 end
 
@@ -596,96 +529,45 @@ end
 
 function M:UpdateReputationData()
 	local db = Config.GetDB()
+	local repInfo = { Reputation:GetWatchedFactionData() }
+	local repFactionID, repName, repStanding,
+			repStandingText, repStandingColor,
+			repMin, repMax, repValue,
+			hasBonusRep, isLFGBonus,
+			isFactionParagon, hasParagonReward = unpack(repInfo)
 
-	local repName, repStanding, repMin, repMax, repValue, factionID = GetWatchedFactionInfo()
-	local isFactionParagon = IsFactionParagon(factionID)
-	local hasParagonReward = false
-
-	local txtcol = db.bars.reptext
-
-	UI:SetBarTextColor(txtcol)
+	UI:SetBarTextColor(db.bars.reptext)
 
 	if repName == nil then
 		UI:SetMainBarVisible(false, DoSetBorderColor(db.general))
+		UI:SetRemainingBarVisible(false)
 		UI:SetBarText(L["You need to select a faction to watch"])
 		UI:SetFactionInfo(nil, nil)
 		return
 	end
 
-	local hasBonusRep, canBeLFGBonus
-	local friendID, friendRep, friendMaxRep, friendName, _, _,
-			friendTextLevel, friendThresh, nextFriendThresh = GetFriendshipReputation(factionID)
-
-	if friendID then
-		if nextFriendThresh then
-			-- Not yet "Exalted" with friend, use provided max for current level.
-			repMax = nextFriendThresh
-			repValue = friendRep - friendThresh
-		else
-			-- "Exalted". Fake the maxRep.
-			repMax = friendMaxRep + 1
-			repValue = 1
-		end
-		repMax = repMax - friendThresh
-		repMin = 0
-	else
-		hasBonusRep, canBeLFGBonus = select(15, GetFactionInfoByID(factionID))
-		-- Check faction with Exalted standing to have paragon reputation.
-		-- If so, adjust values to show bar to next paragon bonus.
-		if repStanding == Config.STANDING_EXALTED then
-			if isFactionParagon then
-				local parValue, parThresh, _, hasReward, tooLowLevelForParagon = GetFactionParagonInfo(factionID)
-				hasParagonReward = not tooLowLevelForParagon and hasReward
-				-- parValue is cumulative. We need to get modulo by the current threshold.
-				repMax = parThresh
-				repValue = parValue % parThresh
-				-- if we have reward pending, show overflow
-				if hasParagonReward then
-					repValue = repValue + parThresh
-				end
-			else
-				repMax = 1000
-				repValue = 999
-			end
-		else
-			repMax = repMax - repMin
-			repValue = repValue - repMin
-		end
-
-		repMin = 0
-	end
-
-
-	UI:SetFactionInfo(
-		factionID,
-		db.bars.repicons and {
+	UI:SetFactionInfo(repFactionID, db.bars.repicons and {
 				hasBonusRep,
-				canBeLFGBonus and factionID == GetLFGBonusFactionID(),
+				isLFGBonus,
 				isFactionParagon,
 				hasParagonReward
-			} or nil
-	)
+			} or nil)
 
 	UI:SetMainBarVisible(true)
 	UI:SetRemainingBarVisible(false)
 
-	UI:SetMainBarValues(math_min(0, repValue), repMax, repValue)
-
-	local repColor = Config.GetReputationColor(repStanding)
-
-	UI:SetMainBarColor(repColor, DoSetBorderColor(db.general))
-	UI:SetBarText(
-		GetReputationText( {
-			repName, repStanding, repMin, repMax,
-			repValue, friendID, friendTextLevel,
-			hasBonusRep, canBeLFGBonus, isFactionParagon
-		} )
-	)
+	UI:SetMainBarValues(repMin, repMax, repValue)
+	UI:SetMainBarColor(repStandingColor, DoSetBorderColor(db.general))
+	UI:SetBarText(GetReputationText(db.bars.repstring, repInfo))
 end
 
-function M:UpdateXPBar()
+function M:UpdateXPBar(event)
 	local db = Config.GetDB()
 	local bar = Bars.GetVisibleBar()
+
+	if event == "UPDATE_FACTION" then
+		self:ShowReputationList(true)
+	end
 
 	if bar == Bars.REP then
 		return self:UpdateReputationData()
@@ -758,4 +640,28 @@ function M:LevelUp(event, level)
 	})
 	Bars.UpdateBarState(false)
 	self:UpdateXPBar()
+end
+
+function M:ToggleBarTooltip(isMouseOver, isCtrl, isAlt, isShift)
+	local db = Config.GetDB()
+	local rep = db.reputation
+	local needAlt, needCtrl, needShift = rep.showFavoritesModAlt, rep.showFavoritesModCtrl, rep.showFavoritesModShift
+	local willShow = rep.showFavorites and (rep.showFavInCombat or not InCombatLockdown())
+	willShow = willShow and (isAlt or not needAlt)
+	willShow = willShow and (isCtrl or not needCtrl)
+	willShow = willShow and (isShift or not needShift)
+	if willShow then
+		Reputation:ToggleBarTooltip(isMouseOver, rep.favorites, db.general.commify)
+	end
+end
+
+function M:ShowReputationList(redraw)
+	local showRepMenu = Config.GetDB().reputation.showRepMenu
+
+	if showRepMenu then
+		Reputation:ShowFactionMenu(redraw)
+	elseif not redraw then
+		-- Just open Character Rep. Window
+		ToggleCharacter("ReputationFrame")
+	end
 end

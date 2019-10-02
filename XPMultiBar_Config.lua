@@ -11,16 +11,46 @@ local Config = XPMultiBar:NewModule("Config", "AceConsole-3.0")
 local Event
 
 local C = Config
+
+local AceDB = LibStub("AceDB-3.0")
+local ACRegistry = LibStub("AceConfigRegistry-3.0")
+local ACDialog = LibStub("AceConfigDialog-3.0")
+local ADBO = LibStub("AceDBOptions-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 local Utils
 
-local tinsert = tinsert
-local error = error
-
+local ALT_KEY = ALT_KEY
+local CTRL_KEY = CTRL_KEY
+local SHIFT_KEY = SHIFT_KEY
 local BACKGROUND = BACKGROUND
+local REPUTATION = REPUTATION
+local ITEM_QUALITY_COLORS = ITEM_QUALITY_COLORS
+local LE_ITEM_QUALITY_ARTIFACT = LE_ITEM_QUALITY_ARTIFACT
+local MAX_PLAYER_LEVEL_TABLE = MAX_PLAYER_LEVEL_TABLE
 
-local DB_VERSION_NUM = 821
+local _G = _G
+local ipairs = ipairs
+local pairs = pairs
+local tonumber = tonumber
+local tostring = tostring
+local type = type
+local unpack = unpack
+
+local GameLimitedMode_IsActive = GameLimitedMode_IsActive
+local GetAddOnMetadata = GetAddOnMetadata
+local GetExpansionLevel = GetExpansionLevel
+local GetRestrictedAccountData = GetRestrictedAccountData
+local InterfaceOptionsFrame_OpenToCategory = InterfaceOptionsFrame_OpenToCategory
+local IsXPUserDisabled = IsXPUserDisabled
+local UnitLevel = UnitLevel
+
+local AceGUIWidgetLSMlists = AceGUIWidgetLSMlists
+
+-- Remove all known globals after this point
+-- luacheck: std none
+
+local DB_VERSION_NUM = 822
 local DB_VERSION = "V" .. tostring(DB_VERSION_NUM) .. (XPMultiBar.IsWoWClassic and "C" or "")
 
 local md = {
@@ -54,42 +84,28 @@ do
 	}
 end
 
--- Reputation colors
-local STANDING_EXALTED = 8
-local reputationColors
+local FilterBorderTextures
 
--- Reputation colors are automatically generated and cached when first looked up.
 do
-	reputationColors = setmetatable({}, {
-		__index = function(t, k)
-			local fbc
+	local excludedBorders = {
+		["1 Pixel"] = true,
+		["Blizzard Chat Bubble"] = true,
+		["Blizzard Party"] = true,
+		["Details BarBorder 1"] = true,
+		["Details BarBorder 2"] = true,
+		["None"] = true,
+		["Square Full White"] = true,
+	}
 
-			if k == STANDING_EXALTED then
-				fbc = db.bars.exalted
-			else
-				fbc = FACTION_BAR_COLORS[k]
+	FilterBorderTextures = function(textures)
+		local result = {}
+		for k, v in pairs(textures) do
+			if not excludedBorders[k] then
+				result[k] = v
 			end
-
-			t[k] = fbc
-			return fbc
-		end,
-	})
-end
-
--- Cache FACTION_STANDING_LABEL
--- When a lookup is first attempted on this cable, we go and lookup the real
--- value and cache it.
-local factionStandingLabel
-
-do
-	local _G = _G
-	factionStandingLabel = setmetatable({}, {
-		__index = function(t, k)
-			local fsl = _G["FACTION_STANDING_LABEL"..k]
-			t[k] = fsl
-			return fsl
-		end,
-	})
+		end
+		return result
+	end
 end
 
 local frameAnchors = {
@@ -139,7 +155,7 @@ local defaults = {
 			texture = "Smooth",
 			horizTile = false,
 			border = false,
-			borderStyle = 1,
+			borderTexture = "Blizzard Dialog",
 			borderDynamicColor = true,
 			borderColor = { r = 0.5, g  = 0.5, b = 0.5, a = 1 },
 			bubbles = false,
@@ -148,7 +164,7 @@ local defaults = {
 		},
 		bars = {
 			-- XP bar
-			xpstring = "Exp: [curXP]/[maxXP] ([restPC]) :: [curPC] through level [pLVL] :: [needXP] XP left :: [KTL] kills to level",
+			xpstring = "Exp: [curXP]/[maxXP] ([restPC]) :: [curPC] through [pLVL] lvl :: [needXP] XP left :: [KTL] kills to lvl",
 			xpicons = true,
 			indicaterest = true,
 			showremaining = true,
@@ -175,8 +191,36 @@ local defaults = {
 			reptext = { r = 1, g = 1, b = 1, a = 1 },
 			azertext = { r = 1, g = 1, b = 1, a = 1 },
 		},
+		reputation = {
+			showRepMenu = true,
+			menuScale = 1,
+			menuAutoHideDelay = 2,
+			watchedFactionLineColor = { r = 0.3, g = 1, b = 1, a = 0.5 },
+			favoriteFactionLineColor = { r = 1, g = 0.3, b = 1, a = 0.5 },
+			showFavorites = false,
+			showFavInCombat = false,
+			showFavoritesModCtrl = false,
+			showFavoritesModAlt = false,
+			showFavoritesModShift = false,
+			favorites = {},
+		},
 	}
 }
+
+local function CreateGetSetColorFunctions(section, postFunc)
+	return function(info)
+				local col = db[section][info[#info]]
+				return col.r, col.g, col.b, col.a or 1
+			end,
+			function(info, r, g, b, a)
+				local key = info[#info]
+				local col = db[section][key]
+				col.r, col.g, col.b, col.a = r, g, b, a
+				if type(postFunc) == "function" then
+					postFunc(key, col)
+				end
+			end
+end
 
 local function CreateGroupItems(description, items, keyMap)
 	local result = {
@@ -223,32 +267,28 @@ local function GetOptions(uiTypes, uiName, appName)
 		onConfigChanged("position", db.general)
 	end
 
-	local function getBorderColor(info)
-		local col = db.general[info[#info]]
-		return col.r, col.g, col.b, col.a
-	end
+	local getBorderColor, setBorderColor = CreateGetSetColorFunctions("general")
 	local function setBorder(info, r, g, b, a)
 		local key = info[#info]
 		if key == "borderColor" then
-			local dbCol = db.general[key]
-			dbCol.r, dbCol.g, dbCol.b, dbCol.a = r, g, b, a
+			setBorderColor(info, r, g, b, a)
 		else
 			db.general[key] = r
 		end
 		onConfigChanged("border", db.general)
 	end
 
-	local function getColor(info)
-		local col = db.bars[info[#info]]
-		return col.r, col.g, col.b, col.a or 1
-	end
-	local function setColor(info, r, g, b, a)
-		local col = db.bars[info[#info]]
-		col.r, col.g, col.b, col.a = r, g, b, a
-		reputationColors[STANDING_EXALTED] = nil
-		local bgc = db.bars.background
-		onConfigChanged("bgColor", bgc)
-	end
+	local getBarColor, setBarColor = CreateGetSetColorFunctions(
+															"bars",
+															function(key, color)
+																if key == "exalted" then
+																	onConfigChanged("exaltedColor", color)
+																elseif key == "background" then
+																	onConfigChanged("bgColor", color)
+																end
+															end
+														)
+	local getRepColor, setRepColor = CreateGetSetColorFunctions("reputation")
 
 	if appName == addonName then
 		local anchors = Utils.Clone(frameAnchors)
@@ -463,14 +503,15 @@ local function GetOptions(uiTypes, uiName, appName)
 									name = L["Show border"],
 									desc = L["Show bar border"],
 								},
-								borderStyle = {
+								borderTexture = {
 									type = "select",
 									order = 2000,
 									width = 1.5,
 									disabled = isBorderOptionsDisabled,
 									name = L["Border style"],
 									desc = L["Set border style (texture)"],
-									values = { "1. Dialog box border", "2. Toast border", "3. Tooltip border" },
+									dialogControl = "LSM30_Border",
+									values = FilterBorderTextures(AceGUIWidgetLSMlists.border),
 								},
 								borderDynamicColor = {
 									type = "toggle",
@@ -611,8 +652,8 @@ local function GetOptions(uiTypes, uiName, appName)
 							name = "",
 							guiInline = true,
 							width = "full",
-							get = getColor,
-							set = setColor,
+							get = getBarColor,
+							set = setBarColor,
 							args = {
 								xptext = {
 									type = "color",
@@ -704,8 +745,8 @@ local function GetOptions(uiTypes, uiName, appName)
 							name = "",
 							guiInline = true,
 							width = "full",
-							get = getColor,
-							set = setColor,
+							get = getBarColor,
+							set = setBarColor,
 							args = {
 								azertext = {
 									type = "color",
@@ -725,7 +766,7 @@ local function GetOptions(uiTypes, uiName, appName)
 								},
 							},
 						},
-						azerdesc = {
+						azerDisplayDesc = {
 							type = "description",
 							order = 50,
 							fontSize = "medium",
@@ -785,8 +826,8 @@ local function GetOptions(uiTypes, uiName, appName)
 							name = "",
 							guiInline = true,
 							width = "full",
-							get = getColor,
-							set = setColor,
+							get = getBarColor,
+							set = setBarColor,
 							args = {
 								reptext = {
 									type = "color",
@@ -809,6 +850,149 @@ local function GetOptions(uiTypes, uiName, appName)
 					},
 				},
 			},
+		}
+	end
+	if appName == (addonName .. "-Reputation") then
+		local t = Utils.Text
+		return {
+			type = "group",
+			name = REPUTATION,
+			childGroups = "tab",
+			get = function(info) return db.reputation[info[#info]] end,
+			set = function(info, value) db.reputation[info[#info]] = value end,
+			args = {
+				bardesc = {
+					type = "description",
+					order = 0,
+					name = L["Settings for reputation menu and favorite factions"],
+				},
+				repMenuGroup = {
+					type = "group",
+					order = 10,
+					name = L["Reputation Menu"],
+					guiInline = true,
+					width = "full",
+					args = {
+						showRepMenu = {
+							type = "toggle",
+							order = 100,
+							width = "full",
+							name = L["Show reputation menu"],
+							-- luacheck: ignore
+							desc = L["Show reputation menu instead of standard Reputation window when |CFFFFFF20Ctrl+Right Button|r on the panel"],
+						},
+						menuScale = {
+							type = "range",
+							order = 200,
+							width = 1.5,
+							disabled = not db.reputation.showRepMenu,
+							name = L["Scale"],
+							desc = L["Set reputation menu scale"],
+							min = 0.5,
+							max = 2,
+							step = 0.1,
+						},
+						menuAutoHideDelay = {
+							type = "range",
+							order = 300,
+							width = 1.5,
+							disabled = not db.reputation.showRepMenu,
+							name = L["Autohide Delay"],
+							desc = L["Set reputation menu autohide delay time (in seconds)"],
+							min = 0,
+							max = 5,
+						},
+						watchedFactionLineColor = {
+							type = "color",
+							order = 400,
+							width = 1.5,
+							disabled = not db.reputation.showRepMenu,
+							name = L["Watched Faction Line Color"],
+							desc = L["Set the color of watched faction menu line"],
+							hasAlpha = true,
+							get = getRepColor,
+							set = setRepColor,
+						},
+						favoriteFactionLineColor = {
+							type = "color",
+							order = 500,
+							width = 1.5,
+							disabled = not (db.reputation.showRepMenu and db.reputation.showFavorites),
+							name = L["Favorite Faction Line Color"],
+							desc = L["Set the color of favorite faction menu lines"],
+							hasAlpha = true,
+							get = getRepColor,
+							set = setRepColor,
+						},
+					},
+				},
+				favRepGroup = {
+					type = "group",
+					order = 20,
+					name = L["Favorite Factions"],
+					guiInline = true,
+					width = "full",
+					args = {
+						showFavorites = {
+							type = "toggle",
+							order = 100,
+							width = 1.5,
+							name = L["Show favorite factions"],
+							desc = L["Show favorite faction popup when mouse is over the bar"],
+						},
+						showFavInCombat = {
+							type = "toggle",
+							order = 200,
+							width = 1.5,
+							disabled = not db.reputation.showFavorites,
+							name = L["Show in combat"],
+							desc = L["Show favorite faction popup when in combat"],
+						},
+						showFavoritesMods = {
+							type = "description",
+							order = 300,
+							fontSize = "medium",
+							disabled = not db.reputation.showFavorites,
+							name = L["Show favorite faction popup only when modifiers are pressed"],
+						},
+						showFavoritesModCtrl = {
+							type = "toggle",
+							order = 400,
+							disabled = not db.reputation.showFavorites,
+							name = CTRL_KEY,
+							desc = L["|CFFFFFF20Ctrl|r must be pressed"],
+						},
+						showFavoritesModAlt = {
+							type = "toggle",
+							order = 500,
+							disabled = not db.reputation.showFavorites,
+							name = ALT_KEY,
+							desc = L["|CFFFFFF20Alt|r must be pressed"],
+						},
+						showFavoritesModShift = {
+							type = "toggle",
+							order = 600,
+							disabled = not db.reputation.showFavorites,
+							name = SHIFT_KEY,
+							desc = L["|CFFFFFF20Shift|r must be pressed"],
+						},
+						noFavoriteFactionsDesc = {
+							type = "description",
+							order = 700,
+							fontSize = "medium",
+							hidden = not db.reputation.showFavorites
+										or next(db.reputation.favorites) ~= nil,
+							name = t.GetWarning(L["WARNING.NOFAVORITEFACTIONS"]),
+						},
+						favoriteFactionsDesc = {
+							type = "description",
+							order = 800,
+							fontSize = "medium",
+							name = t.GetInfo(L["HELP.FAVORITEFACTIONS"]),
+						},
+					},
+				},
+			}
 		}
 	end
 	if appName == (addonName .. "-Help") then
@@ -914,9 +1098,22 @@ local function MigrateSettings(sv)
 	if sv.profiles then
 		for name, data in pairs(sv.profiles) do
 			-- new positioning mode
-			if dbVer < DB_VERSION_NUM then
+			if dbVer < 821 then
 				data.general.anchor = "TOPLEFT"
 				data.general.anchorRelative = "BOTTOMLEFT"
+			end
+			-- border texture picker
+			if dbVer < 822 then
+				local borderTexNames = {
+									"Blizzard Dialog", "Blizzard Toast",
+									"Blizzard Minimap Tooltip", "Blizzard Tooltip"
+								}
+				if not data.general.borderTexture then
+					local style = data.general.borderStyle or 1
+					local tex = borderTexNames[style]
+					data.general.borderTexture = tex
+					data.general.borderStyle = nil
+				end
 			end
 		end
 	end
@@ -929,7 +1126,6 @@ C.EVENT_PROFILE_CHANGED = "ProfileChanged"
 
 C.XPLockedReasons = xpLockedReasons
 C.MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL_TABLE[GetExpansionLevel()]
-C.STANDING_EXALTED = STANDING_EXALTED
 C.Anchors = frameAnchors
 C.NoAnchor = ""
 
@@ -942,20 +1138,12 @@ end
 function C.GetPlayerMaxLevel()
 	if IsXPUserDisabled() then
 		return UnitLevel("player"), xpLockedReasons.LOCKED_XP
-	elseif (GameLimitedMode_IsActive()) then
+	elseif GameLimitedMode_IsActive() then
 		local capLevel = GetRestrictedAccountData()
 		return capLevel, xpLockedReasons.MAX_TRIAL_LEVEL
 	else
 		return C.MAX_PLAYER_LEVEL, xpLockedReasons.MAX_EXPANSION_LEVEL
 	end
-end
-
-function C.GetFactionStandingLabel(standing)
-	return factionStandingLabel[standing]
-end
-
-function C.GetReputationColor(standing)
-	return reputationColors[standing]
 end
 
 function C.RegisterConfigChanged(...)
@@ -970,27 +1158,30 @@ function C:OnInitialize()
 	Event = XPMultiBar:GetModule("Event")
 	Utils = XPMultiBar:GetModule("Utils")
 
-	self.db = LibStub("AceDB-3.0"):New(addonName .. "DB", defaults, true)
+	--@debug@
+	-- L = Utils.DebugL(L)
+	--@end-debug@
+
+	self.db = AceDB:New(addonName .. "DB", defaults, true)
 
 	MigrateSettings(self.db.sv)
 
 	db = self.db.profile
 
 	local myName = md.title
-	local ACRegistry = LibStub("AceConfigRegistry-3.0")
-	local ACDialog = LibStub("AceConfigDialog-3.0")
 
 	ACRegistry:RegisterOptionsTable(addonName, GetOptions)
 	ACRegistry:RegisterOptionsTable(addonName .. "-Bars", GetOptions)
+	ACRegistry:RegisterOptionsTable(addonName .. "-Reputation", GetOptions)
 	ACRegistry:RegisterOptionsTable(addonName .. "-Help", GetOptions)
+
+	local popts = ADBO:GetOptionsTable(self.db)
+	ACRegistry:RegisterOptionsTable(addonName .. "-Profiles", popts)
 
 	ACDialog:AddToBlizOptions(addonName, myName)
 	ACDialog:AddToBlizOptions(addonName .. "-Bars", L["Bars"], myName)
-
-	local popts = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
-	ACRegistry:RegisterOptionsTable(addonName .. "-Profiles", popts)
+	ACDialog:AddToBlizOptions(addonName .. "-Reputation", REPUTATION, myName)
 	ACDialog:AddToBlizOptions(addonName .. "-Profiles", L["Profiles"], myName)
-
 	ACDialog:AddToBlizOptions(addonName .. "-Help", L["Help on format"], myName)
 
 	--[[ TODO: Help tab ]]
@@ -1007,6 +1198,5 @@ end
 
 function C:ProfileChanged(event, database, newProfileKey)
 	db = database.profile
-	reputationColors[STANDING_EXALTED] = nil
 	profileChangedEvent(db)
 end

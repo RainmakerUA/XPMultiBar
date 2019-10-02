@@ -14,6 +14,9 @@ local Utils
 
 local tconcat = table.concat
 
+-- Remove all known globals after this point
+-- luacheck: std none
+
 -- Bar consts
 B.XP = 1
 B.AZ = 2

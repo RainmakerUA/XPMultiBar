@@ -13,4 +13,5 @@
 	<Include file="Libs\LibSharedMedia-3.0\lib.xml"/>
 	<Include file="Libs\AceGUI-3.0-SharedMediaWidgets\widget.xml"/>
 	<Include file="Libs\AceGUIWidget-NumberEditBox\widget.xml"/>
+	<Include file="Libs\LibQTip-1.0\lib.xml"/>
 </Ui>

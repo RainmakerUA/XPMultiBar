@@ -13,6 +13,9 @@ local D = Data
 local ipairs = ipairs
 local math_ceil = math.ceil
 
+-- Remove all known globals after this point
+-- luacheck: std none
+
 local Utils
 
 -- Table stores KTL data

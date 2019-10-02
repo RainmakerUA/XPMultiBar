@@ -10,6 +10,7 @@ local XPMultiBar = AceAddon:GetAddon(addonName)
 local UI = XPMultiBar:NewModule("UI", "AceEvent-3.0")
 
 local geterrorhandler = geterrorhandler
+local ipairs = ipairs
 local type = type
 local unpack = unpack
 local xpcall = xpcall
@@ -17,6 +18,7 @@ local math_floor = math.floor
 
 local CreateFrame = CreateFrame
 local GameFontNormal = GameFontNormal
+local GetTime = GetTime
 local IsAltKeyDown = IsAltKeyDown
 local IsControlKeyDown = IsControlKeyDown
 local IsShiftKeyDown = IsShiftKeyDown
@@ -24,6 +26,9 @@ local StatusTrackingBarManager = StatusTrackingBarManager
 local MainMenuExpBar = MainMenuExpBar
 local ReputationWatchBar = ReputationWatchBar
 local UIParent = UIParent
+
+-- Remove all known globals after this point
+-- luacheck: std none
 
 local Event
 local Utils
@@ -37,14 +42,17 @@ end
 
 local previousStatusTrackingBarVisibility
 
-local borders = {
-	{ name = [[Interface\DialogFrame\UI-DialogBox-Border]], margin = { 2, 3 } },
-	{ name = [[Interface\FriendsFrame\UI-Toast-Border]], margin = { 3, 3 } },
-	{ name = [[Interface\Tooltips\UI-Tooltip-Border]], margin = { 2, 2 } },
-	{ name = [[interface\minimap\tooltipbackdrop]], margin = { 4, 4 } },
+local margins = {
+	[1] = { 2, 2, },
+	[ [[interface\dialogframe\ui-dialogbox-border]]	] = { 2, 3 },
+	[ [[interface\friendsframe\ui-toast-border]]	] = { 3, 3 },
+	[ [[interface\tooltips\ui-tooltip-border]]		] = { 2, 2 },
+	[ [[interface\minimap\tooltipbackdrop]]			] = { 4, 4 },
 }
 local defaultBorderColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 }
 local noBorderColor = { r = 0, g = 0, b = 0, a = 0 }
+
+-- luacheck: push globals XPMultiBarInnerBarFrameMixin XPMultiBarFrameMixin XPMultiBarButtonMixin
 
 XPMultiBarInnerBarFrameMixin = {}
 XPMultiBarFrameMixin = {}
@@ -53,6 +61,8 @@ XPMultiBarButtonMixin = {}
 local ibx = XPMultiBarInnerBarFrameMixin
 local fx = XPMultiBarFrameMixin
 local bx = XPMultiBarButtonMixin
+
+-- luacheck: pop
 
 -- [[ Local functions ]]
 
@@ -338,7 +348,7 @@ function UI:GetBarText()
 end
 
 function UI:GetPosition()
-	local anchor, parent, anchorRel, x, y = self.barFrame:GetPoint()
+	local anchor, _, anchorRel, x, y = self.barFrame:GetPoint()
 	local s = self.barFrame:GetEffectiveScale()
 
 	return { anchor = anchor, anchorRel = anchorRel, x = x * s, y = y * s }
@@ -427,16 +437,15 @@ function UI:SetMargin(x, y)
 	)
 end
 
-function UI:SetBorder(style, color)
+function UI:SetBorder(texture, color)
 	local bTexture, bMargins, bColor
-	if not style then
+	if not texture then
 		bColor = noBorderColor
-	elseif style == true then
+	elseif texture == true then
 		bColor = color or defaultBorderColor
 	else
-		local styleTable = borders[style]
-		bTexture = styleTable.name
-		bMargins = styleTable.margin
+		bTexture = texture
+		bMargins = margins[texture:lower()] or margins[1]
 		bColor = color or defaultBorderColor
 	end
 

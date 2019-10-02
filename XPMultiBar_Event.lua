@@ -8,10 +8,16 @@ local addonName = ...
 local XPMultiBar = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local Event = XPMultiBar:NewModule("Event")
 
+local mod = Event
+
+local error = error
+local ipairs = ipairs
+local setmetatable = setmetatable
 local tinsert = table.insert
 local type = type
 
-local mod = Event
+-- Remove all known globals after this point
+-- luacheck: std none
 
 local function addHandler(event, handler, receiver)
 	if not event.handlers then
