@@ -227,7 +227,11 @@ function R:OnReputationFrameUpdate()
 		local relCheckbox = hasLfgCheckbox and lfgBonusRepCheckbox or watchedCheckbox
 		repDetailFrame:SetHeight(hasLfgCheckbox and 247 or 225)
 		self.favoriteCheckbox.factionID = factionID
-		self.favoriteCheckbox:SetPoint("TOPLEFT", relCheckbox, "BOTTOMLEFT", 0, 3)
+		if wowClassic then
+			self.favoriteCheckbox:SetPoint("BOTTOMLEFT", repDetailFrame, "BOTTOMLEFT", 14, 56)
+		else
+			self.favoriteCheckbox:SetPoint("TOPLEFT", relCheckbox, "BOTTOMLEFT", 0, 3)
+		end
 		self.favoriteCheckbox:SetChecked(config.favorites[factionID] or false)
 		self.favoriteCheckbox:Show()
 	else
