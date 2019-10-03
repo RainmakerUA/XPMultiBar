@@ -5,12 +5,11 @@
 --]=====]
 
 local addonName = ...
+local Utils = LibStub("rmUtils-1.0")
 local XPMultiBar = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local Bars = XPMultiBar:NewModule("Bars")
 
 local B = Bars
-
-local Utils
 
 local tconcat = table.concat
 
@@ -101,7 +100,6 @@ local visibleBar = nil
 local mouseOverWithShift = nil
 
 function B:OnInitialize()
-	Utils = XPMultiBar:GetModule("Utils")
 end
 
 function B.UpdateBarSettings(barSettings)

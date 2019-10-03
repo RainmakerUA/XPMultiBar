@@ -5,6 +5,7 @@
 --]=====]
 
 local addonName = ...
+local Utils = LibStub("rmUtils-1.0")
 local XPMultiBar = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local Data = XPMultiBar:NewModule("Data")
 
@@ -15,8 +16,6 @@ local math_ceil = math.ceil
 
 -- Remove all known globals after this point
 -- luacheck: std none
-
-local Utils
 
 -- Table stores KTL data
 local lastXPValues = {}
@@ -30,7 +29,6 @@ local xp = {
 }
 
 function D:OnInitialize()
-	Utils = XPMultiBar:GetModule("Utils")
 end
 
 function D.GetXP()

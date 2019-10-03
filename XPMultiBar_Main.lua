@@ -5,6 +5,7 @@
 --]=====]
 
 local addonName = ...
+local Utils = LibStub("rmUtils-1.0")
 local XPMultiBar = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local Main = XPMultiBar:NewModule("Main", "AceEvent-3.0")
 
@@ -69,7 +70,6 @@ end
 local Bars
 local Config
 local Data
-local Utils
 local Reputation
 local UI
 
@@ -206,7 +206,6 @@ function M:OnInitialize()
 	Bars = XPMultiBar:GetModule("Bars")
 	Config = XPMultiBar:GetModule("Config")
 	Data = XPMultiBar:GetModule("Data")
-	Utils = XPMultiBar:GetModule("Utils")
 	UI = XPMultiBar:GetModule("UI")
 	Reputation = XPMultiBar:GetModule("Reputation")
 
