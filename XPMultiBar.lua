@@ -6,6 +6,7 @@
 
 local addonName = ...
 local XPMultiBar = LibStub("AceAddon-3.0"):NewAddon(addonName)
+local Utils = LibStub("rmUtils-1.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 local _G = _G
@@ -28,7 +29,7 @@ function XPMultiBar:OnInitialize()
 end
 
 function XPMultiBar:OnEnable()
-	if not self.IsWoWClassic then
+	if not Utils.IsWoWClassic then
 		print(L["ERROR.CLASSIC_ON_RETAIL"])
 	else
 		print(L["MESSAGE.WELCOME"])
