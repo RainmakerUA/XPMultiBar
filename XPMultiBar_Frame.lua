@@ -5,6 +5,7 @@
 --]=====]
 
 local addonName = ...
+local Utils = LibStub("rmUtils-1.0")
 local AceAddon = LibStub("AceAddon-3.0")
 local XPMultiBar = AceAddon:GetAddon(addonName)
 local UI = XPMultiBar:NewModule("UI", "AceEvent-3.0")
@@ -31,7 +32,6 @@ local UIParent = UIParent
 -- luacheck: std none
 
 local Event
-local Utils
 
 local barFrame
 local barEvent
@@ -301,7 +301,6 @@ end
 
 function UI:OnInitialize()
 	Event = XPMultiBar:GetModule("Event")
-	Utils = XPMultiBar:GetModule("Utils")
 
 	self.barFrame = barFrame
 

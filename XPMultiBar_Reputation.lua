@@ -5,6 +5,7 @@
 --]=====]
 
 local addonName = ...
+local Utils = LibStub("rmUtils-1.0")
 local XPMultiBar = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local Reputation = XPMultiBar:NewModule("Reputation")
 
@@ -16,7 +17,6 @@ local R = Reputation
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 local Config
-local Utils
 local UI
 
 local emptyFun = function() end
@@ -193,7 +193,6 @@ end
 function R:OnInitialize()
 	Config = XPMultiBar:GetModule("Config")
 	UI = XPMultiBar:GetModule("UI")
-	Utils = XPMultiBar:GetModule("Utils")
 
 	-- Patch LibQTip
 	local labelProto = LibQT.LabelPrototype

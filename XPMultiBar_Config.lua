@@ -5,6 +5,7 @@
 --]=====]
 
 local addonName = ...
+local Utils = LibStub("rmUtils-1.0")
 local XPMultiBar = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local Config = XPMultiBar:NewModule("Config", "AceConsole-3.0")
 
@@ -17,8 +18,6 @@ local ACRegistry = LibStub("AceConfigRegistry-3.0")
 local ACDialog = LibStub("AceConfigDialog-3.0")
 local ADBO = LibStub("AceDBOptions-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
-
-local Utils
 
 local ALT_KEY = ALT_KEY
 local CTRL_KEY = CTRL_KEY
@@ -1156,7 +1155,6 @@ end
 
 function C:OnInitialize()
 	Event = XPMultiBar:GetModule("Event")
-	Utils = XPMultiBar:GetModule("Utils")
 
 	--@debug@
 	-- L = Utils.DebugL(L)
