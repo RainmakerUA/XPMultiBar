@@ -11,6 +11,8 @@ local Config = XPMultiBar:NewModule("Config", "AceConsole-3.0")
 
 local Event
 
+local wowClassic = Utils.IsWoWClassic
+
 local C = Config
 
 local AceDB = LibStub("AceDB-3.0")
@@ -50,7 +52,7 @@ local AceGUIWidgetLSMlists = AceGUIWidgetLSMlists
 -- luacheck: std none
 
 local DB_VERSION_NUM = 822
-local DB_VERSION = "V" .. tostring(DB_VERSION_NUM) .. (Utils.IsWoWClassic and "C" or "")
+local DB_VERSION = "V" .. tostring(DB_VERSION_NUM) .. (wowClassic and "C" or "")
 
 local md = {
 	title = GetAddOnMetadata(addonName, "Title"),
