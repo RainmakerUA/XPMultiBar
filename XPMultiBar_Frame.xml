@@ -52,8 +52,8 @@
 							</Anchors>
 						</Texture> -->
 					</Layer>
-					<!-- <Layer level="ARTWORK">
-						<Texture parentKey="piIcon" atlas="ParagonReputation_Bag" useAtlasSize="true">
+					<Layer level="ARTWORK">
+						<!-- <Texture parentKey="piIcon" atlas="ParagonReputation_Bag" useAtlasSize="true">
 							<Anchors>
 								<Anchor point="CENTER" relativeKey="$parent.text" relativePoint="LEFT" x="-15" y="0" />
 							</Anchors>
@@ -64,7 +64,7 @@
 							<Anchors>
 								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
 							</Anchors>
-						</Texture>
+						</Texture> -->
 						<Texture parentKey="atWarIcon" file="interface\worldstateframe\combatswords.blp">
 							<Size x="16" y="16" />
 							<TexCoords left="0" right="0.5" top="0" bottom="0.5" />
@@ -78,7 +78,7 @@
 								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
 							</Anchors>
 						</Texture>
-						<Texture parentKey="expStopIcon" atlas="Map-MarkedDefeated" useAtlasSize="true">
+						<!-- <Texture parentKey="expStopIcon" atlas="Map-MarkedDefeated" useAtlasSize="true">
 							<Anchors>
 								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
 							</Anchors>
@@ -94,9 +94,9 @@
 							<Anchors>
 								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
 							</Anchors>
-						</Texture>
+						</Texture> -->
 					</Layer>
-					<Layer level="OVERLAY">
+					<!-- <Layer level="OVERLAY">
 						<Texture parentKey="piCheck" atlas="ParagonReputation_Checkmark" useAtlasSize="true">
 							<Anchors>
 								<Anchor point="CENTER" relativeKey="$parent.text" relativePoint="LEFT" x="-10" y="-2" />

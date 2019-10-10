@@ -11,8 +11,8 @@ local Config = XPMultiBar:NewModule("Config", "AceConsole-3.0")
 
 local Event
 
-local emptyFn = XPMultiBar.EmptyFun
-local wowClassic = XPMultiBar.IsWoWClassic
+local emptyFn = Utils.EmptyFn
+local wowClassic = Utils.IsWoWClassic
 
 local C = Config
 
@@ -47,8 +47,6 @@ local InterfaceOptionsFrame_OpenToCategory = InterfaceOptionsFrame_OpenToCategor
 local IsXPUserDisabled = IsXPUserDisabled
 local UnitLevel = UnitLevel
 
-local IsXPUserDisabled = IsXPUserDisabled
-
 if wowClassic then
 	IsXPUserDisabled = emptyFn
 end
@@ -59,7 +57,7 @@ local AceGUIWidgetLSMlists = AceGUIWidgetLSMlists
 -- luacheck: std none
 
 local DB_VERSION_NUM = 822
-local DB_VERSION = "V" .. tostring(DB_VERSION_NUM) .. (Utils.IsWoWClassic and "C" or "")
+local DB_VERSION = "V" .. tostring(DB_VERSION_NUM) .. (wowClassic and "C" or "")
 
 local md = {
 	title = GetAddOnMetadata(addonName, "Title"),

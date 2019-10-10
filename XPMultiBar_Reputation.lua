@@ -19,7 +19,7 @@ local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local Config
 local UI
 
-local emptyFun = function() end
+local emptyFun = Utils.EmptyFn
 
 local next = next
 local pairs = pairs

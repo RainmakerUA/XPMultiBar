@@ -27,7 +27,7 @@ local math_ceil = math.ceil
 local math_min = math.min
 
 local wowClassic = Utils.IsWoWClassic
-local emptyFun = function() end
+local emptyFun = Utils.EmptyFn
 
 -- WoW globals
 local ChatEdit_GetActiveWindow = ChatEdit_GetActiveWindow
