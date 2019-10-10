@@ -50,7 +50,7 @@ local AceGUIWidgetLSMlists = AceGUIWidgetLSMlists
 -- luacheck: std none
 
 local DB_VERSION_NUM = 822
-local DB_VERSION = "V" .. tostring(DB_VERSION_NUM) .. (XPMultiBar.IsWoWClassic and "C" or "")
+local DB_VERSION = "V" .. tostring(DB_VERSION_NUM) .. (Utils.IsWoWClassic and "C" or "")
 
 local md = {
 	title = GetAddOnMetadata(addonName, "Title"),

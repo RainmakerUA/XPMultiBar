@@ -64,21 +64,6 @@ local bx = XPMultiBarButtonMixin
 
 -- luacheck: pop
 
--- [[ Local functions ]]
-
-local function tappend(...)
-	local result, num, tbl = {}, 1, {...}
-	for i = 1, #tbl do
-		local t = tbl[i]
-		if t then
-			for j = 1, #t do
-				result[num], num = t[j], num + 1
-			end
-		end
-	end
-	return result
-end
-
 --[[ Frame object mixin methods ]]
 
 function fx:OnLoad()
@@ -148,8 +133,8 @@ end
 function bx:OnLoad()
 	self.xpIcons = { self.expMaxIcon, self.expStopIcon, self.expCapIcon }
 	self.azerIcons = { self.azerMaxIcon }
-	self.repIcons = { self.piGlow, self.piIcon, self.piCheck, self.lfgBonusIcon, self.repBonusIcon }
-	self.icons = tappend(self.xpIcons, self.azerIcons, self.repIcons)
+	self.repIcons = { self.piGlow, self.piIcon, self.piCheck, self.lfgBonusIcon, self.repBonusIcon, self.atWarIcon }
+	self.icons = Utils.Append(self.xpIcons, self.azerIcons, self.repIcons)
 	self:HideAllIcons()
 end
 
@@ -273,7 +258,7 @@ end
 function bx:SetFactionIcons(info)
 	self:HideAllIcons()
 	if type(info) == "table" then
-		local hasBonus, hasLfgBonus, isParagon, hasParagonReward = unpack(info)
+		local hasBonus, hasLfgBonus, isParagon, hasParagonReward, isAtWar = unpack(info)
 		if hasBonus then
 			self.repBonusIcon:Show()
 		end
@@ -292,6 +277,9 @@ function bx:SetFactionIcons(info)
 			self.piIcon:Show()
 			self.piGlow:SetShown(hasParagonReward)
 			self.piCheck:SetShown(hasParagonReward)
+		end
+		if isAtWar then
+			self.atWarIcon:Show()
 		end
 	end
 	self:AdjustTextPoint()
