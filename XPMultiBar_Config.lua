@@ -599,7 +599,8 @@ local function GetOptions(uiTypes, uiName, appName)
 				bardesc = {
 					type = "description",
 					order = 0,
-					name = L["Options for XP / reputation / azerite power bars"],
+					name = wowClassic and L["Options for XP / reputation bars"]
+							or L["Options for XP / reputation / azerite power bars"],
 				},
 				xpgroup = {
 					type = "group",
@@ -624,7 +625,8 @@ local function GetOptions(uiTypes, uiName, appName)
 							order = 15,
 							width = 1.5,
 							name = L["Display XP bar icons"],
-							desc = L["Display icons for max. level, disabled XP gain and level cap due to limited account"]
+							desc = wowClassic and L["Display icon for max. player level"]
+									or L["Display icons for max. level, disabled XP gain and level cap due to limited account"],
 						},
 						showmaxlevel = {
 							type = "toggle",
@@ -798,14 +800,16 @@ local function GetOptions(uiTypes, uiName, appName)
 							order = 15,
 							width = 1.5,
 							name = L["Display icons"],
-							desc = L["Display icons for paragon reputation and reputation bonuses"],
+							desc = wowClassic and L["Display icon you are at war with the faction"]
+									or L["Display icons for paragon reputation and reputation bonuses"],
 						},
 						showrepbar = {
 							type = "toggle",
 							order = 20,
 							width = 1.5,
 							name = L["Reputation bar priority"],
-							desc = L["Show the reputation bar over the XP / Azerite bar"],
+							desc = wowClassic and L["Show the reputation bar over the XP bar"]
+									or L["Show the reputation bar over the XP / Azerite bar"],
 						},
 						autowatchrep = {
 							type = "toggle",
@@ -1008,7 +1012,8 @@ local function GetOptions(uiTypes, uiName, appName)
 				bardesc = {
 					type = "description",
 					order = 0,
-					name = L["Format templates for XP / reputation / azerite power bars"],
+					name = wowClassic and L["Format templates for XP and reputation bars"]
+							or L["Format templates for XP / reputation / azerite power bars"],
 				},
 				xpgroup = {
 					type = "group",

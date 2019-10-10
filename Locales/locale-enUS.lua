@@ -1,7 +1,7 @@
 -- This file is generated with ListStrings.ps1
 local L = LibStub("AceLocale-3.0"):NewLocale("XPMultiBar", "enUS", true)
 if not L then return end
----------- Total: 182 ----------
+---------- Total: 187 ----------
 L["Same as Anchor"] = true
 L["Position"] = true
 L["Lock movement"] = true
@@ -56,12 +56,14 @@ L["Show font outline"] = true
 L["Commify"] = true
 L["Insert thousands separators into long numbers"] = true
 L["Bars"] = true
+L["Options for XP / reputation bars"] = true
 L["Options for XP / reputation / azerite power bars"] = true
 L["Experience Bar"] = true
 L["Experience bar related options"] = true
 L["Text format"] = true
 L["Set XP bar text format"] = true
 L["Display XP bar icons"] = true
+L["Display icon for max. player level"] = true
 L["Display icons for max. level, disabled XP gain and level cap due to limited account"] = true
 L["Show at max. level"] = true
 L["Show XP bar at player maximum level"] = true
@@ -93,8 +95,10 @@ L["Set Azerite power bar color"] = true
 L["Reputation Bar"] = true
 L["Reputation bar related options"] = true
 L["Set reputation bar text format"] = true
+L["Display icon you are at war with the faction"] = true
 L["Display icons for paragon reputation and reputation bonuses"] = true
 L["Reputation bar priority"] = true
+L["Show the reputation bar over the XP bar"] = true
 L["Show the reputation bar over the XP / Azerite bar"] = true
 L["Auto watch reputation"] = true
 L["Automatically switch watched faction to one you gain reputation with"] = true
@@ -124,6 +128,7 @@ L["|CFFFFFF20Ctrl|r must be pressed"] = true
 L["|CFFFFFF20Alt|r must be pressed"] = true
 L["|CFFFFFF20Shift|r must be pressed"] = true
 L["Help on format"] = true
+L["Format templates for XP and reputation bars"] = true
 L["Format templates for XP / reputation / azerite power bars"] = true
 L["Current XP value on the level"] = true
 L["Maximum XP value for the current level"] = true
