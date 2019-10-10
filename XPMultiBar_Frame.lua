@@ -64,21 +64,6 @@ local bx = XPMultiBarButtonMixin
 
 -- luacheck: pop
 
--- [[ Local functions ]]
-
-local function tappend(...)
-	local result, num, tbl = {}, 1, {...}
-	for i = 1, #tbl do
-		local t = tbl[i]
-		if t then
-			for j = 1, #t do
-				result[num], num = t[j], num + 1
-			end
-		end
-	end
-	return result
-end
-
 --[[ Frame object mixin methods ]]
 
 function fx:OnLoad()
@@ -146,11 +131,11 @@ end
 --[[ Button object mixin methods ]]
 
 function bx:OnLoad()
-	--[[self.xpIcons = { self.expMaxIcon, self.expStopIcon, self.expCapIcon }
-	self.azerIcons = { self.azerMaxIcon }
-	self.repIcons = { self.piGlow, self.piIcon, self.piCheck, self.lfgBonusIcon, self.repBonusIcon }
-	self.icons = tappend(self.xpIcons, self.azerIcons, self.repIcons)
-	self:HideAllIcons()]]
+	self.xpIcons = { self.expMaxIcon }
+	self.azerIcons = { --[[ no azerite in Classic ]] }
+	self.repIcons = { self.atWarIcon }
+	self.icons = Utils.Append(self.xpIcons, self.azerIcons, self.repIcons)
+	self:HideAllIcons()
 end
 
 function bx:OnClick(button, down)
@@ -213,11 +198,11 @@ function bx:SetBorderColor(color)
 end
 
 function bx:GetVisibleIconWidth()
-	--[[for _, icon in ipairs(self.icons) do
-		if icon ~= self.piGlow and icon ~= self.piCheck and icon:IsVisible() then
-			return icon == self.piIcon and 20 or icon:GetWidth()
+	for _, icon in ipairs(self.icons) do
+		if icon:IsVisible() then
+			return icon:GetWidth()
 		end
-	end]]
+	end
 	return 0
 end
 
@@ -239,24 +224,24 @@ function bx:AdjustTextPoint()
 end
 
 function bx:HideAllIcons()
-	--[[for _, icon in ipairs(self.icons) do
+	for _, icon in ipairs(self.icons) do
 		icon:Hide()
-	end]]
+	end
 end
 
 function bx:SetXPIcons(info)
-	--[[self:HideAllIcons()
+	self:HideAllIcons()
 	if type(info) == "table" then
-		local isMaxLevel, isXPStopped, isLevelCap = unpack(info)
+		local isMaxLevel--[[, isXPStopped, isLevelCap]] = unpack(info)
 		if isMaxLevel then
 			self.expMaxIcon:Show()
-		elseif isXPStopped then
+		--[[elseif isXPStopped then
 			self.expStopIcon:Show()
 		elseif isLevelCap then
-			self.expCapIcon:Show()
+			self.expCapIcon:Show()]]
 		end
 	end
-	self:AdjustTextPoint()]]
+	self:AdjustTextPoint()
 end
 
 function bx:SetAzeriteIcons(info)
@@ -271,10 +256,10 @@ function bx:SetAzeriteIcons(info)
 end
 
 function bx:SetFactionIcons(info)
-	--[[self:HideAllIcons()
+	self:HideAllIcons()
 	if type(info) == "table" then
-		local hasBonus, hasLfgBonus, isParagon, hasParagonReward = unpack(info)
-		if hasBonus then
+		local hasBonus, hasLfgBonus, isParagon, hasParagonReward, isAtWar = unpack(info)
+		--[[if hasBonus then
 			self.repBonusIcon:Show()
 		end
 		if hasLfgBonus then
@@ -292,9 +277,12 @@ function bx:SetFactionIcons(info)
 			self.piIcon:Show()
 			self.piGlow:SetShown(hasParagonReward)
 			self.piCheck:SetShown(hasParagonReward)
+		end]]
+		if isAtWar then
+			self.atWarIcon:Show()
 		end
 	end
-	self:AdjustTextPoint()]]
+	self:AdjustTextPoint()
 end
 
 --[[ Module methods ]]

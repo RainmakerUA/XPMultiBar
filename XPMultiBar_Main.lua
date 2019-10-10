@@ -26,8 +26,8 @@ local unpack = unpack
 local math_ceil = math.ceil
 local math_min = math.min
 
-local wowClassic = XPMultiBar.IsWoWClassic
-local emptyFun = XPMultiBar.EmptyFun
+local wowClassic = Utils.IsWoWClassic
+local emptyFun = function() end
 
 -- WoW globals
 local ChatEdit_GetActiveWindow = ChatEdit_GetActiveWindow
@@ -89,9 +89,8 @@ local function GetPlayerXP()
 	return UnitXP("player")
 end
 
-local function GetXPText(cXP, nXP, remXP, restedXP, level, maxLevel)
+local function GetXPText(cXP, nXP, remXP, restedXP, level, maxLevel, ktl)
 	local nextLevel = level == maxLevel and level or (level + 1)
-	local ktl = Data.GetKTL()
 	local db = Config.GetDB()
 
 	return Utils.MultiReplace(
@@ -208,6 +207,13 @@ function M:OnInitialize()
 	Data = XPMultiBar:GetModule("Data")
 	UI = XPMultiBar:GetModule("UI")
 	Reputation = XPMultiBar:GetModule("Reputation")
+
+	self.xpData = Data:New("XP", true)
+	self.restData = Data:New("XPRested")
+	self.repData = Data:New()
+	if not wowClassic then
+		self.azerData = Data:New("AP")
+	end
 
 	UI:Disable()
 
@@ -522,18 +528,18 @@ end
 
 -- Update XP bar data
 function M:UpdateXPData()
-	Data.UpdateXP(GetPlayerXP(), UnitXPMax("player"))
+	self.xpData:Update(0, GetPlayerXP(), UnitXPMax("player"))
 	self:UpdateXPBar()
 end
 
-function M:UpdateReputationData()
+function M:UpdateReputationBar()
 	local db = Config.GetDB()
 	local repInfo = { Reputation:GetWatchedFactionData() }
 	local repFactionID, repName, repStanding,
 			repStandingText, repStandingColor,
 			repMin, repMax, repValue,
 			hasBonusRep, isLFGBonus,
-			isFactionParagon, hasParagonReward = unpack(repInfo)
+			isFactionParagon, hasParagonReward, isAtWar = unpack(repInfo)
 
 	UI:SetBarTextColor(db.bars.reptext)
 
@@ -549,7 +555,8 @@ function M:UpdateReputationData()
 				hasBonusRep,
 				isLFGBonus,
 				isFactionParagon,
-				hasParagonReward
+				hasParagonReward,
+				isAtWar,
 			} or nil)
 
 	UI:SetMainBarVisible(true)
@@ -569,7 +576,7 @@ function M:UpdateXPBar(event)
 	end
 
 	if bar == Bars.REP then
-		return self:UpdateReputationData()
+		return self:UpdateReputationBar()
 	else
 		UI:SetMainBarVisible(true)
 	end
@@ -592,7 +599,7 @@ function M:UpdateXPBar(event)
 		UI:SetAzeriteInfo(db.bars.azicons and { IsAzeriteItemAtMaxLevel() } or nil)]]
 	else -- if bar == Bars.XP
 		-- GetXPExhaustion() returns nil when no bonus present and 0 on max level
-		local xp, restedXP = Data.GetXP(), GetXPExhaustion() or 0
+		local xp, restedXP = self.xpData:Get(), GetXPExhaustion() or 0
 		local maxLevel, reason = Config.GetPlayerMaxLevel()
 		local level = UnitLevel("player")
 		local isXPStopped = reason == Config.XPLockedReasons.LOCKED_XP
@@ -623,7 +630,7 @@ function M:UpdateXPBar(event)
 		UI:SetXPInfo(db.bars.xpicons and { isMaxLevel, isXPStopped, isLevelCap } or nil)
 
 		txtcol = db.bars.xptext
-		xpText = GetXPText(xp.curr, xp.max, xp.rem, restedXP, level, maxLevel)
+		xpText = GetXPText(xp.curr, xp.max, xp.rem, restedXP, level, maxLevel, self.xpData:GetKTL())
 	end
 
 	UI:SetMainBarValues(math_min(0, currXP), maxXP, currXP)
@@ -634,6 +641,7 @@ function M:UpdateXPBar(event)
 end
 
 function M:LevelUp(event, level)
+	print("LevelUp:", event, level)
 	Bars.UpdateBarSettings({
 		isMaxLevelXP = IsPlayerAtEffectiveMaxLevel(),
 	})

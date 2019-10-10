@@ -11,7 +11,7 @@ local Reputation = XPMultiBar:NewModule("Reputation")
 
 local LibQT = LibStub("LibQTip-1.0")
 
-local wowClassic = XPMultiBar.IsWoWClassic
+local wowClassic = Utils.IsWoWClassic
 local R = Reputation
 
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
@@ -288,6 +288,7 @@ local tags = {
 	plus = [[|TInterface\Buttons\UI-PlusButton-Up:16:16:1:-1|t]],
 	lfgBonus = [[|TInterface\Common\ReputationStar:12:12:0:0:32:32:0:15:0:15|t]],
 	repBonus = [[|TInterface\Common\ReputationStar:12:12:0:0:32:32:16:31:16:31|t]],
+	atWar = [[|TInterface\WorldStateFrame\CombatSwords:16:16:0:0:32:32:0:15:0:15|t]],
 	paragon = [[|A:ParagonReputation_Bag:12:12:0:0|a]],
 	paragonReward = [[|A:ParagonReputation_Bag:12:12:0:0|a|A:ParagonReputation_Checkmark:10:10:-10:0|a]],
 }
@@ -303,7 +304,7 @@ local instructions = {
 
 local function GetFactionReputationData(factionID)
 	local repName, repDesc, repStanding, repMin, repMax, repValue,
-			_--[[atWarWith]], _--[[canToggleAtWar]], isHeader,
+			atWarWith, _--[[canToggleAtWar]], isHeader,
 			isCollapsed, hasRep, isWatched, isChild,
 			_--[[factionID]], hasBonusRep, canBeLFGBonus = GetFactionInfoByID(factionID)
 	local isFactionParagon = false
@@ -362,7 +363,7 @@ local function GetFactionReputationData(factionID)
 
 	return factionID, repName, repStanding, repStandingText, repStandingColor,
 			repMin, repMax, repValue, hasBonusRep, isLFGBonus,
-			isFactionParagon, hasParagonReward,
+			isFactionParagon, hasParagonReward, atWarWith,
 			isHeader, hasRep, isCollapsed, isChild, isWatched, repDesc
 end
 
@@ -427,9 +428,12 @@ local function AcquireRepMenuTooltip(frame, repConfig)
 	return repMenu
 end
 
-local function GetFactionIcons(hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward)
+local function GetFactionIcons(hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward, isAtWar)
 	local icons = ""
 
+	if isAtWar then
+		icons = icons .. tags.atWar
+	end
 	if isLFGBonus then
 		icons = icons .. tags.lfgBonus
 	end
@@ -455,7 +459,7 @@ local function GetReputationFrame(faction, showHeader, commifyNumbers)
 	end
 
 	local _, name, _, standingName, color, min, max, current,
-			hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward = unpack(faction)
+			hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward, isAtWar = unpack(faction)
 	local frame = R.framePool:Acquire()
 	local commify = commifyNumbers and Utils.Commify or tostring
 
@@ -463,7 +467,7 @@ local function GetReputationFrame(faction, showHeader, commifyNumbers)
 
 	if name then
 		if showHeader == 2 then
-			name = name .. "\32" .. GetFactionIcons(hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward)
+			name = name .. "\32" .. GetFactionIcons(hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward, isAtWar)
 		end
 
 		frame:SetHeader(name)
@@ -563,11 +567,11 @@ local function FillReputationMenu(config)
 		local factionInfo = { GetFactionReputationData(factionID) }
 		local _, repName, repStanding, repStandingText, repStandingColor,
 				repMin, repMax, repValue, hasBonusRep, isLFGBonus,
-				isFactionParagon, hasParagonReward,
+				isFactionParagon, hasParagonReward, isAtWar,
 				isHeader, hasRep, isCollapsed, isChild, isWatched, repDesc = unpack(factionInfo)
 				local icons = config.showIcons
-				and GetFactionIcons(hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward)
-				or ""
+								and GetFactionIcons(hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward, isAtWar)
+								or ""
 		local isFavorite = config.favorites[factionID]
 		local instruction
 		--[[

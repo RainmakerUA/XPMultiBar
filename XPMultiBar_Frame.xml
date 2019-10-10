@@ -65,7 +65,14 @@
 								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
 							</Anchors>
 						</Texture>
-						<Texture parentKey="expMaxIcon" file="interface\pvprankbadges\pvprank14.blp">
+						<Texture parentKey="atWarIcon" file="interface\worldstateframe\combatswords.blp">
+							<Size x="16" y="16" />
+							<TexCoords left="0" right="0.5" top="0" bottom="0.5" />
+							<Anchors>
+								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
+							</Anchors>
+						</Texture>
+						<Texture parentKey="expMaxIcon" file="interface\raidframe\readycheck-ready.blp">
 							<Size x="16" y="16" />
 							<Anchors>
 								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />

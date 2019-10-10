@@ -59,7 +59,7 @@ local AceGUIWidgetLSMlists = AceGUIWidgetLSMlists
 -- luacheck: std none
 
 local DB_VERSION_NUM = 822
-local DB_VERSION = "V" .. tostring(DB_VERSION_NUM) .. (XPMultiBar.IsWoWClassic and "C" or "")
+local DB_VERSION = "V" .. tostring(DB_VERSION_NUM) .. (Utils.IsWoWClassic and "C" or "")
 
 local md = {
 	title = GetAddOnMetadata(addonName, "Title"),
@@ -173,7 +173,7 @@ local defaults = {
 		bars = {
 			-- XP bar
 			xpstring = "Exp: [curXP]/[maxXP] ([restPC]) :: [curPC] through [pLVL] lvl :: [needXP] XP left :: [KTL] kills to lvl",
-			--xpicons = true,
+			xpicons = true,
 			indicaterest = true,
 			showremaining = true,
 			showmaxlevel = false,
@@ -184,7 +184,7 @@ local defaults = {
 			--showmaxazerite = false,
 			-- Reputation bar
 			repstring = "Rep: [faction] ([standing]) [curRep]/[maxRep] :: [repPC]",
-			--repicons = true,
+			repicons = true,
 			showrepbar = false,
 			autowatchrep = true,
 			autotrackguild = false,
@@ -627,13 +627,13 @@ local function GetOptions(uiTypes, uiName, appName)
 							desc = L["Set XP bar text format"],
 							width = "full",
 						},
-						--[[xpicons = {
+						xpicons = {
 							type = "toggle",
 							order = 15,
 							width = 1.5,
 							name = L["Display XP bar icons"],
 							desc = L["Display icons for max. level, disabled XP gain and level cap due to limited account"]
-						},]]
+						},
 						showmaxlevel = {
 							type = "toggle",
 							order = 20,
@@ -801,13 +801,13 @@ local function GetOptions(uiTypes, uiName, appName)
 							name = L["Text format"],
 							desc = L["Set reputation bar text format"],
 						},
-						--[[repicons = {
+						repicons = {
 							type = "toggle",
 							order = 15,
 							width = 1.5,
 							name = L["Display icons"],
 							desc = L["Display icons for paragon reputation and reputation bonuses"],
-						},]]
+						},
 						showrepbar = {
 							type = "toggle",
 							order = 20,
