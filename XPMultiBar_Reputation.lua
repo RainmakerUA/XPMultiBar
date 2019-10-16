@@ -206,7 +206,7 @@ function R:OnInitialize()
 
 	-- Secure hook ReputationFrame_Update
 	local mod = self
--- OptionsSmallCheckButtonTemplate
+
 	hooksecurefunc("ReputationFrame_Update", function()
 		mod:OnReputationFrameUpdate()
 	end)
@@ -528,7 +528,7 @@ local function ShowMenuItemTooltip(line, tip)
 		GameTooltip_AddNormalLine(GameTooltip, tip.desc)
 	end
 
-	local isHeader, hasRep = unpack(tip.faction, 13, 14)
+	local isHeader, hasRep = unpack(tip.faction, 14, 15)
 
 	if not isHeader or hasRep then
 		local commify = Config.GetDB().general.commify
@@ -579,7 +579,7 @@ local function FillReputationMenu(config)
 			I	II		III		IV		V
 			[-]	Header text		stand.	icons
 				Fraction name	stand.	icons
-						[-]		Head	stand.	icons
+				[-]		Head	stand.	icons
 						Fract.	stand.	icons
 		]]
 		if isHeader then
@@ -594,9 +594,12 @@ local function FillReputationMenu(config)
 
 			if hasRep then
 				nameColumnSpan = nameColumnSpan - 2
-				instruction = (isWatched and instructions.unwatch or instructions.watch) .. "|n" ..
-								(isFavorite and instructions.unfavorite or instructions.favorite) .. "|n" ..
-								instruction
+				if config.showFavorites then
+					instruction = (isFavorite and instructions.unfavorite or instructions.favorite)
+									.. "|n" .. instruction
+				end
+				instruction = (isWatched and instructions.unwatch or instructions.watch)
+									.. "|n" .. instruction
 			end
 
 			lineNum = repMenu:AddLine()
@@ -612,8 +615,13 @@ local function FillReputationMenu(config)
 			end
 		else
 			local columnForName, nameColumnSpan = 2, 2
-			instruction = (isWatched and instructions.unwatch or instructions.watch) .. "|n" ..
-							(isFavorite and instructions.unfavorite or instructions.favorite)
+			instruction = (isWatched and instructions.unwatch or instructions.watch)
+
+			if config.showFavorites then
+				instruction = instruction .. "|n"
+									.. (isFavorite and instructions.unfavorite or instructions.favorite)
+			end
+
 			if isUnderChildHeader then
 				columnForName, nameColumnSpan = 3, 1
 			end

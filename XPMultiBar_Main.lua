@@ -173,7 +173,6 @@ do
 					end)
 				end
 			end
-
 		end
 
 		local currXP, maxXP = GetAzeriteItemXPInfo(item)
