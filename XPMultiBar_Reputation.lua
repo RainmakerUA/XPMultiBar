@@ -289,8 +289,8 @@ local tags = {
 	lfgBonus = [[|TInterface\Common\ReputationStar:12:12:0:0:32:32:0:15:0:15|t]],
 	repBonus = [[|TInterface\Common\ReputationStar:12:12:0:0:32:32:16:31:16:31|t]],
 	atWar = [[|TInterface\WorldStateFrame\CombatSwords:16:16:0:0:32:32:0:15:0:15|t]],
-	paragon = [[|A:ParagonReputation_Bag:12:12:0:0|a]],
-	paragonReward = [[|A:ParagonReputation_Bag:12:12:0:0|a|A:ParagonReputation_Checkmark:10:10:-10:0|a]],
+	paragon = [[|A:ParagonReputation_Bag:12:10:0:0|a]],
+	paragonReward = [[|A:ParagonReputation_Bag:12:10:0:0|a|A:ParagonReputation_Checkmark:10:10:-10:0|a]],
 }
 
 local instructions = {
