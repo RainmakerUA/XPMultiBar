@@ -34,6 +34,7 @@ local MAX_PLAYER_LEVEL_TABLE = MAX_PLAYER_LEVEL_TABLE
 local _G = _G
 local ipairs = ipairs
 local pairs = pairs
+local print = print
 local tonumber = tonumber
 local tostring = tostring
 local type = type
@@ -53,10 +54,12 @@ end
 
 local AceGUIWidgetLSMlists = AceGUIWidgetLSMlists
 
+-- local _L = Utils.DebugL(L)
+
 -- Remove all known globals after this point
 -- luacheck: std none
 
-local DB_VERSION_NUM = 822
+local DB_VERSION_NUM = 823
 local DB_VERSION = "V" .. tostring(DB_VERSION_NUM) .. (wowClassic and "C" or "")
 
 local md = {
@@ -139,6 +142,8 @@ local frameAnchors = {
 	BOTTOMRIGHT = L["ANCHOR.BOTTOMRIGHT"],
 ]]
 
+local X, A, R = 1, 2, 3
+
 -- Default settings
 local defaults = {
 	profile = {
@@ -163,7 +168,7 @@ local defaults = {
 			border = false,
 			borderTexture = "Blizzard Dialog",
 			borderDynamicColor = true,
-			borderColor = { r = 0.5, g  = 0.5, b = 0.5, a = 1 },
+			borderColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 },
 			bubbles = false,
 			commify = true,
 			hidestatus = true,
@@ -174,16 +179,12 @@ local defaults = {
 			xpicons = true,
 			indicaterest = true,
 			showremaining = true,
-			showmaxlevel = false,
 			-- Azerite bar
 			--azerstr = "[name]: [curXP]/[maxXP] :: [curPC] through level [pLVL] :: [needXP] AP left",
 			--azicons = true,
-			-- showazerbar = true,
-			--showmaxazerite = false,
 			-- Reputation bar
 			repstring = "Rep: [faction] ([standing]) [curRep]/[maxRep] :: [repPC]",
 			repicons = true,
-			showrepbar = false,
 			autowatchrep = true,
 			autotrackguild = false,
 			-- Bar colors
@@ -197,6 +198,20 @@ local defaults = {
 			xptext = { r = 1, g = 1, b = 1, a = 1 },
 			reptext = { r = 1, g = 1, b = 1, a = 1 },
 			--azertext = { r = 1, g = 1, b = 1, a = 1 },
+			-- Bar priority
+			priority = wowClassic
+						and {
+							X, R, 0,
+							0, 0, 0,
+							R, X, 0,
+							0, 0, 0,
+						}
+						or {
+							X, R, 0,
+							X, R, A,
+							A, R, X,
+							R, A, X,
+						},
 		},
 		reputation = {
 			showRepMenu = true,
@@ -227,6 +242,124 @@ local function CreateGetSetColorFunctions(section, postFunc)
 					postFunc(key, col)
 				end
 			end
+end
+
+--[[
+	L["PRIOGROUP_1.NAME"] -> Char. level below maximum, no artifact (HoA)
+	L["PRIOGROUP_1C.NAME"] -> Char. level below maximum
+	L["PRIOGROUP_2.NAME"] -> Char. level below maximum, has artifact (HoA)
+	L["PRIOGROUP_3.NAME"] -> Char. level maximum, artifact power below maximum
+	L["PRIOGROUP_3C.NAME"] -> Char. level maximum
+	L["PRIOGROUP_4.NAME"] -> Char. level maximum, artifact power maximum
+]]
+
+local CreatePriorityGroups
+local SetPrioritiesFromIndex
+
+do
+	local GROUPS = 4
+	local BARS_IN_GROUP = 3
+	local priorities = wowClassic
+						and {
+								{ X, R, 0, 0, 0, 0, R, X, 0, 0, 0, 0, },
+								{},
+								{ R, X, 0, 0, 0, 0, R, X, 0, 0, 0, 0, },
+							}
+						or {
+								{ X, R, 0, X, R, A, A, R, X, R, A, X, },
+								{ X, R, 0, A, R, X, A, R, X, R, A, X, },
+								{ R, X, 0, R, X, A, R, A, X, R, A, X, },
+							}
+
+	local function getIndex(key)
+		local s1, s2 = key:match("^pg_(%d)_bar_(%d)$")
+		local i1, i2 = tonumber(s1), tonumber(s2)
+		return (i1 - 1) * BARS_IN_GROUP + i2
+	end
+
+	local function printWrongIndex(index)
+		print("|cFFFFFF00[XPMultiBar]:|r", Utils.Text.GetError(L["Priority group index is wrong: %d"]:format(index)))
+	end
+
+	local function updateBars(prio)
+		configChangedEvent("priority", prio)
+	end
+
+	local function get(info)
+		local index = getIndex(info[#info])
+		if index >= 1 and index <= BARS_IN_GROUP * GROUPS then
+			return db.bars.priority[index]
+		else
+			printWrongIndex(index)
+			return 0
+		end
+	end
+
+	local function set(info, value)
+		local index = getIndex(info[#info])
+		if index >= 1 and index <= BARS_IN_GROUP * GROUPS then
+			db.bars.priority[index] = value
+			updateBars(db.bars.priority)
+		else
+			printWrongIndex(index)
+		end
+	end
+
+	CreatePriorityGroups = function()
+		local bars = {
+			[0] = L["Off"],
+			[X] = L["Experience Bar"],
+			[A] = (not wowClassic) and L["Azerite Bar"] or nil,
+			[R] = L["Reputation Bar"],
+		}
+		local result = {}
+
+		for i = 1, GROUPS do
+			result["prioritygroup" .. i] = (not wowClassic or i % 2 == 1) and {
+				type = "group",
+				order = (i + 1) * 100,
+				name = L["PRIOGROUP_" .. i .. (wowClassic and "C" or "") .. ".NAME"],
+				guiInline = true,
+				width = "full",
+				get = get,
+				set = set,
+				args = {
+					["pg_" .. i .. "_bar_1"] = {
+						order = 1000,
+						type = "select",
+						width = wowClassic and 1.5 or 1,
+						name = L["Normal"],
+						desc = L["Choose bar to be shown when mouse is not over the bar"],
+						values = bars,
+					},
+					["pg_" .. i .. "_bar_2"] = {
+						order = 2000,
+						type = "select",
+						width = wowClassic and 1.5 or 1,
+						name = L["Mouse over"],
+						desc = L["Choose bar to be shown when mouse is over the bar"],
+						values = bars,
+					},
+					["pg_" .. i .. "_bar_3"] = (not wowClassic) and {
+						order = 3000,
+						type = "select",
+						name = L["Mouse over with |CFFFFFF20Alt|r"],
+						desc = L["Choose bar to be shown when mouse is over the bar while |CFFFFFF20Alt|r key is pressed"],
+						values = bars,
+					} or nil,
+				},
+			} or nil
+		end
+
+		return result
+	end
+
+	SetPrioritiesFromIndex = function(index)
+		return function()
+			db.bars.priority = Utils.Clone(priorities[index] or priorities[1])
+			updateBars(db.bars.priority)
+		end
+	end
 end
 
 local function CreateGroupItems(description, items, keyMap)
@@ -547,7 +680,6 @@ local function GetOptions(uiTypes, uiName, appName)
 					type = "group",
 					order = 30,
 					name = L["Text"],
-					--guiInline = true,
 					width = "full",
 					args = {
 						font = {
@@ -628,18 +760,11 @@ local function GetOptions(uiTypes, uiName, appName)
 						},
 						xpicons = {
 							type = "toggle",
-							order = 15,
+							order = 35,
 							width = 1.5,
-							name = L["Display XP bar icons"],
+							name = L["Display icons"],
 							desc = wowClassic and L["Display icon for max. player level"]
 									or L["Display icons for max. level, disabled XP gain and level cap due to limited account"],
-						},
-						showmaxlevel = {
-							type = "toggle",
-							order = 20,
-							width = 1.5,
-							name = L["Show at max. level"],
-							desc = L["Show XP bar at player maximum level"],
 						},
 						indicaterest = {
 							type = "toggle",
@@ -741,13 +866,6 @@ local function GetOptions(uiTypes, uiName, appName)
 							name = L["Display icons"],
 							desc = L["Display icons for maximum Heart level"]
 						},
-						showmaxazerite = {
-							type = "toggle",
-							order = 30,
-							width = 1.5,
-							name = L["Show at max. level"],
-							desc = L["Show azerite bar at Heart maximum level"],
-						},
 						azercolorgroup = {
 							type = "group",
 							order = 40,
@@ -775,12 +893,6 @@ local function GetOptions(uiTypes, uiName, appName)
 								},
 							},
 						},
-						azerDisplayDesc = {
-							type = "description",
-							order = 50,
-							fontSize = "medium",
-							name = L["HELP.AZBARDISPLAY"],
-						},
 					},
 				},]]
 				repgroup = {
@@ -803,19 +915,11 @@ local function GetOptions(uiTypes, uiName, appName)
 						},
 						repicons = {
 							type = "toggle",
-							order = 15,
+							order = 45,
 							width = 1.5,
 							name = L["Display icons"],
 							desc = wowClassic and L["Display icon you are at war with the faction"]
 									or L["Display icons for paragon reputation and reputation bonuses"],
-						},
-						showrepbar = {
-							type = "toggle",
-							order = 20,
-							width = 1.5,
-							name = L["Reputation bar priority"],
-							desc = wowClassic and L["Show the reputation bar over the XP bar"]
-									or L["Show the reputation bar over the XP / Azerite bar"],
 						},
 						autowatchrep = {
 							type = "toggle",
@@ -860,6 +964,48 @@ local function GetOptions(uiTypes, uiName, appName)
 						},
 					},
 				},
+				priogroup = {
+					type = "group",
+					order = 40,
+					name = L["Bar Priority"],
+					width = "full",
+					args = Utils.Merge( {
+								buttongroup = {
+									type = "group",
+									order = 900,
+									name = L["Activate preset"],
+									guiInline = true,
+									width = "full",
+									args = {
+										setDefaultPrio = {
+											type = "execute",
+											order = 1000,
+											width = wowClassic and 1.5 or 1,
+											name = L["XP bar priority"],
+											desc = L["Activate preset with priority for XP bar display"],
+											func = SetPrioritiesFromIndex(1)
+										},
+										setAzeritePrio = (not wowClassic) and {
+											type = "execute",
+											order = 2000,
+											name = L["Azerite bar priority"],
+											desc = L["Activate preset with priority for Azerite power bar display (when it is available)"],
+											func = SetPrioritiesFromIndex(2)
+										} or nil,
+										setReputationPrio = {
+											type = "execute",
+											order = 3000,
+											width = wowClassic and 1.5 or 1,
+											name = L["Reputation bar priority"],
+											desc = L["Activate preset with priority for Reputation bar display"],
+											func = SetPrioritiesFromIndex(3)
+										},
+									},
+								},
+							},
+							CreatePriorityGroups()
+						),
+				}
 			},
 		}
 	end
@@ -1127,6 +1273,14 @@ local function MigrateSettings(sv)
 					data.general.borderStyle = nil
 				end
 			end
+			-- Bar priority
+			if dbVer < 823 then
+				local bars = data.bars
+				--[[ No migration ]]
+				bars.showmaxlevel = nil
+				bars.showmaxazerite = nil
+				bars.showrepbar = nil
+			end
 		end
 	end
 
@@ -1138,7 +1292,6 @@ C.EVENT_PROFILE_CHANGED = "ProfileChanged"
 
 C.XPLockedReasons = xpLockedReasons
 C.MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL_TABLE[GetExpansionLevel()]
-C.Anchors = frameAnchors
 C.NoAnchor = ""
 
 C.OpenSettings = OpenSettings

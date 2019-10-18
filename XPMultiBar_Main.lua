@@ -173,7 +173,6 @@ do
 					end)
 				end
 			end
-
 		end
 
 		local currXP, maxXP = GetAzeriteItemXPInfo(item)
@@ -281,9 +280,7 @@ function M:OnInitialize()
 		xpicons = onDisplayIconsUpdated,
 		azicons = onDisplayIconsUpdated,
 		repicons = onDisplayIconsUpdated,
-		showmaxlevel = onBarSettingsUpdated,
-		showrepbar = onBarSettingsUpdated,
-		showmaxazerite = onBarSettingsUpdated,
+		priority = onBarSettingsUpdated,
 		exaltedColor = { Reputation.SetExaltedColor, true, ["self"] = Reputation }
 	}
 
@@ -352,7 +349,7 @@ function M:OnEnable()
 	UI:EnableEx(db.general.hidestatus)
 
 	-- Update bars
-	self:UpdateBarSettings(db.bars)
+	self:UpdateBarSettings(db.bars.priority)
 	self:SetBars(false)
 
 	self:UpdateXPData()
@@ -379,7 +376,7 @@ function M:OnProfileChanged(db, skipBarUpdate)
 	UI:ShowBubbles(db.general.bubbles)
 	self:SetTexture(db.general.texture)
 	self:SetFontOptions(db.general)
-	self:UpdateBarSettings(db.bars)
+	self:UpdateBarSettings(db.bars.priority)
 	self:SetBars(false)
 	Reputation:SetExaltedColor(db.bars.exalted)
 
@@ -465,16 +462,14 @@ function M:SetFontOptions(general)
 	UI:SetFontOptions(font, general.fontsize, general.fontoutline)
 end
 
-function M:UpdateBarSettings(bars)
-	if type(bars) ~= "table" then
-		bars = Config.GetDB().bars
+function M:UpdateBarSettings(prio)
+	if type(prio) ~= "table" then
+		prio = Config.GetDB().bars.priority
 	end
 
-	-- showMaxLevelXP, showMaxLevelAzerite, showRepPriority, isMaxLevelXP, hasAzerite, isMaxLevelAzerite
+	-- priority[12], isMaxLevelXP, hasAzerite, isMaxLevelAzerite
 	Bars.UpdateBarSettings({
-		showMaxLevelXP = bars.showmaxlevel,
-		showMaxLevelAzerite = bars.showmaxazerite,
-		showRepPriority = bars.showrepbar,
+		priority = prio,
 		isMaxLevelXP = IsPlayerAtEffectiveMaxLevel(),
 		hasAzerite = HasActiveAzeriteItem(),
 		isMaxLevelAzerite = IsAzeriteItemAtMaxLevel(),
@@ -641,7 +636,6 @@ function M:UpdateXPBar(event)
 end
 
 function M:LevelUp(event, level)
-	print("LevelUp:", event, level)
 	Bars.UpdateBarSettings({
 		isMaxLevelXP = IsPlayerAtEffectiveMaxLevel(),
 	})
