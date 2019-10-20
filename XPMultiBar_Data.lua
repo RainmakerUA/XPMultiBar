@@ -61,24 +61,37 @@ function dataPrototype:GetKTL()
 	return math_ceil(self.data.rem / avgxp)
 end
 
+function dataPrototype:ClearKTL()
+	self.lastXPValues = {}
+	self.sessionKills = 0
+end
+
 function dataPrototype:Update(name, level, current, maximum, extra)
 	if type(name) == "number" then
 		name, level, current, maximum, extra = nil, name, level, current, maximum
 	end
 
-	local prevXP = self.data.curr or 0
 	local prevName = self.data.name
+	local prevLevel = self.data.level or 0
+	local prevXP = self.data.curr or 0
 	self.data.name = name
 	self.data.level = level
 	self.data.curr = current
 	self.data.max = maximum
 	self.data.rem = maximum - current
-	self.data.diff = self.tracking and (not name or name == prevName) and (current - prevXP) or 0
 	self.data.extra = extra
 
-	if self.tracking and self.data.diff > 0 and prevXP > 0 then
-		self.lastXPValues[(self.sessionKills % 10) + 1] = self.data.diff
-		self.sessionKills = self.sessionKills + 1
+	if self.tracking then
+		if not name or name == prevName then
+			local diff = (not level or level == prevLevel) and (current - prevXP) or current
+			self.data.diff = diff
+			if diff > 0 then
+				self.sessionKills = self.sessionKills % 10 + 1
+				self.lastXPValues[self.sessionKills] = diff
+			end
+		else
+			self:ClearKTL()
+		end
 	end
 end
 
