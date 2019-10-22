@@ -1,7 +1,7 @@
 -- This file is generated with ListStrings.ps1
 local L = LibStub("AceLocale-3.0"):NewLocale("XPMultiBar", "enUS", true)
 if not L then return end
----------- Total: 200 ----------
+---------- Total: 201 ----------
 L["Priority group index is wrong: %d"] = true
 L["Off"] = true
 L["Experience Bar"] = true
@@ -100,10 +100,6 @@ L["Reputation bar related options"] = true
 L["Set reputation bar text format"] = true
 L["Display icon you are at war with the faction"] = true
 L["Display icons for paragon reputation and reputation bonuses"] = true
-L["Auto watch reputation"] = true
-L["Automatically switch watched faction to one you gain reputation with"] = true
-L["Auto watch guild reputation"] = true
-L["Automatically track your guild reputation increases"] = true
 L["Reputation text"] = true
 L["Set reputation text color"] = true
 L["Set exalted reputation bar color"] = true
@@ -116,6 +112,11 @@ L["Activate preset with priority for Azerite power bar display (when it is avail
 L["Reputation bar priority"] = true
 L["Activate preset with priority for Reputation bar display"] = true
 L["Settings for reputation menu and favorite factions"] = true
+L["Tracking"] = true
+L["Auto track reputation"] = true
+L["Automatically switch watched faction to one you gain reputation with"] = true
+L["Auto track guild reputation"] = true
+L["Automatically track your guild reputation increases"] = true
 L["Reputation Menu"] = true
 L["Show reputation menu"] = true
 L["Show reputation menu instead of standard Reputation window when |CFFFFFF20Ctrl+Right Button|r on the panel"] = true

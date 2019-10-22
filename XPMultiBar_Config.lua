@@ -180,8 +180,6 @@ local defaults = {
 			-- Reputation bar
 			repstring = "Rep: [faction] ([standing]) [curRep]/[maxRep] :: [repPC]",
 			repicons = true,
-			autowatchrep = true,
-			autotrackguild = false,
 			-- Bar colors
 			normal = { r = 0.8, g = 0, b = 1, a = 1 },
 			rested = { r = 0, g = 0.4, b = 1, a = 1 },
@@ -209,6 +207,8 @@ local defaults = {
 						},
 		},
 		reputation = {
+			autowatchrep = false,
+			autotrackguild = false,
 			showRepMenu = true,
 			menuScale = 1,
 			menuAutoHideDelay = 2,
@@ -916,20 +916,6 @@ local function GetOptions(uiTypes, uiName, appName)
 							desc = wowClassic and L["Display icon you are at war with the faction"]
 									or L["Display icons for paragon reputation and reputation bonuses"],
 						},
-						autowatchrep = {
-							type = "toggle",
-							order = 30,
-							width = 1.5,
-							name = L["Auto watch reputation"],
-							desc = L["Automatically switch watched faction to one you gain reputation with"],
-						},
-						autotrackguild = {
-							type = "toggle",
-							order = 40,
-							width = 1.5,
-							name = L["Auto watch guild reputation"],
-							desc = L["Automatically track your guild reputation increases"],
-						},
 						repcolorgroup = {
 							type = "group",
 							order = 50,
@@ -1018,9 +1004,32 @@ local function GetOptions(uiTypes, uiName, appName)
 					order = 0,
 					name = L["Settings for reputation menu and favorite factions"],
 				},
-				repMenuGroup = {
+				trackinggroup = {
 					type = "group",
 					order = 10,
+					name = L["Tracking"],
+					guiInline = true,
+					width = "full",
+					args = {
+						autowatchrep = {
+							type = "toggle",
+							order = 100,
+							width = 1.5,
+							name = L["Auto track reputation"],
+							desc = L["Automatically switch watched faction to one you gain reputation with"],
+						},
+						autotrackguild = {
+							type = "toggle",
+							order = 200,
+							width = 1.5,
+							name = L["Auto track guild reputation"],
+							desc = L["Automatically track your guild reputation increases"],
+						},
+					},
+				},
+				repMenuGroup = {
+					type = "group",
+					order = 30,
 					name = L["Reputation Menu"],
 					guiInline = true,
 					width = "full",
@@ -1080,7 +1089,7 @@ local function GetOptions(uiTypes, uiName, appName)
 				},
 				favRepGroup = {
 					type = "group",
-					order = 20,
+					order = 40,
 					name = L["Favorite Factions"],
 					guiInline = true,
 					width = "full",
@@ -1230,6 +1239,16 @@ local function GetOptions(uiTypes, uiName, appName)
 	end
 end
 
+local slashCmd = "xpbar"
+
+local appNames = {
+	main = addonName,
+	bars = addonName .. "-Bars",
+	reputation = addonName .. "-Reputation",
+	help = addonName .. "-Help",
+	profiles = addonName .. "-Profiles",
+}
+
 local function OpenSettings()
 	--[[
 		First opening Bars subcategory should expand addon options,
@@ -1238,6 +1257,15 @@ local function OpenSettings()
 	]]
 	InterfaceOptionsFrame_OpenToCategory(L["Bars"])
 	InterfaceOptionsFrame_OpenToCategory(md.title)
+end
+
+local function HandleChatCommand(input)
+	input = (input or ""):trim()
+	if input == "" then
+		OpenSettings()
+	else
+		-- TODO:
+	end
 end
 
 local function MigrateSettings(sv)
@@ -1268,13 +1296,23 @@ local function MigrateSettings(sv)
 					data.general.borderStyle = nil
 				end
 			end
-			-- Bar priority
 			if dbVer < 823 then
+				-- Bar priority
 				local bars = data.bars
-				--[[ No migration ]]
-				bars.showmaxlevel = nil
-				bars.showmaxazerite = nil
-				bars.showrepbar = nil
+				if bars then
+					--[[ No migration ]]
+					bars.showmaxlevel = nil
+					bars.showmaxazerite = nil
+					bars.showrepbar = nil
+					-- AutoTracking settings
+					local rep = data.reputation
+					if rep then
+						rep.autowatchrep = bars.autowatchrep
+						rep.autotrackguild = bars.autotrackguild
+						bars.autowatchrep = nil
+						bars.autotrackguild = nil
+					end
+				end
 			end
 		end
 	end
@@ -1329,23 +1367,21 @@ function C:OnInitialize()
 
 	local myName = md.title
 
-	ACRegistry:RegisterOptionsTable(addonName, GetOptions)
-	ACRegistry:RegisterOptionsTable(addonName .. "-Bars", GetOptions)
-	ACRegistry:RegisterOptionsTable(addonName .. "-Reputation", GetOptions)
-	ACRegistry:RegisterOptionsTable(addonName .. "-Help", GetOptions)
+	ACRegistry:RegisterOptionsTable(appNames.main, GetOptions)
+	ACRegistry:RegisterOptionsTable(appNames.bars, GetOptions)
+	ACRegistry:RegisterOptionsTable(appNames.reputation, GetOptions)
+	ACRegistry:RegisterOptionsTable(appNames.help, GetOptions)
 
 	local popts = ADBO:GetOptionsTable(self.db)
-	ACRegistry:RegisterOptionsTable(addonName .. "-Profiles", popts)
+	ACRegistry:RegisterOptionsTable(appNames.profiles, popts)
 
-	ACDialog:AddToBlizOptions(addonName, myName)
-	ACDialog:AddToBlizOptions(addonName .. "-Bars", L["Bars"], myName)
-	ACDialog:AddToBlizOptions(addonName .. "-Reputation", REPUTATION, myName)
-	ACDialog:AddToBlizOptions(addonName .. "-Profiles", L["Profiles"], myName)
-	ACDialog:AddToBlizOptions(addonName .. "-Help", L["Help on format"], myName)
+	ACDialog:AddToBlizOptions(appNames.main, myName)
+	ACDialog:AddToBlizOptions(appNames.bars, L["Bars"], myName)
+	ACDialog:AddToBlizOptions(appNames.reputation, REPUTATION, myName)
+	ACDialog:AddToBlizOptions(appNames.profiles, L["Profiles"], myName)
+	ACDialog:AddToBlizOptions(appNames.help, L["Help on format"], myName)
 
-	--[[ TODO: Help tab ]]
-
-	self:RegisterChatCommand("xpbar", OpenSettings)
+	self:RegisterChatCommand(slashCmd, HandleChatCommand)
 
 	self.db.RegisterCallback(self, "OnProfileChanged", self.EVENT_PROFILE_CHANGED)
 	self.db.RegisterCallback(self, "OnProfileCopied", self.EVENT_PROFILE_CHANGED)

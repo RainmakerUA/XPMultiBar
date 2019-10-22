@@ -326,7 +326,7 @@ function M:OnEnable()
 		self:RegisterEvent("AZERITE_ITEM_EXPERIENCE_CHANGED", "UpdateXPBar")
 	end
 
-	if db.bars.autowatchrep then
+	if db.reputation.autowatchrep then
 		self:RegisterEvent("COMBAT_TEXT_UPDATE")
 	end
 
@@ -507,8 +507,8 @@ function M:COMBAT_TEXT_UPDATE(event, msgtype)
 	local db = Config.GetDB()
 
 	-- If we are watching reputations automatically
-	if db.bars.autowatchrep then
-		Reputation:SetWatchedFaction(factionName, amount, db.bars.autotrackguild)
+	if db.reputation.autowatchrep then
+		Reputation:SetWatchedFaction(factionName, amount, db.reputation.autotrackguild)
 	end
 end
 
@@ -648,9 +648,9 @@ function M:ToggleBarTooltip(isMouseOver, isCtrl, isAlt, isShift)
 	local rep = db.reputation
 	local needAlt, needCtrl, needShift = rep.showFavoritesModAlt, rep.showFavoritesModCtrl, rep.showFavoritesModShift
 	local willShow = rep.showFavorites and (rep.showFavInCombat or not InCombatLockdown())
-	willShow = willShow and (isAlt or not needAlt)
-	willShow = willShow and (isCtrl or not needCtrl)
-	willShow = willShow and (isShift or not needShift)
+						and (isAlt or not needAlt)
+						and (isCtrl or not needCtrl)
+						and (isShift or not needShift)
 	if willShow then
 		Reputation:ToggleBarTooltip(isMouseOver, rep.favorites, db.general.commify)
 	end

@@ -1,7 +1,7 @@
 -- This file is generated with ListStrings.ps1
 local L = LibStub("AceLocale-3.0"):NewLocale("XPMultiBar", "ruRU")
 if not L then return end
----------- Total: 200 ----------
+---------- Total: 201 ----------
 L["Priority group index is wrong: %d"] = "Неверный индекс группы приоритетов: %d"
 L["Off"] = "Нет"
 L["Experience Bar"] = "Полоса опыта"
@@ -100,10 +100,6 @@ L["Reputation bar related options"] = "Настройки полосы репу�
 L["Set reputation bar text format"] = "Задать формат текста полосы репутации"
 L["Display icon you are at war with the faction"] = "Отображать на панели значок когда фракция отмечена как неприятель"
 L["Display icons for paragon reputation and reputation bonuses"] = "Отображать на панели значки для награды за превознесение (Paragon) и бонусов к репутации"
-L["Auto watch reputation"] = "Авто-отслеживание"
-L["Automatically switch watched faction to one you gain reputation with"] = "Автоматически переключать отслеживание на фракцию, с которой вы улучшаете репутацию"
-L["Auto watch guild reputation"] = "Отслеживать репутацию в гильдии"
-L["Automatically track your guild reputation increases"] = "Автоматически отслеживать улучшение вашей репутации в гильдии"
 L["Reputation text"] = "Текст репутации"
 L["Set reputation text color"] = "Задать цвет текста полосы репутации"
 L["Set exalted reputation bar color"] = "Задать цвет полосы репутации при превознесении"
@@ -116,6 +112,11 @@ L["Activate preset with priority for Azerite power bar display (when it is avail
 L["Reputation bar priority"] = "Приоритет репутации"
 L["Activate preset with priority for Reputation bar display"] = "Активировать настройки с приоритетом отображения полосы репутации"
 L["Settings for reputation menu and favorite factions"] = "Настройки меню репутации и избранных фракций"
+L["Tracking"] = "Отслеживание"
+L["Auto track reputation"] = "Авто-отслеживание репутации"
+L["Automatically switch watched faction to one you gain reputation with"] = "Автоматически переключать отслеживание на фракцию, с которой вы улучшаете репутацию"
+L["Auto track guild reputation"] = "Отслеживание репутации в гильдии"
+L["Automatically track your guild reputation increases"] = "Автоматически отслеживать улучшение вашей репутации в гильдии"
 L["Reputation Menu"] = "Меню репутации"
 L["Show reputation menu"] = "Отображать меню репутации"
 L["Show reputation menu instead of standard Reputation window when |CFFFFFF20Ctrl+Right Button|r on the panel"] = "Отображать меню репутации вместо стандартного окна репутации при нажатии |CFFFFFF20Ctrl+ПКМ|r на панели"
