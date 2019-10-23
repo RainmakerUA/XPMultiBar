@@ -168,8 +168,8 @@ function bx:OnDragStop()
 	end
 end
 
-function bx:OnUpdate()
-	--[[if self.piGlow:IsShown() then
+--[[function bx:OnUpdate()
+	if self.piGlow:IsShown() then
 		local alpha
 		local time = GetTime()
 		local value = time - math_floor(time)
@@ -182,8 +182,8 @@ function bx:OnUpdate()
 		end
 
 		self.piGlow:SetAlpha(alpha)
-	end]]
-end
+	end
+end]]
 
 function bx:SetBorderTexture(texture, color)
 	local bd = self:GetBackdrop()

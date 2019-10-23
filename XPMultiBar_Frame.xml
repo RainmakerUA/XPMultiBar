@@ -33,7 +33,7 @@
 				<BarTexture parentKey="tex" file="Interface\AddOns\XPMultiBar\Textures\bubbles" />
 				<BarColor r="0" g="0" b="0" a="0.5" />
 			</StatusBar>
-			<Button parentKey="button" mixin="XPMultiBarButtonMixin" setAllPoints="true" inherits="SecureActionButtonTemplate">
+			<Button parentKey="button" mixin="XPMultiBarButtonMixin" setAllPoints="true">
 				<Backdrop edgeFile="Interface\FriendsFrame\UI-Toast-Border" alphaMode="BLEND">
 					<EdgeSize>
 						<AbsValue val="10"/>
@@ -114,12 +114,11 @@
 				</Layers>
 				<Scripts>
 					<OnLoad method="OnLoad" />
-					<PostClick method="PostClick" />
+					<OnClick method="OnClick" />
 					<OnDragStart method="OnDragStart" />
 					<OnDragStop method="OnDragStop" />
 					<OnEnter method="OnEnter" />
 					<OnLeave method="OnLeave" />
-					<!-- <OnUpdate method="OnUpdate" /> -->
 				</Scripts>
 			</Button>
 		</Frames>

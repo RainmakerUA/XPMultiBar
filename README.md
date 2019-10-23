@@ -21,8 +21,6 @@ Highly customizable bar displaying XP, reputation and azerite artifact power.
 - Color configuration.
 - Optional icon for maximum azerite level.
 
-Before reaching the maximum level azerite power bar can be displayed by hovering mouse over the bar while *Alt* key is pressed.
-
 #### **Reputation Bar:**
 
 - Text display configuration using templates.
@@ -30,6 +28,8 @@ Before reaching the maximum level azerite power bar can be displayed by hovering
 - Automatic faction switch when reputation is increased (automatic watch).
 - Mouse click combo on the bar for faction selection.
 - Optional icons for faction reputation bonus and paragon reputation award.
+
+Customizable setup of bar priority depending on character status.
 
 #### **Reputation Menu:**
 
