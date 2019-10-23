@@ -23,7 +23,7 @@
 		</Anchors>
 		<Scripts>
 			<OnLoad method="OnLoad" />
-			<OnUpdate method="OnUpdate" />
+			<!-- <OnUpdate method="OnUpdate" /> -->
 		</Scripts>
 		<Frames>
 			<StatusBar parentKey="background" inherits="XPMultiBarInnerBarTemplate" />
