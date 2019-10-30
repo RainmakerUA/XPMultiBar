@@ -398,8 +398,9 @@ function M:OnBarEvent(event, ...)
 end
 
 function M:OnButtonClick(button, ctrl, alt, shift)
-	-- Paste currently displayed text to edit box on Shift-LeftClick
-	if shift and button == "LeftButton" then
+	local action = Config.GetActionOrProcessSettings(button, ctrl, alt, shift)
+	if action == "linktext" then
+		-- Paste currently displayed text to edit box (Shift-LeftClick)
 		local activeWin = ChatEdit_GetActiveWindow()
 		if not activeWin then
 			activeWin = ChatEdit_GetLastActiveWindow()
@@ -407,15 +408,11 @@ function M:OnButtonClick(button, ctrl, alt, shift)
 		end
 		activeWin:SetFocus()
 		activeWin:Insert(UI:GetBarText())
-	end
-
-	-- Display options on Shift-RightClick
-	if shift and button == "RightButton" then
+	elseif action == "settings" then
+		-- Display options on Shift-RightClick
 		Config.OpenSettings()
-	end
-
-	-- Display Reputation menu on Ctrl-RightClick
-	if ctrl and button == "RightButton" and not InCombatLockdown() then
+	elseif action == "repmenu" and not InCombatLockdown() then
+		-- Display Reputation menu on Ctrl-RightClick
 		self:ShowReputationList()
 	end
 end
