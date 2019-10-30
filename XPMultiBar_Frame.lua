@@ -87,9 +87,6 @@ function fx:OnLoad()
 	self.button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 end
 
-function fx:Update(time)
-end
-
 function fx:SetBarValues(barKey, min, max, value)
 	local bar = self[barKey]
 	bar:SetMinMaxValues(min, max)

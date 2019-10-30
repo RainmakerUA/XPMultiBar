@@ -12,6 +12,7 @@
 		]
 	},
 	"exclude": [
+		"MasterModule\\",
 		"ListStrings.ps1",
 		"README.md",
 		"*.new",

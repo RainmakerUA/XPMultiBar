@@ -23,7 +23,6 @@
 		</Anchors>
 		<Scripts>
 			<OnLoad method="OnLoad" />
-			<!-- <OnUpdate method="OnUpdate" /> -->
 		</Scripts>
 		<Frames>
 			<StatusBar parentKey="background" inherits="XPMultiBarInnerBarTemplate" />
@@ -119,6 +118,7 @@
 					<OnDragStop method="OnDragStop" />
 					<OnEnter method="OnEnter" />
 					<OnLeave method="OnLeave" />
+					<OnUpdate method="OnUpdate" />
 				</Scripts>
 			</Button>
 		</Frames>

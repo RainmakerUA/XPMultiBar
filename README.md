@@ -29,7 +29,7 @@ Highly customizable bar displaying XP, reputation and azerite artifact power.
 - Mouse click combo on the bar for faction selection.
 - Optional icons for faction reputation bonus and paragon reputation award.
 
-Customizable setup of bar priority depending on character status.
+#### **Customizable setup of bar priority depending on character status.**
 
 #### **Reputation Menu:**
 
