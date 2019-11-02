@@ -422,7 +422,7 @@ function M:OnSavePosition(position)
 
 	gen.anchor = position.anchor
 	gen.anchorRelative = (position.anchor == position.anchorRel)
-							and Config.NoAnchor
+							and Config.Empty
 							or position.anchorRel
 	gen.posx = position.x
 	gen.posy = position.y
@@ -435,7 +435,7 @@ function M:SetPosition(general)
 
 	local position = {
 		anchor = general.anchor,
-		anchorRel = general.anchorRelative == Config.NoAnchor
+		anchorRel = general.anchorRelative == Config.Empty
 							and general.anchor
 							or general.anchorRelative,
 		x = general.posx,

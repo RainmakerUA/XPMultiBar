@@ -4,7 +4,7 @@
 		Initialization module for XPMultiBar addon
 --]=====]
 
-local addonName = ...
+local addonName, addonTable = ...
 local XPMultiBar = LibStub("AceAddon-3.0"):NewAddon(addonName)
 local Utils = LibStub("rmUtils-1.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
@@ -15,6 +15,10 @@ local print = print
 
 -- Remove all known globals after this point
 -- luacheck: std none
+
+if addonTable.master then
+	addonTable.master(XPMultiBar)
+end
 
 function XPMultiBar:OnInitialize()
 	--@debug@

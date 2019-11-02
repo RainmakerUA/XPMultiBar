@@ -153,15 +153,15 @@ local frameAnchors = {
 
 local slashCmd = "xpbar"
 
-local empty = ""
+local empty = "-"
 
 local appNames = {
-	main = addonName,
-	general = addonName .. "-General",
-	bars = addonName .. "-Bars",
-	reputation = addonName .. "-Reputation",
-	help = addonName .. "-Help",
-	profiles = addonName .. "-Profiles",
+	main = { addonName, nil },
+	general = { addonName .. "-General", L["General"] },
+	bars = { addonName .. "-Bars", L["Bars"] },
+	reputation = { addonName .. "-Reputation", REPUTATION },
+	help = { addonName .. "-Help", L["Help"] },
+	profiles = { addonName .. "-Profiles", L["Profiles"] },
 }
 
 -- Bar codes
@@ -186,7 +186,7 @@ local defaults = {
 			clamptoscreen = true,
 			strata = "LOW",
 			anchor = frameAnchors.BOTTOM,
-			anchorRelative = "",
+			anchorRelative = empty,
 			posx = 0,
 			posy = 0,
 			width = 1028,
@@ -278,7 +278,7 @@ local defaults = {
 	}
 }
 
-local GetOptions
+local GetOptions, GetHelp
 
 do
 	local GROUPS = 4
@@ -363,6 +363,8 @@ do
 		locked = [[|Tinterface\petbattles\petbattle-lockicon:17:19:-4:0|t]]
 	}
 
+	local optionsTrace
+
 	local function FormatDate(dateMeta)
 		if tonumber(dateMeta) then
 			local year = tonumber(dateMeta:sub(1, 4))
@@ -375,7 +377,7 @@ do
 	end
 
 	local function FormatKeyColor(name)
-		return ("|CFFFFFF20%s|r"):format(name)
+		return Utils.Text.GetKey(name)
 	end
 
 	local function GetIndex(key)
@@ -551,7 +553,7 @@ do
 			elseif key == "actionChoose" then
 				return config.action or empty
 			elseif key == "actionEdit" then
-				return config.actionText or empty
+				return config.actionText or ""
 			end
 		end
 	end
@@ -660,7 +662,7 @@ do
 							order = 10,
 							type = "select",
 							width = "full",
-							name = "", --L[""],
+							name = "",
 							desc = L["Choose click action"],
 							values = actions,
 						},
@@ -668,7 +670,7 @@ do
 							order = 20,
 							type = "input",
 							width = "full",
-							name = "", --L[""],
+							name = "",
 							desc = L["Enter settings action text"],
 							hidden = function() return config.action ~= empty end,
 						},
@@ -678,7 +680,7 @@ do
 		}
 	end
 
-	local function CreateGroupItems(description, items, keyMap)
+	local function CreateGroupItems(description, items)
 		local result = {
 			text = {
 				name = description,
@@ -690,17 +692,20 @@ do
 
 		for i, v in ipairs(items) do
 			local k, vv = unpack(v)
+			local tag = "[" .. k .. "]"
 			result[k] = {
-				name = keyMap and keyMap(k, vv) or k,
+				name = vv,
 				type = "group",
 				order = (i + 1) * 10,
 				width = "full",
 				inline = true,
 				args = {
 					text = {
-						name = vv,
-						type = "description",
-						fontSize = "medium",
+						type = "input",
+						name = "",
+						width = "full",
+						get = function() return tag end,
+						dialogControl = "InteractiveText",
 					},
 				}
 			}
@@ -784,21 +789,21 @@ do
 								order = 10,
 								name = L["Author"],
 								get = function() return md.author end,
-								disabled = true,
+								dialogControl = "InteractiveText",
 							},
 							version = {
 								type = "input",
 								order = 20,
 								name = L["Version"],
 								get = function() return md.version end,
-								disabled = true,
+								dialogControl = "InteractiveText",
 							},
 							date = {
 								type = "input",
 								order = 30,
 								name = L["Date"],
 								get = function() return FormatDate(md.date) end,
-								disabled = true,
+								dialogControl = "InteractiveText",
 							},
 						},
 					},
@@ -810,7 +815,7 @@ do
 			local anchorValues = Utils.Map(anchors, function(val)
 				return ("%s (%s)"):format(L["ANCHOR." .. val], val)
 			end)
-			local relAnchorValues = Utils.Merge({ [C.NoAnchor] = L["Same as Anchor"] }, anchorValues)
+			local relAnchorValues = Utils.Merge({ [empty] = L["Same as Anchor"] }, anchorValues)
 			local isBorderOptionsDisabled = function() return not db.general.border end
 			local isBorderColorDisabled = function()
 				return not db.general.border or db.general.borderDynamicColor
@@ -957,6 +962,7 @@ do
 										desc = L["Set the bar scale"],
 										min = 0.5,
 										max = 2,
+										step = 0.1,
 									},
 								},
 							},
@@ -1548,85 +1554,231 @@ do
 				}
 			}
 		end
-		if appName == (addonName .. "-Help") then
-			local function makeGroupTitle(key)
-				return "|cffffff00[" .. key .. "]|r"
+	end
+
+	local function TraceSettings(key, table)
+		local function Error(msg)
+			-- print("TraceSettings error:", msg)
+		end
+		local function Trace(tabkey, tab, parents, output)
+			if type(tabkey) ~= "string" then
+				return Error("illegal tab key under " .. tconcat(parents))
 			end
+			if tabkey == "main" or tabkey == "mouseGroup" or tabkey:sub(1, 3) == "pg_" then
+				return Error("skipped " .. tabkey .. " under " .. tconcat(parents))
+			end
+			if type(tab) ~= "table" or type(tab.type) ~= "string" then
+				return Error("malformed option table under " .. tconcat(parents))
+			end
+			if tab.type == "group" then
+				if type(tab.args) ~= "table" then
+					return Error("malformed group element under " .. tconcat(parents))
+				end
+				local newParents = Utils.Clone(parents)
+				if not (tab.inline or tab.guiInline) then
+					Utils.Push(newParents, tabkey)
+				end
+				for k, v in pairs(tab.args) do
+					Trace(k, v, newParents, output)
+				end
+			elseif tab.type == "description" or tab.type == "header" then
+				return
+			else
+				local vals
+				if tab.type == "execute" then
+					vals = ""
+				elseif tab.type == "input" then
+					vals = "<value>"
+				elseif tab.type == "toggle" then
+					vals = "<none>|on|off"
+				elseif tab.type == "range" then
+					vals = tostring(tab.min) .. ".." .. tostring(tab.max)
+				elseif tab.type == "select" then
+					local values = type(tab.values) == "function" and tab.values() or tab.values
+					vals = tconcat(Utils.Keys(values), "|")
+				elseif tab.type == "color" then
+					vals = "RRGGBBAA||r g b a"
+				else
+					vals = "???"
+				end
+				Utils.Push(output, { cmd = tconcat(parents, "\32") .. "\32" .. tabkey, desc = tab.desc, name = tab.name, vals = vals })
+			end
+		end
+		local out = {}
+		Trace(key, table, {}, out)
+		return out
+	end
+
+	local function GetOptionsTrace(appNames, getOptions)
+		local apps = {}
+		for k, v in pairs(appNames) do
+			apps[k] = TraceSettings(k, getOptions(nil, nil, v[1]))
+		end
+		return apps
+	end
+
+	local function GetTrace()
+		if not optionsTrace then
+			optionsTrace = GetOptionsTrace(appNames, GetOptions)
+		end
+		return optionsTrace
+	end
+
+	local function GetOptionHelpItem(index, item)
+		local vals, cmd
+		if item.vals:len() > 20 then
+			vals, cmd = item.vals, item.cmd .. "\32<value>"
+		else
+			vals, cmd = nil, item.cmd .. "\32" .. item.vals
+		end
+		return ("opthelp_%02d"):format(index), {
+			type = "group",
+			order = index * 10,
+			name = item.name,
+			width = "full",
+			inline = true,
+			args = {
+				cmdInput = {
+					type = "input",
+					dialogControl = "InteractiveText",
+					order = 10,
+					name = "",
+					width = "full",
+					get = function() return cmd end,
+					set = Utils.EmptyFn,
+				},
+				valInput = vals and {
+					type = "input",
+					dialogControl = "InteractiveText",
+					order = 20,
+					name = "",
+					width = "full",
+					get = function() return vals end,
+					set = Utils.EmptyFn,
+				} or nil,
+			},
+		}
+	end
+
+	local function GetOptionHelpTab(tabIndex, key, tabItem)
+		local tabArgs = {}
+		for i, v in ipairs(tabItem) do
+			local itemKey, item = GetOptionHelpItem(i, v)
+			tabArgs[itemKey] = item
+		end
+		return "optHelp_" .. key, {
+			type = "group",
+			order = tabIndex * 10,
+			name = appNames[key][2] or "!NONAME!",
+			width = "full",
+			args = tabArgs,
+		}
+	end
+
+	function GetHelp(uiTypes, uiName, appName)
+		local optArgs = {
+			optHeader = {
+				type = "header",
+				order = 0,
+				name = L["Commands for setting options values"],
+			},
+		}
+		local tabIndex = 1
+		for k, v in pairs(GetTrace()) do
+			if #k > 0 and v and #v > 0 then
+				local key, item = GetOptionHelpTab(tabIndex, k, v)
+				optArgs[key] = item
+				tabIndex = tabIndex + 1
+			end
+		end
+		if appName == (addonName .. "-Help") then
 			return {
 				type = "group",
-				name = L["Help on format"],
-				childGroups = "tab",
+				name = L["Please select help section"],
+				childGroups = "select",
 				args = {
-					bardesc = {
-						type = "description",
-						order = 0,
-						name = wowClassic and L["Format templates for XP and reputation bars"]
-								or L["Format templates for XP / reputation / azerite power bars"],
-					},
-					xpgroup = {
+					formatHelp = {
 						type = "group",
+						name = L["Help on format"],
+						childGroups = "tab",
 						order = 10,
-						name = L["Experience Bar"],
-						width = "full",
-						args = CreateGroupItems(
-							L["HELP.XPBARTEMPLATE"],
-							{
-								{ "curXP",	L["Current XP value on the level"] },
-								{ "maxXP",	L["Maximum XP value for the current level"] },
-								{ "needXP",	L["Remaining XP value till the next level"] },
-								{ "restXP",	L["Rested XP bonus value"] },
-								{ "curPC",	L["Current XP value in percents"] },
-								{ "needPC",	L["Remaining XP value in percents"] },
-								{ "restPC",	L["Rested XP bonus value in percents of maximum XP value"] },
-								{ "pLVL",	L["Current level"] },
-								{ "nLVL",	L["Next level"] },
-								{ "mLVL",	L["Maximum character level (current level when XP gain is disabled"] },
-								{ "KTL",	L["Remaining kill number till next level"] },
-								{ "BTL",	L["Remaining bubble (scale tick) number till next level"] },
+						args = {
+							bardesc = {
+								type = "header",
+								order = 0,
+								name = wowClassic and L["Format templates for XP and reputation bars"]
+										or L["Format templates for XP / reputation / azerite power bars"],
 							},
-							makeGroupTitle
-						),
+							xpgroup = {
+								type = "group",
+								order = 10,
+								name = L["Experience Bar"],
+								width = "full",
+								args = CreateGroupItems(
+									L["HELP.XPBARTEMPLATE"],
+									{
+										{ "curXP",	L["Current XP value on the level"] },
+										{ "maxXP",	L["Maximum XP value for the current level"] },
+										{ "needXP",	L["Remaining XP value till the next level"] },
+										{ "restXP",	L["Rested XP bonus value"] },
+										{ "curPC",	L["Current XP value in percents"] },
+										{ "needPC",	L["Remaining XP value in percents"] },
+										{ "restPC",	L["Rested XP bonus value in percents of maximum XP value"] },
+										{ "pLVL",	L["Current level"] },
+										{ "nLVL",	L["Next level"] },
+										{ "mLVL",	L["Maximum character level (current level when XP gain is disabled"] },
+										{ "KTL",	L["Remaining kill number till next level"] },
+										{ "BTL",	L["Remaining bubble (scale tick) number till next level"] },
+									}
+								),
+							},
+							azergroup = {
+								type = "group",
+								order = 20,
+								name = L["Azerite Bar"],
+								width = "full",
+								args = CreateGroupItems(
+									L["HELP.AZBARTEMPLATE"],
+									{
+										{ "name",	L["Name of artifact necklace: Heart of Azeroth"] },
+										{ "curXP",	L["Current azerite power value on the level"] },
+										{ "maxXP",	L["Maximum azerite power value for the current level"] },
+										{ "needXP",	L["Remaining azerite power value till the next level"] },
+										{ "curPC",	L["Current azerite power value in percents"] },
+										{ "needPC",	L["Remaining azerite power value in percents"] },
+										{ "pLVL",	L["Current azerite level"] },
+										{ "nLVL",	L["Next azerite level"] },
+									}
+								),
+							},
+							repgroup = {
+								type = "group",
+								order = 30,
+								name = L["Reputation Bar"],
+								width = "full",
+								args = CreateGroupItems(
+									L["HELP.REPBARTEMPLATE"],
+									{
+										{ "faction",	L["Watched faction / friend / guild name"] },
+										{ "standing",	L["Faction reputation standing"] },
+										{ "curRep",		L["Current reputation value for the current standing"] },
+										{ "maxRep",		L["Maximum reputation value for the current standing"] },
+										{ "needRep",	L["Remaining reputation value till the next standing"] },
+										{ "repPC",		L["Current reputation value in percents"] },
+										{ "needPC",		L["Remaining reputation value in percents"] },
+									}
+								),
+							},
+						},
 					},
-					azergroup = {
+					optionsHelp = {
 						type = "group",
+						name = L["Help on options"],
 						order = 20,
-						name = L["Azerite Bar"],
-						width = "full",
-						args = CreateGroupItems(
-							L["HELP.AZBARTEMPLATE"],
-							{
-								{ "name",	L["Name of artifact necklace: Heart of Azeroth"] },
-								{ "curXP",	L["Current azerite power value on the level"] },
-								{ "maxXP",	L["Maximum azerite power value for the current level"] },
-								{ "needXP",	L["Remaining azerite power value till the next level"] },
-								{ "curPC",	L["Current azerite power value in percents"] },
-								{ "needPC",	L["Remaining azerite power value in percents"] },
-								{ "pLVL",	L["Current azerite level"] },
-								{ "nLVL",	L["Next azerite level"] },
-							},
-							makeGroupTitle
-						),
+						childGroups = "tab",
+						args = optArgs,
 					},
-					repgroup = {
-						type = "group",
-						order = 30,
-						name = L["Reputation Bar"],
-						width = "full",
-						args = CreateGroupItems(
-							L["HELP.REPBARTEMPLATE"],
-							{
-								{ "faction",	L["Watched faction / friend / guild name"] },
-								{ "standing",	L["Faction reputation standing"] },
-								{ "curRep",		L["Current reputation value for the current standing"] },
-								{ "maxRep",		L["Maximum reputation value for the current standing"] },
-								{ "needRep",	L["Remaining reputation value till the next standing"] },
-								{ "repPC",		L["Current reputation value in percents"] },
-								{ "needPC",		L["Remaining reputation value in percents"] },
-							},
-							makeGroupTitle
-						),
-					},
-				}
+				},
 			}
 		end
 	end
@@ -1649,7 +1801,7 @@ local function HandleSettingsCommand(input)
 		OpenSettings()
 	else
 		local sub, command = input:match("^(%S+)%s+(.+)$")
-		local tabName = sub and appNames[sub] or nil
+		local tabName = sub and appNames[sub][1] or nil
 		if tabName then
 			ACCmd.HandleCommand(C, slashCmd, tabName, command)
 		end
@@ -1715,7 +1867,6 @@ C.EVENT_PROFILE_CHANGED = "ProfileChanged"
 
 C.XPLockedReasons = xpLockedReasons
 C.MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL_TABLE[GetExpansionLevel()]
-C.NoAnchor = ""
 
 C.OpenSettings = OpenSettings
 
@@ -1790,21 +1941,26 @@ function C:OnInitialize()
 
 	local myName = md.title
 
-	ACRegistry:RegisterOptionsTable(appNames.main, GetOptions)
-	ACRegistry:RegisterOptionsTable(appNames.general, GetOptions)
-	ACRegistry:RegisterOptionsTable(appNames.bars, GetOptions)
-	ACRegistry:RegisterOptionsTable(appNames.reputation, GetOptions)
-	ACRegistry:RegisterOptionsTable(appNames.help, GetOptions)
+	ACRegistry:RegisterOptionsTable(appNames.main[1], GetOptions)
+	ACRegistry:RegisterOptionsTable(appNames.general[1], GetOptions)
+	ACRegistry:RegisterOptionsTable(appNames.bars[1], GetOptions)
+	ACRegistry:RegisterOptionsTable(appNames.reputation[1], GetOptions)
+	ACRegistry:RegisterOptionsTable(appNames.help[1], GetHelp)
 
 	local popts = ADBO:GetOptionsTable(self.db)
-	ACRegistry:RegisterOptionsTable(appNames.profiles, popts)
+	ACRegistry:RegisterOptionsTable(appNames.profiles[1], popts)
 
-	ACDialog:AddToBlizOptions(appNames.main, myName)
-	ACDialog:AddToBlizOptions(appNames.general, L["General"], myName)
-	ACDialog:AddToBlizOptions(appNames.bars, L["Bars"], myName)
-	ACDialog:AddToBlizOptions(appNames.reputation, REPUTATION, myName)
-	ACDialog:AddToBlizOptions(appNames.profiles, L["Profiles"], myName)
-	ACDialog:AddToBlizOptions(appNames.help, L["Help on format"], myName)
+	ACDialog:AddToBlizOptions(appNames.main[1], myName)
+	ACDialog:AddToBlizOptions(appNames.general[1], appNames.general[2], myName)
+	ACDialog:AddToBlizOptions(appNames.bars[1], appNames.bars[2], myName)
+	ACDialog:AddToBlizOptions(appNames.reputation[1], appNames.reputation[2], myName)
+	ACDialog:AddToBlizOptions(appNames.profiles[1], appNames.profiles[2], myName)
+	local helpApp = ACDialog:AddToBlizOptions(appNames.help[1], appNames.help[2], myName)
+	if helpApp then
+		local helpAppGroupObj = helpApp:GetChildren().obj
+		helpAppGroupObj:SetTitle(L["Help"])
+		helpAppGroupObj.SetTitle = Utils.EmptyFn
+	end
 
 	self:RegisterChatCommand(slashCmd, HandleSettingsCommand)
 

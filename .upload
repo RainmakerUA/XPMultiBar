@@ -32,7 +32,7 @@
 		"AceLocale-3.0",
 		"LibSharedMedia-3.0",
 		"AceGUI-3.0-SharedMediaWidgets",
-		"AceGUIWidget-NumberEditBox",
+		"Widgets",
 		"AceEvent-3.0",
 		"LibQTip-1.0",
 		"rmUtils-1.0"

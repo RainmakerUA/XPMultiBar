@@ -1,14 +1,16 @@
 -- This file is generated with ListStrings.ps1
 local L = LibStub("AceLocale-3.0"):NewLocale("XPMultiBar", "enUS", true)
 if not L then return end
----------- Total: 224 ----------
+---------- Total: 228 ----------
+L["General"] = true
+L["Bars"] = true
+L["Help"] = true
+L["Profiles"] = true
 L["Left Button"] = true
 L["Right Button"] = true
 L["Middle Button"] = true
 L["Actions"] = true
 L["Settings"] = true
-L["General"] = true
-L["Bars"] = true
 L["Priority"] = true
 L["Reputation"] = true
 L["Copy bar text to the chat"] = true
@@ -159,6 +161,8 @@ L["Show in combat"] = true
 L["Show favorite faction popup when in combat"] = true
 L["Show favorite faction popup only when modifiers are pressed"] = true
 L["%s must be pressed"] = true
+L["Commands for setting options values"] = true
+L["Please select help section"] = true
 L["Help on format"] = true
 L["Format templates for XP and reputation bars"] = true
 L["Format templates for XP / reputation / azerite power bars"] = true
@@ -189,7 +193,7 @@ L["Maximum reputation value for the current standing"] = true
 L["Remaining reputation value till the next standing"] = true
 L["Current reputation value in percents"] = true
 L["Remaining reputation value in percents"] = true
-L["Profiles"] = true
+L["Help on options"] = true
 L["You need to select a faction to watch"] = true
 L["Azerite item not found!"] = true
 L["Favorite faction"] = true

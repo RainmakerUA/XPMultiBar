@@ -347,7 +347,7 @@ function UI:SetPosition(position)
 
 	x, y = x / s, y / s
 
-	if anchorRel == "" then
+	if anchorRel == "-" then
 		anchorRel = anchor
 	end
 
