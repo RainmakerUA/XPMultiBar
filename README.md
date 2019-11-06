@@ -44,15 +44,29 @@ Highly customizable bar displaying XP, reputation and azerite artifact power.
 
 #### **Optional hiding standard XP/Artifact/Reputation bars**
 
-#### **Mouse click combos:**
+#### **Mouse click shortcuts:**
+
+##### Predefined shortcuts
 
 - _Shift + Left mouse button click_ - copy bar text to current / last used chat window.
 - _Shift + Right mouse button click_ - open addon settings.
 - _Ctrl + Right mouse button click_ - open reputation popup menu / WoW reputation window.
 
+##### Up to 13 more configurable shortcuts with _Ctrl_, _Alt_, _Shift_ and Left, Right, Middle Mouse buttons
+
+##### Use common actions or toggle options, or use command line for modifying any option (can be taken from Help page)
+
 ## Slash command
 
-/xpbar - open addon settings.
+### /xpbar
+
+Without arguments: Open addon settings.\
+With command line: set option value (complete list is in the Help page).
+
+## Translations
+
+- Korean: *kdw112*.
+- more translators wanted!
 
 ## Credits
 

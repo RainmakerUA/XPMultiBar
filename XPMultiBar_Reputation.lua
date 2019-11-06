@@ -718,7 +718,7 @@ function R:ToggleBarTooltip(visibility)
 		GameTooltip:SetMinimumWidth(250, true)
 		GameTooltip:SetOwner(bar, "ANCHOR_NONE")
 
-		GameTooltip_SetTitle(GameTooltip, L["Favorite factions"])
+		GameTooltip_SetTitle(GameTooltip, L["Favorite Factions"])
 
 		if not factions or next(factions) == nil then
 			GameTooltip_AddErrorLine(GameTooltip, L["No favorite factions selected"], true)

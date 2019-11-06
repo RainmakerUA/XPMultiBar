@@ -15,6 +15,7 @@
 		"MasterModule\\",
 		"ListStrings.ps1",
 		"README.md",
+		"WhatsNew.md",
 		"*.new",
 		"*~"
 	],
