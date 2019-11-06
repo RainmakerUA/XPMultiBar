@@ -118,7 +118,7 @@
 					<OnDragStop method="OnDragStop" />
 					<OnEnter method="OnEnter" />
 					<OnLeave method="OnLeave" />
-					<OnUpdate method="OnUpdate" />
+					<!-- <OnUpdate method="OnUpdate" /> -->
 				</Scripts>
 			</Button>
 		</Frames>
