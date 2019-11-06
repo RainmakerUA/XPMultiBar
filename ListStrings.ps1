@@ -2,7 +2,7 @@
 
 $projName = 'XPMultiBar'
 $localeSources = Get-ChildItem "$projName*.lua" | %{ $_.Name }
-$locales = @('enUS', 'ruRU')
+$locales = @('enUS', 'ruRU', 'koKR')
 $baseLocale = 'enUS'
 $localeDir = 'Locales'
 
@@ -15,11 +15,11 @@ $loc_re = '(?<=L\[")([^"]+?)(?="\])'
 $ext_re = '^[A-Z0-9._]+$'
 $old_re = '(?m)^L\["([^"]+?)"\]\s*=\s*"([^"]+?)"'
 
-$localeSources | %{$strings = @()} {$strings += (Get-Content $_ -Raw | Select-String $loc_re -AllMatches | %{ $_.matches.Value } | Select-Object -Unique)} {$strings} | Out-Null
+$locStrings = $localeSources | %{ $strings = @() } { $strings += (Get-Content $_ -Raw | Select-String $loc_re -AllMatches | %{ $_.matches.Value }) } { $strings } | Select-Object -Unique
 
-$total = $strings.Length
-$ext_strings = $strings | ?{ $_ -cmatch $ext_re }
-$strings = $strings | ?{ $_ -cnotmatch $ext_re }
+$total = $locStrings.Length
+$ext_strings = $locStrings | ?{ $_ -cmatch $ext_re }
+$strings = $locStrings | ?{ $_ -cnotmatch $ext_re }
 
 $locales | %{
 	$locale = $_
@@ -27,7 +27,7 @@ $locales | %{
     $file = "$oldFile.new"
 
 	Select-String -Path $oldFile -Encoding utf8 -Pattern $old_re `
-			| %{$oldStrings = [hashtable]::new()} { $_.Matches | %{$oldStrings.Add($_.Groups[1].Value, $_.Groups[2].Value)} } {$oldStrings} `
+			| %{$oldStrings = [hashtable]::new()} { $_.Matches | %{ $oldStrings[$_.Groups[1].Value] = $_.Groups[2].Value } } {$oldStrings} `
 			| Out-Null
 
 	Set-Content $file ([string]::Format($headerFmt, $locale, $(if($locale -eq $baseLocale){ $trueParam } else { "" }), $total))

@@ -13,11 +13,23 @@ local _G = _G
 local pairs = pairs
 local print = print
 
+local GetAddOnMetadata = GetAddOnMetadata
+
 -- Remove all known globals after this point
 -- luacheck: std none
 
 if addonTable.master then
 	addonTable.master(XPMultiBar)
+end
+
+local function ShowStartupMessage(isClassicVersion)
+	if Utils.IsWoWClassic == isClassicVersion then
+		print(L["MESSAGE.WELCOME"])
+	elseif isClassicVersion then
+		print(L["ERROR.RETAIL_ON_CLASSIC"])
+	else
+		print(L["ERROR.CLASSIC_ON_RETAIL"])
+	end
 end
 
 function XPMultiBar:OnInitialize()
@@ -28,12 +40,15 @@ function XPMultiBar:OnInitialize()
 		XPMultiBar[k] = v
 	end
 	--@end-debug@
+	local version = GetAddOnMetadata(addonName, "Version") or ""
+	local _, _, vernum, isClassic, vertype = version:find("^(%d+%.%d+%.%d+)(c?)-(%w+)$")
+	XPMultiBar.Version = {
+		Number = vernum or "test",
+		Classic = isClassic and isClassic ~= "",
+		Type = vertype,
+	}
 end
 
 function XPMultiBar:OnEnable()
-	if Utils.IsWoWClassic then
-		print(L["ERROR.RETAIL_ON_CLASSIC"])
-	else
-		print(L["MESSAGE.WELCOME"])
-	end
+	ShowStartupMessage(self.Version.Classic)
 end
