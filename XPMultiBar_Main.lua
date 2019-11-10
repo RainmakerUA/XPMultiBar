@@ -520,7 +520,7 @@ end
 
 -- Update XP bar data
 function M:UpdateXPData()
-	self.xpData:Update(0, GetPlayerXP(), UnitXPMax("player"))
+	self.xpData:Update(UnitLevel("player"), GetPlayerXP(), UnitXPMax("player"))
 	self:UpdateXPBar()
 end
 
