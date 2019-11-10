@@ -26,11 +26,11 @@ dataPrototype.sessionKills = 0
 
 dataPrototype.data = {
 	name = "", -- current name (artifact name / reputation faction)
-	level = 0, -- current level (rep. standing)
-	curr = 0, -- current XP on level
-	max = 0, -- max XP on level
-	rem = 0, -- remaining XP
-	diff = 0, -- last XP increment
+	level = nil, -- current level (rep. standing)
+	curr = nil, -- current XP on level
+	max = nil, -- max XP on level
+	rem = nil, -- remaining XP
+	diff = nil, -- last XP increment
 	extra = nil, -- extra data
 }
 
@@ -58,7 +58,7 @@ function dataPrototype:GetKTL()
 
 	local avgxp = lastXP / #self.lastXPValues
 
-	return math_ceil(self.data.rem / avgxp)
+	return self.data.rem and math_ceil(self.data.rem / avgxp) or 0
 end
 
 function dataPrototype:ClearKTL()
@@ -72,8 +72,9 @@ function dataPrototype:Update(name, level, current, maximum, extra)
 	end
 
 	local prevName = self.data.name
-	local prevLevel = self.data.level or 0
-	local prevXP = self.data.curr or 0
+	local prevLevel = self.data.level
+	local prevXP = self.data.curr
+	local prevMax = self.data.max
 	self.data.name = name
 	self.data.level = level
 	self.data.curr = current
@@ -82,12 +83,18 @@ function dataPrototype:Update(name, level, current, maximum, extra)
 	self.data.extra = extra
 
 	if self.tracking then
-		if not name or name == prevName then
-			local diff = (not level or level == prevLevel) and (current - prevXP) or current
-			self.data.diff = diff
-			if diff > 0 then
-				self.sessionKills = self.sessionKills % 10 + 1
-				self.lastXPValues[self.sessionKills] = diff
+		if not prevName or prevName == name then
+			local diff = prevXP and (current - prevXP) or nil
+			if diff then
+				-- if level up occured
+				if level and level > prevLevel then
+					diff = diff + prevMax
+				end
+				self.data.diff = diff
+				if diff > 0 then
+					self.sessionKills = self.sessionKills % 10 + 1
+					self.lastXPValues[self.sessionKills] = diff
+				end
 			end
 		else
 			self:ClearKTL()
