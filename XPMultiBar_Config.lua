@@ -69,7 +69,7 @@ local DB_VERSION_NUM = 823
 local DB_VERSION = "V" .. tostring(DB_VERSION_NUM) .. (wowClassic and "C" or "")
 
 --@debug@
---L = Utils.DebugL(L)
+L = Utils.DebugL(L)
 --@end-debug@
 
 local md = {
@@ -287,17 +287,31 @@ local GetOptions, GetHelp
 do
 	local GROUPS = 4
 	local BARS_IN_GROUP = 3
-	local priorities = wowClassic
+	local FLAG_NOTEXT = 4
+	local priorities
+	do
+		local N = FLAG_NOTEXT
+		priorities = wowClassic
 						and {
 								{ X, R, 0, 0, 0, 0, R, X, 0, 0, 0, 0, },
 								{},
 								{ R, X, 0, 0, 0, 0, R, X, 0, 0, 0, 0, },
+								-- No-Text presets
+								{ X+N, X, R, 0, 0, 0, R+N, R, X, 0, 0, 0, },
+								{},
+								{ R+N, R, X, 0, 0, 0, R+N, R, X, 0, 0, 0, },
 							}
 						or {
 								{ X, R, 0, X, R, A, A, R, X, R, A, X, },
 								{ X, R, 0, A, R, X, A, R, X, R, A, X, },
 								{ R, X, 0, R, X, A, R, A, X, R, A, X, },
+								-- No-Text presets
+								{ X+N, X, R, X+N, X, R, A+N, A, R, R+N, R, X, },
+								{ X+N, X, R, A+N, A, R, A+N, A, R, R+N, R, A, },
+								{ R+N, R, X, R+N, R, X, R+N, R, A, R+N, R, 0, },
 							}
+	end
+	C.FLAG_NOTEXT = FLAG_NOTEXT
 
 	local MOUSE_ACTIONS = 16
 
@@ -385,7 +399,7 @@ do
 	end
 
 	local function GetIndex(key)
-		local s1, s2 = key:match("^pg_(%d)_bar_(%d)$")
+		local s1, s2 = key:match("^pg_(%d)_[a-z]+_(%d)$")
 		local i1, i2 = tonumber(s1), tonumber(s2)
 		return (i1 - 1) * BARS_IN_GROUP + i2
 	end
@@ -394,14 +408,14 @@ do
 		print("|cFFFFFF00[XPMultiBar]:|r", Utils.Text.GetError(L["Priority group index is wrong: %d"]:format(index)))
 	end
 
-	local function updateBars(prio)
+	local function UpdateBars(prio)
 		configChangedEvent("priority", prio)
 	end
 
 	local function GetPriority(info)
 		local index = GetIndex(info[#info])
 		if index >= 1 and index <= BARS_IN_GROUP * GROUPS then
-			return db.bars.priority[index]
+			return db.bars.priority[index] % FLAG_NOTEXT
 		else
 			PrintWrongIndex(index)
 			return 0
@@ -411,11 +425,39 @@ do
 	local function SetPriority(info, value)
 		local index = GetIndex(info[#info])
 		if index >= 1 and index <= BARS_IN_GROUP * GROUPS then
-			db.bars.priority[index] = value
-			updateBars(db.bars.priority)
+			local oldValue = db.bars.priority[index]
+			db.bars.priority[index] = value > 0
+										and value + (oldValue > FLAG_NOTEXT and FLAG_NOTEXT or 0)
+										or 0
+			UpdateBars(db.bars.priority)
 		else
 			PrintWrongIndex(index)
 		end
+	end
+
+	local function GetShowText(info)
+		local index = GetIndex(info[#info])
+		if index >= 1 and index <= BARS_IN_GROUP * GROUPS then
+			return db.bars.priority[index] < FLAG_NOTEXT
+		else
+			PrintWrongIndex(index)
+			return true
+		end
+	end
+
+	local function SetShowText(info, value)
+		local index = GetIndex(info[#info])
+		if index >= 1 and index <= BARS_IN_GROUP * GROUPS then
+			local raw = db.bars.priority[index] % FLAG_NOTEXT
+			db.bars.priority[index] = raw + (value and 0 or FLAG_NOTEXT)
+			UpdateBars(db.bars.priority)
+		else
+			PrintWrongIndex(index)
+		end
+	end
+
+	local function GetShowTextDisabled(info)
+		return GetPriority(info) == 0
 	end
 
 	--[[
@@ -428,13 +470,15 @@ do
 	]]
 
 	local function CreatePriorityGroups()
-		local bars = {
+		local barsNoAzerite = {
 			[0] = L["Off"],
 			[X] = L["Experience Bar"],
-			[A] = (not wowClassic) and L["Azerite Bar"] or nil,
 			[R] = L["Reputation Bar"],
 		}
+		local bars = (not wowClassic) and Utils.Merge({ [A] = L["Azerite Bar"] }, barsNoAzerite) or barsNoAzerite
 		local result = {}
+		local textTitle = L["Show text"]
+		local textDesc = L["Show text on the bar"]
 
 		for i = 1, GROUPS do
 			result["prioritygroup" .. i] = (not wowClassic or i % 2 == 1) and {
@@ -449,27 +493,52 @@ do
 					["pg_" .. i .. "_bar_1"] = {
 						order = 1000,
 						type = "select",
-						width = wowClassic and 1.5 or 1,
 						name = L["Normal"],
 						desc = L["Choose bar to be shown when mouse is not over the bar"],
-						values = bars,
+						values = i == 1 and barsNoAzerite or bars,
 					},
 					["pg_" .. i .. "_bar_2"] = {
 						order = 2000,
 						type = "select",
-						width = wowClassic and 1.5 or 1,
 						name = L["Mouse over"],
 						desc = L["Choose bar to be shown when mouse is over the bar"],
-						values = bars,
+						values = i == 1 and barsNoAzerite or bars,
 					},
-					["pg_" .. i .. "_bar_3"] = (not wowClassic) and {
+					["pg_" .. i .. "_bar_3"] = {
 						order = 3000,
 						type = "select",
 						name = L["Mouse over with %s"]:format(FormatKeyColor(modNames.alt)),
 						-- luacheck: ignore
 						desc = L["Choose bar to be shown when mouse is over the bar while %s key is pressed"]:format(FormatKeyColor(modNames.alt)),
-						values = bars,
-					} or nil,
+						values = i == 1 and barsNoAzerite or bars,
+					},
+					["pg_" .. i .. "_text_1"] = {
+						order = 4000,
+						type = "toggle",
+						name = textTitle,
+						desc = textDesc,
+						get = GetShowText,
+						set = SetShowText,
+						disabled = GetShowTextDisabled,
+					},
+					["pg_" .. i .. "_text_2"] = {
+						order = 5000,
+						type = "toggle",
+						name = textTitle,
+						desc = textDesc,
+						get = GetShowText,
+						set = SetShowText,
+						disabled = GetShowTextDisabled,
+					},
+					["pg_" .. i .. "_text_3"] = {
+						order = 6000,
+						type = "toggle",
+						name = textTitle,
+						desc = textDesc,
+						get = GetShowText,
+						set = SetShowText,
+						disabled = GetShowTextDisabled,
+					},
 				},
 			} or nil
 		end
@@ -480,7 +549,7 @@ do
 	local function SetPrioritiesFromIndex(index)
 		return function()
 			db.bars.priority = Utils.Clone(priorities[index] or priorities[1])
-			updateBars(db.bars.priority)
+			UpdateBars(db.bars.priority)
 		end
 	end
 
@@ -1361,6 +1430,11 @@ do
 										inline = true,
 										width = "full",
 										args = {
+											presetsWithTextDesc = {
+												type = "description",
+												order = 0,
+												name = L["Presets with text always visible"],
+											},
 											setDefaultPrio = {
 												type = "execute",
 												order = 1000,
@@ -1373,7 +1447,7 @@ do
 												type = "execute",
 												order = 2000,
 												name = L["Azerite bar priority"],
-												desc = L["Activate preset with priority for Azerite power bar display (when it is available)"],
+												desc = L["Activate preset with priority for Azerite power bar display"],
 												func = SetPrioritiesFromIndex(2)
 											} or nil,
 											setReputationPrio = {
@@ -1383,6 +1457,34 @@ do
 												name = L["Reputation bar priority"],
 												desc = L["Activate preset with priority for Reputation bar display"],
 												func = SetPrioritiesFromIndex(3)
+											},
+											presetsWithoutTextDesc = {
+												type = "description",
+												order = 3500,
+												name = L["Presets with text show on mouseover"],
+											},
+											setDefaultPrioNoText = {
+												type = "execute",
+												order = 4000,
+												width = wowClassic and 1.5 or 1,
+												name = L["XP bar priority"],
+												desc = L["Activate preset with priority for XP bar display"],
+												func = SetPrioritiesFromIndex(4)
+											},
+											setAzeritePrioNoText = (not wowClassic) and {
+												type = "execute",
+												order = 5000,
+												name = L["Azerite bar priority"],
+												desc = L["Activate preset with priority for Azerite power bar display"],
+												func = SetPrioritiesFromIndex(5)
+											} or nil,
+											setReputationPrioNoText = {
+												type = "execute",
+												order = 6000,
+												width = wowClassic and 1.5 or 1,
+												name = L["Reputation bar priority"],
+												desc = L["Activate preset with priority for Reputation bar display"],
+												func = SetPrioritiesFromIndex(6)
 											},
 										},
 									},
