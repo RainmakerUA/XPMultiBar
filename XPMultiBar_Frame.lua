@@ -533,11 +533,14 @@ function UI:SetRemainingBarVisible(visible)
 end
 
 function UI:SetBarText(text)
+	self.barFrame.button.text:SetShown(text and true or false)
 	self.barFrame.button.text:SetText(text)
 end
 
 function UI:SetBarTextColor(color)
-	self.barFrame.button.text:SetTextColor(color.r, color.g, color.b, color.a)
+	if color then
+		self.barFrame.button.text:SetTextColor(color.r, color.g, color.b, color.a)
+	end
 end
 
 function UI:HideIcons()

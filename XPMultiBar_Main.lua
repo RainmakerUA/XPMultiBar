@@ -524,7 +524,7 @@ function M:UpdateXPData()
 	self:UpdateXPBar()
 end
 
-function M:UpdateReputationBar()
+function M:UpdateReputationBar(showText)
 	local db = Config.GetDB()
 	local repInfo = { Reputation:GetWatchedFactionData() }
 	local repFactionID, repName, repStanding,
@@ -533,17 +533,16 @@ function M:UpdateReputationBar()
 			hasBonusRep, isLFGBonus,
 			isFactionParagon, hasParagonReward, isAtWar = unpack(repInfo)
 
-	UI:SetBarTextColor(db.bars.reptext)
-
 	if repName == nil then
 		UI:SetMainBarVisible(false, DoSetBorderColor(db.general))
 		UI:SetRemainingBarVisible(false)
 		UI:SetBarText(L["You need to select a faction to watch"])
+		UI:SetBarTextColor(db.bars.reptext)
 		UI:SetFactionInfo(nil, nil)
 		return
 	end
 
-	UI:SetFactionInfo(repFactionID, db.bars.repicons and {
+	UI:SetFactionInfo(repFactionID, db.bars.repicons and showText and {
 				hasBonusRep,
 				isLFGBonus,
 				isFactionParagon,
@@ -556,19 +555,22 @@ function M:UpdateReputationBar()
 
 	UI:SetMainBarValues(repMin, repMax, repValue)
 	UI:SetMainBarColor(repStandingColor, DoSetBorderColor(db.general))
-	UI:SetBarText(GetReputationText(db.bars.repstring, repInfo))
+	UI:SetBarText(showText and GetReputationText(db.bars.repstring, repInfo) or nil)
+	UI:SetBarTextColor(showText and db.bars.reptext or nil)
 end
 
 function M:UpdateXPBar(event)
 	local db = Config.GetDB()
 	local bar = Bars.GetVisibleBar()
+	local showText = bar < Config.FLAG_NOTEXT
+	bar = bar % Config.FLAG_NOTEXT
 
 	if event == "UPDATE_FACTION" then
 		self:ShowReputationList(true)
 	end
 
 	if bar == Bars.REP then
-		return self:UpdateReputationBar()
+		return self:UpdateReputationBar(showText)
 	else
 		UI:SetMainBarVisible(true)
 	end
@@ -579,17 +581,17 @@ function M:UpdateXPBar(event)
 		local name, azeriteLevel
 		name, azeriteLevel, currXP, maxXP = GetHeartOfAzerothInfo(self.UpdateXPBar, self)
 		if name then
-			xpText = GetAzerText(name, currXP, maxXP, azeriteLevel)
+			xpText = showText and GetAzerText(name, currXP, maxXP, azeriteLevel) or nil
 		else
 			currXP, maxXP, xpText = 0, 1, L["Azerite item not found!"]
 		end
 
 		barColor = db.bars.azerite
 		UI:SetRemainingBarVisible(false)
-		txtcol = db.bars.azertext
+		txtcol = showText and db.bars.azertext or nil
 
-		UI:SetAzeriteInfo(db.bars.azicons and { IsAzeriteItemAtMaxLevel() } or nil)
-	else -- if bar == Bars.XP
+		UI:SetAzeriteInfo(db.bars.azicons and showText and { IsAzeriteItemAtMaxLevel() } or nil)
+	elseif bar == Bars.XP then
 		-- GetXPExhaustion() returns nil when no bonus present and 0 on max level
 		local xp, restedXP = self.xpData:Get(), GetXPExhaustion() or 0
 		local maxLevel, reason = Config.GetPlayerMaxLevel()
@@ -619,10 +621,12 @@ function M:UpdateXPBar(event)
 		local isLevelCap = reason == Config.XPLockedReasons.MAX_TRIAL_LEVEL
 		local isMaxLevel = IsPlayerAtEffectiveMaxLevel() and reason == Config.XPLockedReasons.MAX_EXPANSION_LEVEL
 
-		UI:SetXPInfo(db.bars.xpicons and { isMaxLevel, isXPStopped, isLevelCap } or nil)
+		UI:SetXPInfo(db.bars.xpicons and showText and { isMaxLevel, isXPStopped, isLevelCap } or nil)
 
-		txtcol = db.bars.xptext
-		xpText = GetXPText(xp.curr, xp.max, xp.rem, restedXP, level, maxLevel, self.xpData:GetKTL())
+		txtcol = showText and db.bars.xptext or nil
+		xpText = showText and GetXPText(xp.curr, xp.max, xp.rem, restedXP, level, maxLevel, self.xpData:GetKTL()) or nil
+	else
+		return
 	end
 
 	UI:SetMainBarValues(math_min(0, currXP), maxXP, currXP)
