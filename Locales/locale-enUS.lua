@@ -1,7 +1,7 @@
 -- This file is generated with ListStrings.ps1
 local L = LibStub("AceLocale-3.0"):NewLocale("XPMultiBar", "enUS", true)
 if not L then return end
----------- Total: 228 ----------
+---------- Total: 232 ----------
 L["General"] = true
 L["Bars"] = true
 L["Help"] = true
@@ -30,8 +30,10 @@ L["Set Azerite power bar priority"] = true
 L["Priority group index is wrong: %d"] = true
 L["Off"] = true
 L["Experience Bar"] = true
-L["Azerite Bar"] = true
 L["Reputation Bar"] = true
+L["Azerite Bar"] = true
+L["Show text"] = true
+L["Show text on the bar"] = true
 L["Normal"] = true
 L["Choose bar to be shown when mouse is not over the bar"] = true
 L["Mouse over"] = true
@@ -136,12 +138,14 @@ L["Set reputation text color"] = true
 L["Set exalted reputation bar color"] = true
 L["Bar Priority"] = true
 L["Activate preset"] = true
+L["Presets with text always visible"] = true
 L["XP bar priority"] = true
 L["Activate preset with priority for XP bar display"] = true
 L["Azerite bar priority"] = true
 L["Activate preset with priority for Azerite power bar display"] = true
 L["Reputation bar priority"] = true
 L["Activate preset with priority for Reputation bar display"] = true
+L["Presets with text show on mouseover"] = true
 L["Settings for reputation menu and favorite factions"] = true
 L["Tracking"] = true
 L["Automatically switch watched faction to one you gain reputation with"] = true
