@@ -1,7 +1,7 @@
 -- This file is generated with ListStrings.ps1
 local L = LibStub("AceLocale-3.0"):NewLocale("XPMultiBar", "koKR")
 if not L then return end
----------- Total: 228 ----------
+---------- Total: 232 ----------
 L["General"] = "기본 설정"
 L["Bars"] = "바"
 L["Help"] = "도움말"
@@ -30,8 +30,10 @@ L["Set Azerite power bar priority"] = "유물력 바 우선순위 설정"
 L["Priority group index is wrong: %d"] = "Priority group index is wrong: %d"
 L["Off"] = "끄기"
 L["Experience Bar"] = "경험치 바"
-L["Azerite Bar"] = "아제라이트 바"
 L["Reputation Bar"] = "평판 바"
+L["Azerite Bar"] = "아제라이트 바"
+L["Show text"] = "Show text"
+L["Show text on the bar"] = "Show text on the bar"
 L["Normal"] = "일반"
 L["Choose bar to be shown when mouse is not over the bar"] = "마우스 오버를 하지 않았을 때 바에 표시할 내용"
 L["Mouse over"] = "마우스 오버"
@@ -136,12 +138,14 @@ L["Set reputation text color"] = "평판을 표시하는 글자의 색상 설정
 L["Set exalted reputation bar color"] = "확고한 동맹의 색상 설정"
 L["Bar Priority"] = "바 표시 순서"
 L["Activate preset"] = "프리셋 적용"
+L["Presets with text always visible"] = "Presets with text always visible"
 L["XP bar priority"] = "경험치 바 우선"
 L["Activate preset with priority for XP bar display"] = "경험치 바가 먼저 보이도록 우선순위 설정"
 L["Azerite bar priority"] = "유물력 바 우선"
 L["Activate preset with priority for Azerite power bar display"] = "유물력바가 먼저 보이도록 우선순위 설정(사용이 가능할 때)"
 L["Reputation bar priority"] = "평판 바 우선"
 L["Activate preset with priority for Reputation bar display"] = "평판 바가 먼저 보이도록 우선순위 설정"
+L["Presets with text show on mouseover"] = "Presets with text show on mouseover"
 L["Settings for reputation menu and favorite factions"] = "평판 메뉴와 진영 즐겨찾는 목록을 설정"
 L["Tracking"] = "추적"
 L["Automatically switch watched faction to one you gain reputation with"] = "평판 수치를 얻었을 때 해당 평판으로 추적을 자동으로 변경합니다"
