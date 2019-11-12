@@ -318,7 +318,11 @@ do
 	local modNames = Utils.Map(
 		{ ctrl = CTRL_KEY, alt = ALT_KEY, shift = SHIFT_KEY },
 		function(v)
-			return v:sub(1, 1) .. v:sub(2):lower()
+			local first, rest = v:match("([A-Z])([A-Z]+)")
+			if not first or not rest then
+				first, rest = v:sub(1, 1), v:sub(2)
+			end
+			return first:upper() .. rest:lower()
 		end
 	)
 
