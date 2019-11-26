@@ -15,6 +15,7 @@ local B = Bars
 -- luacheck: std none
 
 -- Bar consts
+B.None = 0
 B.XP = 1
 B.AZ = 2
 B.REP = 3

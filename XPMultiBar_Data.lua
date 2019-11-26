@@ -38,7 +38,11 @@ function D:OnInitialize()
 end
 
 function dataPrototype:Get()
-	return Utils.Clone(self.data)
+	local data = {}
+	if self.tracking then
+		data.ktl = self:GetKTL()
+	end
+	return Utils.Merge(data, self.data)
 end
 
 function dataPrototype:GetKTL()
@@ -79,26 +83,24 @@ function dataPrototype:Update(name, level, current, maximum, extra)
 	self.data.level = level
 	self.data.curr = current
 	self.data.max = maximum
-	self.data.rem = maximum - current
+	self.data.rem = maximum and maximum - current or nil
 	self.data.extra = extra
 
-	if self.tracking then
-		if not prevName or prevName == name then
-			local diff = prevXP and (current - prevXP) or nil
-			if diff then
-				-- if level up occured
-				if level and level > prevLevel then
-					diff = diff + prevMax
-				end
-				self.data.diff = diff
-				if diff > 0 then
-					self.sessionKills = self.sessionKills % 10 + 1
-					self.lastXPValues[self.sessionKills] = diff
-				end
+	if not prevName or prevName == name then
+		local diff = prevXP and (current - prevXP) or nil
+		if diff then
+			-- if level up occured
+			if level and level > prevLevel then
+				diff = diff + prevMax
 			end
-		else
-			self:ClearKTL()
+			self.data.diff = diff
+			if self.tracking and diff > 0 then
+				self.sessionKills = self.sessionKills % 10 + 1
+				self.lastXPValues[self.sessionKills] = diff
+			end
 		end
+	elseif self.tracking then
+		self:ClearKTL()
 	end
 end
 
