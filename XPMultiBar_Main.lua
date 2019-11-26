@@ -688,7 +688,6 @@ function M:PET_BATTLE_CLOSE()
 end
 
 function M:UpdateXPData(updateBar)
-	print("UpdXPData", updateBar)
 	local prevData = updateBar and self.xpData:Get() or nil
 	self.xpData:Update(UnitLevel("player"), GetPlayerXP(), UnitXPMax("player"))
 
@@ -702,7 +701,6 @@ function M:UpdateXPData(updateBar)
 end
 
 function M:UpdateRestData(updateBar)
-	print("UpdRestData", updateBar)
 	local prevData = updateBar and self.restData:Get() or nil
 	self.restData:Update(nil, GetXPExhaustion())
 
@@ -712,7 +710,6 @@ function M:UpdateRestData(updateBar)
 end
 
 --[==[function M:UpdateAzeriteData(updateBar)
-	--[[print("UpdAzerData", updateBar)
 	local prevData = updateBar and self.azerData:Get() or nil
 
 	Bars.UpdateBarSettings({
@@ -731,7 +728,6 @@ end
 end]==]
 
 function M:UpdateReputationData(updateBar)
-	print("UpdRepData", updateBar)
 	local prevData = updateBar and self.repData:Get() or nil
 	local repInfo = { Reputation:GetWatchedFactionData() }
 	local repName, repStanding, repMax, repValue = unpack(Utils.Values(repInfo, 2, 3, 7, 8))
@@ -761,7 +757,6 @@ function M:LevelUp(event, level)
 end
 
 function M:UpdateActiveBar(source, updateData)
-	print("UpdActiveBar", source, updateData and "updData+" or "nil/false")
 	local db = Config.GetDB()
 	local bar = Bars.GetVisibleBar()
 	local showText = bar < Config.FLAG_NOTEXT
@@ -771,7 +766,7 @@ function M:UpdateActiveBar(source, updateData)
 		updateData = {}
 	end
 
-	if not source or bar == source then
+	if not source and bar > 0 or bar == source then
 		updateData.db = db
 		updateData.showText = showText
 		updateData.data = barData[bar]:Get()
@@ -781,9 +776,7 @@ function M:UpdateActiveBar(source, updateData)
 		return barHandlers[bar](updateData)
 	end
 
-	-- bar ~= source
-	-- should not happen now
-	return nil --barHandlers[source](updateData)
+	return nil
 end
 
 function M:ToggleBarTooltip(isMouseOver, isCtrl, isAlt, isShift)
