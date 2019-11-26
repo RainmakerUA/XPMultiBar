@@ -16,6 +16,7 @@ local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local LSM3 = LibStub("LibSharedMedia-3.0")
 
 -- Lua
+local pairs = pairs
 local print = print
 local select = select
 local tostring = tostring
@@ -136,13 +137,17 @@ do
 	local itemName
 
 	-- Since GetItemInfo function can be async, callback can be provided
-	GetHeartOfAzerothInfo = function(callback, callbackReceiver)
+	GetHeartOfAzerothInfo = function(callback)
 		local name = nil
 		local item = FindActiveAzeriteItem()
 
+		if not item then
+			return nil
+		end
+
 		if itemName then
 			name = itemName
-		elseif item then
+		else
 			local itemID
 
 			if item:IsBagAndSlot() then
@@ -168,7 +173,7 @@ do
 					Item:CreateFromItemID(itemID):ContinueOnItemLoad(function()
 						itemName = GetItemInfo(itemID)
 						if callback then
-							callback(callbackReceiver)
+							callback()
 						end
 					end)
 				end
@@ -200,6 +205,143 @@ local function DoSetBorderColor(db_general)
 	return db_general.border and db_general.borderDynamicColor
 end
 
+--[[
+	local function CreateAnimationSequence(min, max, start, finish,
+										color, text, onstart, onfinish)
+		return {
+			min = min,
+			max = max,
+			start = start or 0,
+			finish = finish,
+			diff = (finish - (start or 0)) / (max - min),
+			color = color,
+			text = text,
+			onstart = onstart,
+			onfinish = onfinish
+		}
+	end
+]]
+
+local barDataHandlers, barHandlers, barData
+
+--[[ db, showText, data, prevData, restData, prevRestData ]]
+local function UpdateXPBar(updateData)
+	local db, showText, data, prevData, restData, prevRestData
+			= unpack(Utils.Values(updateData, "db", "showText", "data", "prevData", "restData", "prevRestData"))
+
+	-- GetXPExhaustion() returns nil when no bonus present and 0 on max level
+	local restedXP = restData and restData.curr or 0
+	local maxLevel, reason = Config.GetPlayerMaxLevel()
+	local level = data.level
+	local isXPStopped = reason == Config.XPLockedReasons.LOCKED_XP
+	local currXP, maxXP = data.curr, data.max
+	local barColor
+	-- TODO:!
+	--if maxXP == 0 then maxXP = 1 end
+
+	if prevRestData then
+		-- animate Rest bar
+	end
+
+	if restedXP == 0 or isXPStopped then
+		barColor = db.bars.normal
+		UI:SetRemainingBarVisible(false)
+	else
+		UI:SetRemainingBarValues(math_min(0, currXP), maxXP, currXP + restedXP)
+		UI:SetRemainingBarColor(db.bars.remaining)
+
+		-- Do we want to indicate rest?
+		if IsResting() and db.bars.indicaterest then
+			barColor = db.bars.resting
+		else
+			barColor = db.bars.rested
+		end
+
+		UI:SetRemainingBarVisible(db.bars.showremaining)
+	end
+
+	local isLevelCap = reason == Config.XPLockedReasons.MAX_TRIAL_LEVEL
+	local isMaxLevel = IsPlayerAtEffectiveMaxLevel() and reason == Config.XPLockedReasons.MAX_EXPANSION_LEVEL
+	local txtcol = showText and db.bars.xptext or nil
+	local xpText = showText and GetXPText(data.curr, data.max, data.rem, restedXP, level, maxLevel, data.ktl) or nil
+
+	UI:SetXPInfo(db.bars.xpicons and showText and { isMaxLevel, isXPStopped, isLevelCap } or nil)
+
+	UI:SetMainBarValues(math_min(0, currXP), maxXP, currXP)
+	UI:SetMainBarColor(barColor, DoSetBorderColor(db.general))
+
+	UI:SetBarText(xpText)
+	UI:SetBarTextColor(txtcol)
+end
+
+--[[ db, showText, data, prevData ]]
+local function UpdateAzeriteBar(updateData)
+	local db, showText, data, prevData
+			= unpack(Utils.Values(updateData, "db", "showText", "data", "prevData"))
+	local name, azeriteLevel, currXP, maxXP = unpack(Utils.Values(data, "name", "level", "curr", "max"))
+	local xpText
+
+	if name then
+		xpText = showText and GetAzerText(name, currXP, maxXP, azeriteLevel) or nil
+	else
+		currXP, maxXP, xpText = 0, 1, L["Azerite item not found!"]
+	end
+
+	local barColor, txtcol = db.bars.azerite, showText and db.bars.azertext or nil
+
+	UI:SetAzeriteInfo(db.bars.azicons and showText and { IsAzeriteItemAtMaxLevel() } or nil)
+
+	UI:SetRemainingBarVisible(false)
+
+	UI:SetMainBarValues(math_min(0, currXP), maxXP, currXP)
+	UI:SetMainBarColor(barColor, DoSetBorderColor(db.general))
+
+	UI:SetBarText(xpText)
+	UI:SetBarTextColor(txtcol)
+end
+
+--[[ db, showText, data, prevData ]]
+local function UpdateReputationBar(updateData)
+	local db, showText, data, prevData
+			= unpack(Utils.Values(updateData, "db", "showText", "data", "prevData"))
+	local repInfo = data.extra
+	local repFactionID, repName, repStanding,
+			repStandingText, repStandingColor,
+			repMin, repMax, repValue,
+			hasBonusRep, isLFGBonus,
+			isFactionParagon, hasParagonReward, isAtWar = unpack(repInfo)
+
+	if repName == nil then
+		UI:SetMainBarVisible(false, DoSetBorderColor(db.general))
+		UI:SetRemainingBarVisible(false)
+		UI:SetBarText(L["You need to select a faction to watch"])
+		UI:SetFactionInfo(nil, nil)
+		return
+	end
+
+	--if prevData then
+		-- todo: animate
+	do--else
+		UI:SetFactionInfo(repFactionID, db.bars.repicons and showText and {
+					hasBonusRep,
+					isLFGBonus,
+					isFactionParagon,
+					hasParagonReward,
+					isAtWar,
+				} or nil)
+
+		UI:SetMainBarVisible(true)
+		UI:SetRemainingBarVisible(false)
+
+		UI:SetMainBarValues(repMin, repMax, repValue)
+		UI:SetMainBarColor(repStandingColor, DoSetBorderColor(db.general))
+		UI:SetBarText(showText and GetReputationText(db.bars.repstring, repInfo) or nil)
+		UI:SetBarTextColor(showText and db.bars.reptext or nil)
+	-- else - should never get here
+		-- print("M:UpdateReputationBar: just update Rep. data")
+	end
+end
+
 function M:OnInitialize()
 	Bars = XPMultiBar:GetModule("Bars")
 	Config = XPMultiBar:GetModule("Config")
@@ -213,6 +355,28 @@ function M:OnInitialize()
 	if not wowClassic then
 		self.azerData = Data:New("AP")
 	end
+
+	barDataHandlers = {
+		[Bars.None] = emptyFun,
+		[Bars.XP] = self.UpdateXPData,
+		[Bars.AZ] = (not wowClassic) and self.UpdateAzeriteData or nil,
+		[Bars.REP] = self.UpdateReputationData,
+		RESTDATA = self.UpdateRestData,
+	}
+
+	barHandlers = {
+		[Bars.None] = emptyFun,
+		[Bars.XP] = UpdateXPBar,
+		[Bars.AZ] = (not wowClassic) and UpdateAzeriteBar or nil,
+		[Bars.REP] = UpdateReputationBar,
+	}
+
+	barData = {
+		[Bars.XP] = self.xpData,
+		[Bars.AZ] = self.azerData, -- nil on Classic
+		[Bars.REP] = self.repData,
+		--RESTDATA = self.restData,
+	}
 
 	UI:Disable()
 
@@ -243,7 +407,7 @@ function M:OnInitialize()
 	end
 
 	local onBarSettingsUpdated = {
-		function(localSelf, _)
+		function(localSelf)
 			localSelf:UpdateBarSettings()
 			localSelf:SetBars(false)
 		end,
@@ -303,7 +467,7 @@ function M:OnInitialize()
 				updateBar = true
 			end
 			if updateBar then
-				eventMap._self:UpdateXPBar()
+				eventMap._self:UpdateActiveBar()
 			end
 		end
 	)
@@ -319,11 +483,11 @@ function M:OnEnable()
 
 	self:RegisterEvent("PLAYER_XP_UPDATE", "UpdateXPData")
 	self:RegisterEvent("PLAYER_LEVEL_UP", "LevelUp")
-	self:RegisterEvent("PLAYER_UPDATE_RESTING", "UpdateXPData")
-	self:RegisterEvent("UPDATE_EXHAUSTION", "UpdateXPBar")
-	self:RegisterEvent("UPDATE_FACTION", "UpdateXPBar")
+	self:RegisterEvent("PLAYER_UPDATE_RESTING", "UpdateRestData")
+	self:RegisterEvent("UPDATE_EXHAUSTION", "UpdateRestData")
+	self:RegisterEvent("UPDATE_FACTION", "UpdateReputationData")
 	if not wowClassic then
-		self:RegisterEvent("AZERITE_ITEM_EXPERIENCE_CHANGED", "UpdateXPBar")
+		self:RegisterEvent("AZERITE_ITEM_EXPERIENCE_CHANGED", "UpdateAzeriteData")
 	end
 
 	if db.reputation.autowatchrep then
@@ -352,10 +516,15 @@ function M:OnEnable()
 	self:UpdateBarSettings(db.bars.priority)
 	self:SetBars(false)
 
-	self:UpdateXPData()
+	-- Call bar handlers to fill initial values in data
+	for _, v in pairs(barDataHandlers) do
+		v(self, false)
+	end
 
 	-- Show the bar
 	UI:EnableEx(db.general.hidestatus)
+
+	self:UpdateActiveBar()
 end
 
 function M:OnDisable()
@@ -381,7 +550,7 @@ function M:OnProfileChanged(db, skipBarUpdate)
 	Reputation:SetExaltedColor(db.bars.exalted)
 
 	if not skipBarUpdate then
-		self:UpdateXPBar()
+		self:UpdateActiveBar()
 	end
 end
 
@@ -390,7 +559,7 @@ function M:OnBarEvent(event, ...)
 		self:OnButtonClick(...)
 	elseif event == "button-over" then
 		self:SetBars(...)
-		self:UpdateXPBar()
+		self:UpdateActiveBar()
 		self:ToggleBarTooltip(...)
 	elseif event == "save-position" then
 		self:OnSavePosition(...)
@@ -518,122 +687,69 @@ function M:PET_BATTLE_CLOSE()
 	UI:EnableEx(Config.GetDB().general.hidestatus)
 end
 
--- Update XP bar data
-function M:UpdateXPData()
+function M:UpdateXPData(updateBar)
+	print("UpdXPData", updateBar)
+	local prevData = updateBar and self.xpData:Get() or nil
 	self.xpData:Update(UnitLevel("player"), GetPlayerXP(), UnitXPMax("player"))
-	self:UpdateXPBar()
+
+	Bars.UpdateBarSettings({
+		isMaxLevelXP = IsPlayerAtEffectiveMaxLevel(),
+	})
+
+	if updateBar then
+		self:UpdateActiveBar(Bars.XP, { prevData = prevData })
+	end
 end
 
-function M:UpdateReputationBar(showText)
-	local db = Config.GetDB()
+function M:UpdateRestData(updateBar)
+	print("UpdRestData", updateBar)
+	local prevData = updateBar and self.restData:Get() or nil
+	self.restData:Update(nil, GetXPExhaustion())
+
+	if updateBar then
+		self:UpdateActiveBar(Bars.XP, { prevRestData = prevData })
+	end
+end
+
+--[==[function M:UpdateAzeriteData(updateBar)
+	--[[print("UpdAzerData", updateBar)
+	local prevData = updateBar and self.azerData:Get() or nil
+
+	Bars.UpdateBarSettings({
+		hasAzerite = HasActiveAzeriteItem(),
+		isMaxLevelAzerite = IsAzeriteItemAtMaxLevel(),
+	})
+
+	local azerCallback = Utils.Bind(self.UpdateAzeriteData, self, updateBar)
+	local name, azeriteLevel, currXP, maxXP = GetHeartOfAzerothInfo(azerCallback)
+	if name then
+		self.azerData:Update(name, azeriteLevel, currXP, maxXP)
+		if updateBar then
+			self:UpdateActiveBar(Bars.AZ, { prevData = prevData })
+		end
+	end
+end]==]
+
+function M:UpdateReputationData(updateBar)
+	print("UpdRepData", updateBar)
+	local prevData = updateBar and self.repData:Get() or nil
 	local repInfo = { Reputation:GetWatchedFactionData() }
-	local repFactionID, repName, repStanding,
-			repStandingText, repStandingColor,
-			repMin, repMax, repValue,
-			hasBonusRep, isLFGBonus,
-			isFactionParagon, hasParagonReward, isAtWar = unpack(repInfo)
+	local repName, repStanding, repMax, repValue = unpack(Utils.Values(repInfo, 2, 3, 7, 8))
 
-	if repName == nil then
-		UI:SetMainBarVisible(false, DoSetBorderColor(db.general))
-		UI:SetRemainingBarVisible(false)
-		UI:SetBarText(L["You need to select a faction to watch"])
-		UI:SetBarTextColor(db.bars.reptext)
-		UI:SetFactionInfo(nil, nil)
-		return
+	if prevData and not prevData.curr then
+		prevData = nil
 	end
 
-	UI:SetFactionInfo(repFactionID, db.bars.repicons and showText and {
-				hasBonusRep,
-				isLFGBonus,
-				isFactionParagon,
-				hasParagonReward,
-				isAtWar,
-			} or nil)
+	self:ShowReputationList(true)
 
-	UI:SetMainBarVisible(true)
-	UI:SetRemainingBarVisible(false)
-
-	UI:SetMainBarValues(repMin, repMax, repValue)
-	UI:SetMainBarColor(repStandingColor, DoSetBorderColor(db.general))
-	UI:SetBarText(showText and GetReputationText(db.bars.repstring, repInfo) or nil)
-	UI:SetBarTextColor(showText and db.bars.reptext or nil)
-end
-
-function M:UpdateXPBar(event)
-	local db = Config.GetDB()
-	local bar = Bars.GetVisibleBar()
-	local showText = bar < Config.FLAG_NOTEXT
-	bar = bar % Config.FLAG_NOTEXT
-
-	if event == "UPDATE_FACTION" then
-		self:ShowReputationList(true)
+	if not prevData or repName ~= prevData.name or repStanding ~= prevData.level
+			or (not prevData.curr) or prevData.curr < repValue then
+		self.repData:Update(repName, repStanding, repValue, repMax, repInfo)
 	end
 
-	if bar == Bars.REP then
-		return self:UpdateReputationBar(showText)
-	else
-		UI:SetMainBarVisible(true)
+	if updateBar then
+		self:UpdateActiveBar(Bars.REP, { prevData = prevData })
 	end
-
-	local xpText, currXP, maxXP, barColor, txtcol
-
-	if bar == Bars.AZ then
-		--[[ocal name, azeriteLevel
-		name, azeriteLevel, currXP, maxXP = GetHeartOfAzerothInfo(self.UpdateXPBar, self)
-		if name then
-			xpText = showText and GetAzerText(name, currXP, maxXP, azeriteLevel) or nil
-		else
-			currXP, maxXP, xpText = 0, 1, L["Azerite item not found!"]
-		end
-
-		barColor = db.bars.azerite
-		UI:SetRemainingBarVisible(false)
-		txtcol = showText and db.bars.azertext or nil
-
-		UI:SetAzeriteInfo(db.bars.azicons and showText and { IsAzeriteItemAtMaxLevel() } or nil)]]
-	elseif bar == Bars.XP then
-		-- GetXPExhaustion() returns nil when no bonus present and 0 on max level
-		local xp, restedXP = self.xpData:Get(), GetXPExhaustion() or 0
-		local maxLevel, reason = Config.GetPlayerMaxLevel()
-		local level = UnitLevel("player")
-		local isXPStopped = reason == Config.XPLockedReasons.LOCKED_XP
-		currXP, maxXP = xp.curr, xp.max
-		if restedXP == 0 or isXPStopped then
-			barColor = db.bars.normal
-			UI:SetRemainingBarVisible(false)
-		else
-			UI:SetRemainingBarValues(math_min(0, currXP), maxXP, currXP + restedXP)
-
-			local remaining = db.bars.remaining
-
-			UI:SetRemainingBarColor(remaining)
-
-			-- Do we want to indicate rest?
-			if IsResting() and db.bars.indicaterest then
-				barColor = db.bars.resting
-			else
-				barColor = db.bars.rested
-			end
-
-			UI:SetRemainingBarVisible(db.bars.showremaining)
-		end
-
-		local isLevelCap = reason == Config.XPLockedReasons.MAX_TRIAL_LEVEL
-		local isMaxLevel = IsPlayerAtEffectiveMaxLevel() and reason == Config.XPLockedReasons.MAX_EXPANSION_LEVEL
-
-		UI:SetXPInfo(db.bars.xpicons and showText and { isMaxLevel, isXPStopped, isLevelCap } or nil)
-
-		txtcol = showText and db.bars.xptext or nil
-		xpText = showText and GetXPText(xp.curr, xp.max, xp.rem, restedXP, level, maxLevel, self.xpData:GetKTL()) or nil
-	else
-		return
-	end
-
-	UI:SetMainBarValues(math_min(0, currXP), maxXP, currXP)
-	UI:SetMainBarColor(barColor, DoSetBorderColor(db.general))
-
-	UI:SetBarText(xpText)
-	UI:SetBarTextColor(txtcol)
 end
 
 function M:LevelUp(event, level)
@@ -641,7 +757,33 @@ function M:LevelUp(event, level)
 		isMaxLevelXP = IsPlayerAtEffectiveMaxLevel(),
 	})
 	Bars.UpdateBarState(false)
-	self:UpdateXPBar()
+	self:UpdateActiveBar()
+end
+
+function M:UpdateActiveBar(source, updateData)
+	print("UpdActiveBar", source, updateData and "updData+" or "nil/false")
+	local db = Config.GetDB()
+	local bar = Bars.GetVisibleBar()
+	local showText = bar < Config.FLAG_NOTEXT
+	bar = bar % Config.FLAG_NOTEXT
+
+	if not updateData then
+		updateData = {}
+	end
+
+	if not source or bar == source then
+		updateData.db = db
+		updateData.showText = showText
+		updateData.data = barData[bar]:Get()
+		if bar == Bars.XP then
+			updateData.restData = self.restData:Get()
+		end
+		return barHandlers[bar](updateData)
+	end
+
+	-- bar ~= source
+	-- should not happen now
+	return nil --barHandlers[source](updateData)
 end
 
 function M:ToggleBarTooltip(isMouseOver, isCtrl, isAlt, isShift)
