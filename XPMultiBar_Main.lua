@@ -486,8 +486,11 @@ function M:OnEnable()
 	self:RegisterEvent("PLAYER_UPDATE_RESTING", "UpdateRestData")
 	self:RegisterEvent("UPDATE_EXHAUSTION", "UpdateRestData")
 	self:RegisterEvent("UPDATE_FACTION", "UpdateReputationData")
+
 	if not wowClassic then
 		self:RegisterEvent("AZERITE_ITEM_EXPERIENCE_CHANGED", "UpdateAzeriteData")
+		self:RegisterEvent("LFG_BONUS_FACTION_ID_UPDATED", "UpdateReputationData")
+		self:RegisterEvent("QUEST_TURNED_IN", "CheckParagonRewardQuest")
 	end
 
 	if db.reputation.autowatchrep then
@@ -546,7 +549,7 @@ function M:OnProfileChanged(db, skipBarUpdate)
 	self:SetTexture(db.general.texture)
 	self:SetFontOptions(db.general)
 	self:UpdateBarSettings(db.bars.priority)
-	self:SetBars(false)
+	self:SetBars()
 	Reputation:SetExaltedColor(db.bars.exalted)
 
 	if not skipBarUpdate then
@@ -694,18 +697,19 @@ function M:UpdateXPData(updateBar)
 	Bars.UpdateBarSettings({
 		isMaxLevelXP = IsPlayerAtEffectiveMaxLevel(),
 	})
+	Bars.UpdateBarState()
 
 	if updateBar then
-		self:UpdateActiveBar(Bars.XP, { prevData = prevData })
+		self:UpdateActiveBar({ prevData = prevData })
 	end
 end
 
 function M:UpdateRestData(updateBar)
 	local prevData = updateBar and self.restData:Get() or nil
-	self.restData:Update(nil, GetXPExhaustion())
+	self.restData:Update(0, GetXPExhaustion() or 0)
 
 	if updateBar then
-		self:UpdateActiveBar(Bars.XP, { prevRestData = prevData })
+		self:UpdateActiveBar({ prevRestData = prevData })
 	end
 end
 
@@ -716,13 +720,14 @@ end
 		hasAzerite = HasActiveAzeriteItem(),
 		isMaxLevelAzerite = IsAzeriteItemAtMaxLevel(),
 	})
+	Bars.UpdateBarState()
 
 	local azerCallback = Utils.Bind(self.UpdateAzeriteData, self, updateBar)
 	local name, azeriteLevel, currXP, maxXP = GetHeartOfAzerothInfo(azerCallback)
 	if name then
 		self.azerData:Update(name, azeriteLevel, currXP, maxXP)
 		if updateBar then
-			self:UpdateActiveBar(Bars.AZ, { prevData = prevData })
+			self:UpdateActiveBar({ prevData = prevData })
 		end
 	end
 end]==]
@@ -737,14 +742,16 @@ function M:UpdateReputationData(updateBar)
 	end
 
 	self:ShowReputationList(true)
-
-	if not prevData or repName ~= prevData.name or repStanding ~= prevData.level
-			or (not prevData.curr) or prevData.curr < repValue then
-		self.repData:Update(repName, repStanding, repValue, repMax, repInfo)
-	end
+	self.repData:Update(repName, repStanding, repValue, repMax, repInfo)
 
 	if updateBar then
-		self:UpdateActiveBar(Bars.REP, { prevData = prevData })
+		self:UpdateActiveBar({ prevData = prevData })
+	end
+end
+
+function M:CheckParagonRewardQuest(event, questID)
+	if select(20, Reputation:GetWatchedFactionData()) == questID then
+		self:UpdateReputationData(true)
 	end
 end
 
@@ -752,11 +759,11 @@ function M:LevelUp(event, level)
 	Bars.UpdateBarSettings({
 		isMaxLevelXP = IsPlayerAtEffectiveMaxLevel(),
 	})
-	Bars.UpdateBarState(false)
+	Bars.UpdateBarState()
 	self:UpdateActiveBar()
 end
 
-function M:UpdateActiveBar(source, updateData)
+function M:UpdateActiveBar(updateData)
 	local db = Config.GetDB()
 	local bar = Bars.GetVisibleBar()
 	local showText = bar < Config.FLAG_NOTEXT
@@ -766,7 +773,7 @@ function M:UpdateActiveBar(source, updateData)
 		updateData = {}
 	end
 
-	if not source and bar > 0 or bar == source then
+	if bar > 0 then
 		updateData.db = db
 		updateData.showText = showText
 		updateData.data = barData[bar]:Get()

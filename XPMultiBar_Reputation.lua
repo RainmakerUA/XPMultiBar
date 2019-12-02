@@ -309,7 +309,7 @@ local function GetFactionReputationData(factionID)
 			_--[[factionID]], hasBonusRep, canBeLFGBonus = GetFactionInfoByID(factionID)
 	local isFactionParagon = false
 	local hasParagonReward = false
-	local repStandingText, repStandingColor, isLFGBonus
+	local repStandingText, repStandingColor, isLFGBonus, paragonRewardQuestID
 
 	if not repName then
 		-- Return nil for non-existent factions
@@ -338,7 +338,9 @@ local function GetFactionReputationData(factionID)
 		-- If so, adjust values to show bar to next paragon bonus.
 		if repStanding == STANDING_EXALTED then
 			if isFactionParagon then
-				local parValue, parThresh, _, hasReward, tooLowLevelForParagon = GetFactionParagonInfo(factionID)
+				local parValue, parThresh, paragonQuestID, hasReward, tooLowLevelForParagon
+																		= GetFactionParagonInfo(factionID)
+				paragonRewardQuestID = paragonQuestID
 				hasParagonReward = not tooLowLevelForParagon and hasReward
 				-- parValue is cumulative. We need to get modulo by the current threshold.
 				repMax = parThresh
@@ -364,7 +366,7 @@ local function GetFactionReputationData(factionID)
 	return factionID, repName, repStanding, repStandingText, repStandingColor,
 			repMin, repMax, repValue, hasBonusRep, isLFGBonus,
 			isFactionParagon, hasParagonReward, atWarWith,
-			isHeader, hasRep, isCollapsed, isChild, isWatched, repDesc
+			isHeader, hasRep, isCollapsed, isChild, isWatched, repDesc, paragonRewardQuestID
 end
 
 local function SetWatchedFactionByName(factionName, amount, autotrackGuild)
