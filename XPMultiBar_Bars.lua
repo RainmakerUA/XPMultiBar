@@ -20,11 +20,17 @@ B.XP = 1
 B.AZ = 2
 B.REP = 3
 
-local currentState = {
+local currentSettings = {
 	priority = {},
 	isMaxLevelXP = false,
 	hasAzerite = false,
 	isMaxLevelAzerite = false,
+}
+
+local currentState = {
+	isOver = false,
+	isAlt = false,
+	isShift = false,
 }
 
 local currentBars = nil
@@ -58,12 +64,19 @@ function B:OnInitialize()
 end
 
 function B.UpdateBarSettings(barSettings)
-	Utils.Override(currentState, barSettings)
-	currentBars = GetCurrentBars(currentState)
+	Utils.Override(currentSettings, barSettings)
+	currentBars = GetCurrentBars(currentSettings)
 end
 
 function B.UpdateBarState(isOver, isAlt, isShift)
+
+	if isOver == nil then
+		isOver, isAlt, isShift = currentState.isOver, currentState.isAlt, currentState.isShift
+	end
+
 	mouseOverWithShift = isOver and isShift
+
+	Utils.Override(currentState, { isOver = false, isAlt = false, isShift = false, })
 
 	if not isOver or mouseOverWithShift then
 		visibleBar = currentBars[1]
