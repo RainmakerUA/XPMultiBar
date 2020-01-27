@@ -7,8 +7,8 @@
 		"log": "No changes provided",
 		"date": "Recenly",
 		"gameVersions": [
-			"1.13.0",
-			"1.13.2"
+			"1.13.2",
+			"1.13.3"
 		]
 	},
 	"exclude": [
