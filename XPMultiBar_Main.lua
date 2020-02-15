@@ -227,7 +227,8 @@ local barDataHandlers, barHandlers, barData
 --[[ db, showText, data, prevData, restData, prevRestData ]]
 local function UpdateXPBar(updateData)
 	local db, showText, data, prevData, restData, prevRestData
-			= unpack(Utils.Values(updateData, "db", "showText", "data", "prevData", "restData", "prevRestData"))
+			= updateData.db, updateData.showText, updateData.data, updateData.prevData,
+				updateData.restData, updateData.prevRestData
 
 	-- GetXPExhaustion() returns nil when no bonus present and 0 on max level
 	local restedXP = restData and restData.curr or 0
@@ -277,8 +278,8 @@ end
 --[[ db, showText, data, prevData ]]
 local function UpdateAzeriteBar(updateData)
 	local db, showText, data, prevData
-			= unpack(Utils.Values(updateData, "db", "showText", "data", "prevData"))
-	local name, azeriteLevel, currXP, maxXP = unpack(Utils.Values(data, "name", "level", "curr", "max"))
+			= updateData.db, updateData.showText, updateData.data, updateData.prevData
+	local name, azeriteLevel, currXP, maxXP = data.name, data.level, data.curr, data.max
 	local xpText
 
 	if name then
@@ -303,7 +304,7 @@ end
 --[[ db, showText, data, prevData ]]
 local function UpdateReputationBar(updateData)
 	local db, showText, data, prevData
-			= unpack(Utils.Values(updateData, "db", "showText", "data", "prevData"))
+			= updateData.db, updateData.showText, updateData.data, updateData.prevData
 	local repInfo = data.extra
 	local repFactionID, repName, repStanding,
 			repStandingText, repStandingColor,
@@ -735,7 +736,7 @@ end]==]
 function M:UpdateReputationData(updateBar)
 	local prevData = updateBar and self.repData:Get() or nil
 	local repInfo = { Reputation:GetWatchedFactionData() }
-	local repName, repStanding, repMax, repValue = unpack(Utils.Values(repInfo, 2, 3, 7, 8))
+	local repName, repStanding, repMax, repValue = repInfo[2], repInfo[3], repInfo[7], repInfo[8]
 
 	if prevData and not prevData.curr then
 		prevData = nil
