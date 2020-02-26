@@ -44,7 +44,7 @@ function XPMultiBar:OnInitialize()
 	local _, _, vernum, isClassic, vertype = version:find("^(%d+%.%d+%.%d+)(c?)-(%w+)$")
 	XPMultiBar.Version = {
 		Number = vernum or "test",
-		Classic = isClassic and isClassic ~= "",
+		Classic = isClassic and isClassic ~= "" or false,
 		Type = vertype,
 	}
 end

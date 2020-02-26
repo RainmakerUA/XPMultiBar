@@ -75,16 +75,18 @@ function dataPrototype:Update(name, level, current, maximum, extra)
 		name, level, current, maximum, extra = nil, name, level, current, maximum
 	end
 
-	local prevName = self.data.name
-	local prevLevel = self.data.level
-	local prevXP = self.data.curr
-	local prevMax = self.data.max
-	self.data.name = name
-	self.data.level = level
-	self.data.curr = current
-	self.data.max = maximum
-	self.data.rem = maximum and maximum - current or nil
-	self.data.extra = extra
+	local data = self.data
+
+	local prevName = data.name
+	local prevLevel = data.level
+	local prevXP = data.curr
+	local prevMax = data.max
+	data.name = name
+	data.level = level
+	data.curr = current
+	data.max = maximum
+	data.rem = maximum and maximum - current or nil
+	data.extra = extra
 
 	if not prevName or prevName == name then
 		local diff = prevXP and (current - prevXP) or nil
@@ -93,14 +95,17 @@ function dataPrototype:Update(name, level, current, maximum, extra)
 			if level and level > prevLevel then
 				diff = diff + prevMax
 			end
-			self.data.diff = diff
+			data.diff = diff
 			if self.tracking and diff > 0 then
 				self.sessionKills = self.sessionKills % 10 + 1
 				self.lastXPValues[self.sessionKills] = diff
 			end
 		end
-	elseif self.tracking then
-		self:ClearKTL()
+	else
+		data.diff = nil
+		if self.tracking then
+			self:ClearKTL()
+		end
 	end
 end
 
