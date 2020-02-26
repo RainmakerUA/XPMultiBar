@@ -50,6 +50,7 @@ local UnitTrialXP = UnitTrialXP
 local UnitXP = UnitXP
 local UnitXPMax = UnitXPMax
 
+local SetTimeout = emptyFun
 local FindActiveAzeriteItem = emptyFun
 local GetAzeriteItemXPInfo = emptyFun
 local GetAzeritePowerLevel = emptyFun
@@ -57,6 +58,7 @@ local HasActiveAzeriteItem = emptyFun
 local IsAzeriteItemAtMaxLevel = emptyFun
 
 if not wowClassic then
+	SetTimeout = C_Timer.After
 	FindActiveAzeriteItem = C_AzeriteItem.FindActiveAzeriteItem
 	GetAzeriteItemXPInfo = C_AzeriteItem.GetAzeriteItemXPInfo
 	GetAzeritePowerLevel = C_AzeriteItem.GetPowerLevel
@@ -204,10 +206,15 @@ end
 local function DoSetBorderColor(db_general)
 	return db_general.border and db_general.borderDynamicColor
 end
-
 --[[
-	local function CreateAnimationSequence(min, max, start, finish,
-										color, text, onstart, onfinish)
+local CreateAnimationSequence, AnimateBar
+
+do
+	local queue = {}
+	local AnimationStep
+
+	function CreateAnimationSequence(min, max, start, finish,
+											color, text, onstart, onfinish)
 		return {
 			min = min,
 			max = max,
@@ -220,8 +227,14 @@ end
 			onfinish = onfinish
 		}
 	end
-]]
 
+	function AnimateBar()
+	end
+
+	function AnimationStep()
+	end
+end
+]]
 local barDataHandlers, barHandlers, barData
 
 --[[ db, showText, data, prevData, restData, prevRestData ]]
@@ -237,8 +250,6 @@ local function UpdateXPBar(updateData)
 	local isXPStopped = reason == Config.XPLockedReasons.LOCKED_XP
 	local currXP, maxXP = data.curr, data.max
 	local barColor
-	-- TODO:!
-	--if maxXP == 0 then maxXP = 1 end
 
 	if prevRestData then
 		-- animate Rest bar
@@ -251,8 +262,7 @@ local function UpdateXPBar(updateData)
 		UI:SetRemainingBarValues(math_min(0, currXP), maxXP, currXP + restedXP)
 		UI:SetRemainingBarColor(db.bars.remaining)
 
-		-- Do we want to indicate rest?
-		if IsResting() and db.bars.indicaterest then
+		if db.bars.indicaterest and IsResting() then
 			barColor = db.bars.resting
 		else
 			barColor = db.bars.rested
@@ -338,8 +348,6 @@ local function UpdateReputationBar(updateData)
 		UI:SetMainBarColor(repStandingColor, DoSetBorderColor(db.general))
 		UI:SetBarText(showText and GetReputationText(db.bars.repstring, repInfo) or nil)
 		UI:SetBarTextColor(showText and db.bars.reptext or nil)
-	-- else - should never get here
-		-- print("M:UpdateReputationBar: just update Rep. data")
 	end
 end
 
@@ -400,6 +408,8 @@ function M:OnInitialize()
 		end
 	)
 
+	LSM3:Register("border", "Azerite Tooltip", [[interface\tooltips\ui-tooltip-border-azerite]])
+	LSM3:Register("border", "Corrupted Tooltip", [[interface\tooltips\ui-tooltip-border-corrupted]])
 	LSM3:Register("border", "Blizzard Minimap Tooltip", [[interface\minimap\tooltipbackdrop]])
 	LSM3:Register("border", "Blizzard Toast", [[Interface\FriendsFrame\UI-Toast-Border]])
 
@@ -723,7 +733,13 @@ end
 	})
 	Bars.UpdateBarState()
 
-	local azerCallback = Utils.Bind(self.UpdateAzeriteData, self, updateBar)
+	local azerCallback = Utils.Bind(
+										function(main, updBar)
+											main:UpdateAzeriteData(updBar)
+											main:UpdateActiveBar()
+										end,
+										self, updateBar
+									)
 	local name, azeriteLevel, currXP, maxXP = GetHeartOfAzerothInfo(azerCallback)
 	if name then
 		self.azerData:Update(name, azeriteLevel, currXP, maxXP)
@@ -746,13 +762,22 @@ function M:UpdateReputationData(updateBar)
 	self.repData:Update(repName, repStanding, repValue, repMax, repInfo)
 
 	if updateBar then
-		self:UpdateActiveBar({ prevData = prevData })
+		local isParagon, paragonCount, paragonCountPrev = repInfo[11], repInfo[21], prevData and prevData.extra[21] or 0
+		--print("M:UpdateReputationData paragonCount:", paragonCountPrev, "->", paragonCount)
+		if isParagon and paragonCount > paragonCountPrev then
+			-- paragon threshold was overcome
+			-- set timeout to allow hasReward to be updated
+			SetTimeout(0.5, Utils.Bind(self.UpdateActiveBar, self, { prevData = prevData }))
+		else
+			self:UpdateActiveBar({ prevData = prevData })
+		end
 	end
 end
 
 function M:CheckParagonRewardQuest(event, questID)
 	if select(20, Reputation:GetWatchedFactionData()) == questID then
-		self:UpdateReputationData(true)
+		-- set timeout to allow hasReward to be updated
+		SetTimeout(0.5, Utils.Bind(self.UpdateReputationData, self, true))
 	end
 end
 

@@ -29,6 +29,7 @@ local tonumber = tonumber
 local tostring = tostring
 local type = type
 local unpack = unpack
+local math_floor = math.floor
 
 local _G = _G
 local FACTION_ALLIANCE = FACTION_ALLIANCE
@@ -307,8 +308,7 @@ local function GetFactionReputationData(factionID)
 			atWarWith, _--[[canToggleAtWar]], isHeader,
 			isCollapsed, hasRep, isWatched, isChild,
 			_--[[factionID]], hasBonusRep, canBeLFGBonus = GetFactionInfoByID(factionID)
-	local isFactionParagon = false
-	local hasParagonReward = false
+	local isFactionParagon, hasParagonReward, paragonCount = false, false, 0
 	local repStandingText, repStandingColor, isLFGBonus, paragonRewardQuestID
 
 	if not repName then
@@ -344,6 +344,7 @@ local function GetFactionReputationData(factionID)
 				hasParagonReward = not tooLowLevelForParagon and hasReward
 				-- parValue is cumulative. We need to get modulo by the current threshold.
 				repMax = parThresh
+				paragonCount = math_floor(parValue / parThresh)
 				repValue = parValue % parThresh
 				-- if we have reward pending, show overflow
 				if hasParagonReward then
@@ -359,14 +360,15 @@ local function GetFactionReputationData(factionID)
 		end
 	end
 
-		repMin = 0
-		repStandingColor = repStanding and reputationColors[repStanding]
-		isLFGBonus = canBeLFGBonus and factionID == GetLFGBonusFactionID()
+	repMin = 0
+	repStandingColor = repStanding and reputationColors[repStanding]
+	isLFGBonus = canBeLFGBonus and factionID == GetLFGBonusFactionID()
 
 	return factionID, repName, repStanding, repStandingText, repStandingColor,
 			repMin, repMax, repValue, hasBonusRep, isLFGBonus,
 			isFactionParagon, hasParagonReward, atWarWith,
-			isHeader, hasRep, isCollapsed, isChild, isWatched, repDesc, paragonRewardQuestID
+			isHeader, hasRep, isCollapsed, isChild, isWatched, repDesc,
+			paragonRewardQuestID, paragonCount
 end
 
 local function SetWatchedFactionByName(factionName, amount, autotrackGuild)
