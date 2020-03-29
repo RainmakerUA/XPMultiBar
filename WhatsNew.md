@@ -1,5 +1,5 @@
 # Changes
 
-- Add option to hide bar text
+- Bugfixes
 
 #### Complete Changelog
