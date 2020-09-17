@@ -410,6 +410,7 @@ function M:OnInitialize()
 
 	LSM3:Register("border", "Azerite Tooltip", [[interface\tooltips\ui-tooltip-border-azerite]])
 	LSM3:Register("border", "Corrupted Tooltip", [[interface\tooltips\ui-tooltip-border-corrupted]])
+	LSM3:Register("border", "Maw Tooltip", [[interface\tooltips\ui-tooltip-border-maw]])
 	LSM3:Register("border", "Blizzard Minimap Tooltip", [[interface\minimap\tooltipbackdrop]])
 	LSM3:Register("border", "Blizzard Toast", [[Interface\FriendsFrame\UI-Toast-Border]])
 
@@ -500,7 +501,6 @@ function M:OnEnable()
 
 	if not wowClassic then
 		self:RegisterEvent("AZERITE_ITEM_EXPERIENCE_CHANGED", "UpdateAzeriteData")
-		self:RegisterEvent("LFG_BONUS_FACTION_ID_UPDATED", "UpdateReputationData")
 		self:RegisterEvent("QUEST_TURNED_IN", "CheckParagonRewardQuest")
 	end
 

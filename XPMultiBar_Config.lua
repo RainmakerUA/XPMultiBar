@@ -28,8 +28,7 @@ local SHIFT_KEY = SHIFT_KEY
 local BACKGROUND = BACKGROUND
 local REPUTATION = REPUTATION
 local ITEM_QUALITY_COLORS = ITEM_QUALITY_COLORS
-local LE_ITEM_QUALITY_ARTIFACT = LE_ITEM_QUALITY_ARTIFACT
-local MAX_PLAYER_LEVEL_TABLE = MAX_PLAYER_LEVEL_TABLE
+local MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL
 local OFF = OFF
 local KEY_BUTTON1 = KEY_BUTTON1
 local KEY_BUTTON2 = KEY_BUTTON2
@@ -49,12 +48,12 @@ local unpack = unpack
 
 local GameLimitedMode_IsActive = GameLimitedMode_IsActive
 local GetAddOnMetadata = GetAddOnMetadata
-local GetExpansionLevel = GetExpansionLevel
 local GetRestrictedAccountData = GetRestrictedAccountData
 local InterfaceOptionsFrame_OpenToCategory = InterfaceOptionsFrame_OpenToCategory
 local IsXPUserDisabled = IsXPUserDisabled
 local UnitLevel = UnitLevel
 
+local ARTIFACT_QUALITY_TYPE = Enum.ItemQuality.Artifact;
 
 local AceGUIWidgetLSMlists = AceGUIWidgetLSMlists
 
@@ -93,7 +92,7 @@ local db
 local artColor
 
 do
-	local color = ITEM_QUALITY_COLORS[LE_ITEM_QUALITY_ARTIFACT]
+	local color = ITEM_QUALITY_COLORS[ARTIFACT_QUALITY_TYPE]
 	artColor = {
 		r = color.r,
 		g = color.g,
@@ -1972,7 +1971,7 @@ C.EVENT_CONFIG_CHANGED = "ConfigChanged"
 C.EVENT_PROFILE_CHANGED = "ProfileChanged"
 
 C.XPLockedReasons = xpLockedReasons
-C.MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL_TABLE[GetExpansionLevel()]
+C.MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL
 
 C.OpenSettings = OpenSettings
 

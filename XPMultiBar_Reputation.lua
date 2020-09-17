@@ -52,7 +52,6 @@ local GameTooltip_AddColoredLine = GameTooltip_AddColoredLine
 local GameTooltip_AddErrorLine = GameTooltip_AddErrorLine
 local GameTooltip_AddInstructionLine = GameTooltip_AddInstructionLine
 local GameTooltip_AddNormalLine = GameTooltip_AddNormalLine
-local GameTooltip_ClearInsertedFrames = GameTooltip_ClearInsertedFrames
 local GameTooltip_InsertFrame = GameTooltip_InsertFrame
 local GameTooltip_SetDefaultAnchor = GameTooltip_SetDefaultAnchor
 local GameTooltip_SetTitle = GameTooltip_SetTitle
@@ -72,7 +71,6 @@ local SetWatchedFactionIndex = SetWatchedFactionIndex
 local GetFactionParagonInfo = emptyFun
 local IsFactionParagon = emptyFun
 local GetFriendshipReputation = GetFriendshipReputation or emptyFun
-local GetLFGBonusFactionID = GetLFGBonusFactionID or emptyFun
 
 if not wowClassic then
 	GetFactionParagonInfo = C_Reputation.GetFactionParagonInfo
@@ -82,12 +80,14 @@ end
 -- Remove all known globals after this point
 -- luacheck: std none
 
--- luacheck: push globals ReputationTooltipStatusBarMixin ReputationDetailFavoriteFactionCheckBoxMixin
+-- luacheck: push globals ReputationTooltipStatusBarMixin ReputationDetailFavoriteFactionCheckBoxMixin ReputationTooltipStatusBarBorderMixin
 ReputationTooltipStatusBarMixin = {}
 ReputationDetailFavoriteFactionCheckBoxMixin = {}
+ReputationTooltipStatusBarBorderMixin = {}
 
 local rb = ReputationTooltipStatusBarMixin
 local fav = ReputationDetailFavoriteFactionCheckBoxMixin
+local bx = ReputationTooltipStatusBarBorderMixin
 -- luacheck: pop
 
 -- luacheck: push globals ReputationDetailFrame
@@ -117,6 +117,16 @@ end
 
 local function GetErrorText(text)
 	return RED_FONT_COLOR:WrapTextInColorCode(text)
+end
+
+--[[ Border methods ]]
+
+function bx:OnLoad()
+	self:SetBackdrop({
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		edgeSize = 10,
+		insets = { left = 5, right = 5, top = 5, bottom = 5 },
+	})
 end
 
 --[[ Favorite Checkbox methods ]]
@@ -157,7 +167,7 @@ end
 
 function rb:AfterInsert(tooltip, reservedHeight)
 	local _, relative = self:GetPoint(1)
-	self:SetPoint("TOPLEFT", relative, "TOPLEFT", 5, 0)
+	self:SetPoint("TOPLEFT", relative, "TOPLEFT", 0, 0)
 	self:SetPoint("RIGHT", tooltip, "RIGHT", -10, 0)
 	self:Show()
 end
@@ -362,7 +372,7 @@ local function GetFactionReputationData(factionID)
 
 	repMin = 0
 	repStandingColor = repStanding and reputationColors[repStanding]
-	isLFGBonus = canBeLFGBonus and factionID == GetLFGBonusFactionID()
+	isLFGBonus = false
 
 	return factionID, repName, repStanding, repStandingText, repStandingColor,
 			repMin, repMax, repValue, hasBonusRep, isLFGBonus,
@@ -551,7 +561,6 @@ end
 local function HideMenuItemTooltip()
 	GameTooltip:Hide()
 	GameTooltip:SetMinimumWidth(0, false)
-	GameTooltip_ClearInsertedFrames(GameTooltip)
 	ReleaseFrames()
 end
 
@@ -753,7 +762,6 @@ function R:ToggleBarTooltip(visibility)
 	elseif GameTooltip:IsShown() then
 		GameTooltip:Hide()
 		GameTooltip:SetMinimumWidth(0, false)
-		GameTooltip_ClearInsertedFrames(GameTooltip)
 		ReleaseFrames()
 	end
 end
