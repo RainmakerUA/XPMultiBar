@@ -271,6 +271,8 @@ local function UpdateXPBar(updateData)
 		UI:SetRemainingBarVisible(db.bars.showremaining)
 	end
 
+	UI:SetMainBarVisible(true)
+
 	local isLevelCap = reason == Config.XPLockedReasons.MAX_TRIAL_LEVEL
 	local isMaxLevel = IsPlayerAtEffectiveMaxLevel() and reason == Config.XPLockedReasons.MAX_EXPANSION_LEVEL
 	local txtcol = showText and db.bars.xptext or nil
@@ -302,6 +304,7 @@ local function UpdateAzeriteBar(updateData)
 
 	UI:SetAzeriteInfo(db.bars.azicons and showText and { IsAzeriteItemAtMaxLevel() } or nil)
 
+	UI:SetMainBarVisible(true)
 	UI:SetRemainingBarVisible(false)
 
 	UI:SetMainBarValues(math_min(0, currXP), maxXP, currXP)
