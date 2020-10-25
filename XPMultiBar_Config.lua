@@ -240,6 +240,7 @@ local defaults = {
 							X, R, A,
 							A, R, X,
 							R, A, X,
+							R, X, 0
 						},
 		},
 		reputation = {
@@ -280,7 +281,7 @@ local defaults = {
 local GetOptions, GetHelp
 
 do
-	local GROUPS = 4
+	local GROUPS = 5
 	local BARS_IN_GROUP = 3
 	local FLAG_NOTEXT = 4
 	local priorities
@@ -297,13 +298,13 @@ do
 								{ R+N, R, X, 0, 0, 0, R+N, R, X, 0, 0, 0, },
 							}
 						or {
-								{ X, R, 0, X, R, A, A, R, X, R, A, X, },
-								{ X, R, 0, A, R, X, A, R, X, R, A, X, },
-								{ R, X, 0, R, X, A, R, A, X, R, A, X, },
+								{ X, R, 0, X, R, A, A, R, X, R, A, X, R, X, 0, },
+								{ X, R, 0, A, R, X, A, R, X, R, A, X, R, X, 0, },
+								{ R, X, 0, R, X, A, R, A, X, R, A, X, R, X, 0, },
 								-- No-Text presets
-								{ X+N, X, R, X+N, X, R, A+N, A, R, R+N, R, X, },
-								{ X+N, X, R, A+N, A, R, A+N, A, R, R+N, R, A, },
-								{ R+N, R, X, R+N, R, X, R+N, R, A, R+N, R, 0, },
+								{ X+N, X, R, X+N, X, R, A+N, A, R, R+N, R, X, R+N, R, X, },
+								{ X+N, X, R, A+N, A, R, A+N, A, R, R+N, R, A, R+N, R, X, },
+								{ R+N, R, X, R+N, R, X, R+N, R, A, R+N, R, 0, R+N, R, X, },
 							}
 	end
 	C.FLAG_NOTEXT = FLAG_NOTEXT
@@ -466,6 +467,7 @@ do
 		L["PRIOGROUP_3.NAME"] -> Char. level maximum, artifact power below maximum
 		L["PRIOGROUP_3C.NAME"] -> Char. level maximum
 		L["PRIOGROUP_4.NAME"] -> Char. level maximum, artifact power maximum
+		L["PRIOGROUP_5.NAME"] -> Char. level maximum, no artifact (HoA)
 	]]
 
 	local function CreatePriorityGroups()
@@ -494,14 +496,14 @@ do
 						type = "select",
 						name = L["Normal"],
 						desc = L["Choose bar to be shown when mouse is not over the bar"],
-						values = i == 1 and barsNoAzerite or bars,
+						values = (i == 1 or i == 5) and barsNoAzerite or bars,
 					},
 					["pg_" .. i .. "_bar_2"] = {
 						order = 2000,
 						type = "select",
 						name = L["Mouse over"],
 						desc = L["Choose bar to be shown when mouse is over the bar"],
-						values = i == 1 and barsNoAzerite or bars,
+						values = (i == 1 or i == 5) and barsNoAzerite or bars,
 					},
 					["pg_" .. i .. "_bar_3"] = {
 						order = 3000,
@@ -509,7 +511,7 @@ do
 						name = L["Mouse over with %s"]:format(FormatKeyColor(modNames.alt)),
 						-- luacheck: ignore
 						desc = L["Choose bar to be shown when mouse is over the bar while %s key is pressed"]:format(FormatKeyColor(modNames.alt)),
-						values = i == 1 and barsNoAzerite or bars,
+						values = (i == 1 or i == 5) and barsNoAzerite or bars,
 					},
 					["pg_" .. i .. "_text_1"] = {
 						order = 4000,

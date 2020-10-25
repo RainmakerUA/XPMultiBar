@@ -1,7 +1,7 @@
--- This file is generated with ListStrings.ps1
+-- This file is generated with AddonUploader::Update-Localization
 local L = LibStub("AceLocale-3.0"):NewLocale("XPMultiBar", "enUS", true)
 if not L then return end
----------- Total: 232 ----------
+---------- Total: 233 ----------
 L["General"] = true
 L["Bars"] = true
 L["Help"] = true
@@ -198,8 +198,8 @@ L["Remaining reputation value till the next standing"] = true
 L["Current reputation value in percents"] = true
 L["Remaining reputation value in percents"] = true
 L["Help on options"] = true
-L["You need to select a faction to watch"] = true
 L["Azerite item not found!"] = true
+L["You need to select a faction to watch"] = true
 L["Favorite faction"] = true
 L["Choose faction to show in favorites list"] = true
 L["Right Button click to collapse %1$s factions"] = true
@@ -229,6 +229,7 @@ L["PRIOGROUP_2.NAME"] = "Below max character level, with artifact (HoA)"
 L["PRIOGROUP_3.NAME"] = "Maximum character level, before max artifact (HoA) level"
 L["PRIOGROUP_3C.NAME"] = "Maximum character level"
 L["PRIOGROUP_4.NAME"] = "Maximum character level, maximum artifact (HoA) level"
+L["PRIOGROUP_5.NAME"] = "Maximum character level, without artifact (HoA)"
 L["WARNING.NOFAVORITEFACTIONS"] = "You do not have any favorite factions selected"
 L["HELP.FAVORITEFACTIONS"] = "Favorite factions can be added or removed using Reputation menu or standard Reputation window"
 L["HELP.XPBARTEMPLATE"] = "Format templates are used to insert specific values into XP text string"

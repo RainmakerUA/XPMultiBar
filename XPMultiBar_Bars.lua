@@ -43,6 +43,7 @@ local function GetCurrentBars(state)
 			2C.	1 0 ?
 			3.	1 1 0
 			4.	1 1 1
+			5.  1 0 0 -- For 9.0.1 Prepatch
 	]]
 	local prio, maxLevelXP, hasAzerite, maxLevelAzer
 			= state.priority, state.isMaxLevelXP, state.hasAzerite, state.isMaxLevelAzerite
@@ -52,6 +53,8 @@ local function GetCurrentBars(state)
 		index = 1
 	elseif not maxLevelXP then
 		index = 2
+	elseif not hasAzerite then
+		index = 5
 	elseif not maxLevelAzer then
 		index = 3
 	else

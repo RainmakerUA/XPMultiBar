@@ -1,7 +1,7 @@
--- This file is generated with ListStrings.ps1
+-- This file is generated with AddonUploader::Update-Localization
 local L = LibStub("AceLocale-3.0"):NewLocale("XPMultiBar", "koKR")
 if not L then return end
----------- Total: 232 ----------
+---------- Total: 233 ----------
 L["General"] = "기본 설정"
 L["Bars"] = "바"
 L["Help"] = "도움말"
@@ -198,8 +198,8 @@ L["Remaining reputation value till the next standing"] = "다음 관계 등급�
 L["Current reputation value in percents"] = "현재 평판 수치 (퍼센트)"
 L["Remaining reputation value in percents"] = "남은 평판 수치 (퍼센트)"
 L["Help on options"] = "설정 도움말"
-L["You need to select a faction to watch"] = "추적할 진영을 선택하세요"
 L["Azerite item not found!"] = "아제라이트 아이템이 없습니다"
+L["You need to select a faction to watch"] = "추적할 진영을 선택하세요"
 L["Favorite faction"] = "즐겨찾는 목록"
 L["Choose faction to show in favorites list"] = "즐겨찾는 목록에 추가할 진영을 선택합니다"
 L["Right Button click to collapse %1$s factions"] = "Right Click시 %1$s 진영의 목록을 접습니다"
@@ -229,6 +229,7 @@ L["PRIOGROUP_2.NAME"] = "만렙 전 레벨, 유물 없음 (HoA)"
 L["PRIOGROUP_3.NAME"] = "만렙, 최고 유물력 레벨 이전 (HoA)"
 L["PRIOGROUP_3C.NAME"] = "만렙"
 L["PRIOGROUP_4.NAME"] = "만렙, 최고 유물력 레벨 (HoA)"
+L["PRIOGROUP_5.NAME"] = "Maximum character level, without artifact (HoA)"
 L["WARNING.NOFAVORITEFACTIONS"] = "즐겨찾는 목록으로 설정된 진영이 없습니다"
 L["HELP.FAVORITEFACTIONS"] = "평판 메뉴나 기본 블리자드 평판창에서 즐겨찾는 목록에 추가/삭제를 할 수 있습니다"
 L["HELP.XPBARTEMPLATE"] = "형식 템플릿은 경험치 바에 특정 정보를 나타내기 위해 사용됩니다"
