@@ -182,8 +182,12 @@ do
 			end
 		end
 
-		local currXP, maxXP = GetAzeriteItemXPInfo(item)
-		return name or "???", GetAzeritePowerLevel(item), currXP, maxXP
+		if name then
+			local currXP, maxXP = GetAzeriteItemXPInfo(item)
+			return name or "???", GetAzeritePowerLevel(item), currXP, maxXP
+		else
+			return nil
+		end
 	end
 end
 
@@ -654,7 +658,7 @@ function M:UpdateBarSettings(prio)
 	Bars.UpdateBarSettings({
 		priority = prio,
 		isMaxLevelXP = IsPlayerAtEffectiveMaxLevel(),
-		hasAzerite = HasActiveAzeriteItem(),
+		hasAzerite = HasActiveAzeriteItem() and GetHeartOfAzerothInfo() or false,
 		isMaxLevelAzerite = IsAzeriteItemAtMaxLevel(),
 	})
 end
@@ -729,13 +733,6 @@ end
 
 function M:UpdateAzeriteData(updateBar)
 	local prevData = updateBar and self.azerData:Get() or nil
-
-	Bars.UpdateBarSettings({
-		hasAzerite = HasActiveAzeriteItem(),
-		isMaxLevelAzerite = IsAzeriteItemAtMaxLevel(),
-	})
-	Bars.UpdateBarState()
-
 	local azerCallback = Utils.Bind(
 										function(main, updBar)
 											main:UpdateAzeriteData(updBar)
@@ -743,7 +740,16 @@ function M:UpdateAzeriteData(updateBar)
 										end,
 										self, updateBar
 									)
+
 	local name, azeriteLevel, currXP, maxXP = GetHeartOfAzerothInfo(azerCallback)
+
+	Bars.UpdateBarSettings({
+		hasAzerite = HasActiveAzeriteItem() and name or false,
+		isMaxLevelAzerite = IsAzeriteItemAtMaxLevel(),
+	})
+
+	Bars.UpdateBarState()
+
 	if name then
 		self.azerData:Update(name, azeriteLevel, currXP, maxXP)
 		if updateBar then
