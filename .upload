@@ -10,7 +10,9 @@
 			"1.13.2",
 			"1.13.3",
 			"1.13.4",
-			"1.13.5"
+			"1.13.5",
+			"1.13.6",
+			"1.13.7"
 		]
 	},
 	"exclude": [
@@ -26,6 +28,7 @@
 		"CallbackHandler-1.0",
 		"AceAddon-3.0",
 		"AceConfig-3.0",
+		"AceDBOptions-3.0",
 		"AceConsole-3.0",
 		"AceGUI-3.0",
 		"AceDB-3.0",

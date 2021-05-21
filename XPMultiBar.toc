@@ -1,4 +1,4 @@
-## Interface: 11305
+## Interface: 11307
 ## Title: XP MultiBar
 ## Notes: XP / Reputation bar
 ## Notes-ruRU: Полоса опыта / репутации
@@ -11,8 +11,9 @@
 ## X-Embeds: Ace3, LibQTip-1.0, LibSharedMedia-3.0
 ## X-ReleaseDate: @@release-date@@
 
-Locales\locales.xml
 libs.xml
+
+Locales\locales.xml
 
 XPMultiBar.lua
 XPMultiBar_Event.lua
