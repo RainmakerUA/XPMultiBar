@@ -1,4 +1,4 @@
-## Interface: 90002
+## Interface: 90005
 ## Title: XP MultiBar
 ## Notes: XP / Reputation / Azerite power bar
 ## Notes-ruRU: Полоса опыта / репутации / силы азерита
@@ -11,8 +11,9 @@
 ## X-Embeds: Ace3, LibQTip-1.0, LibSharedMedia-3.0
 ## X-ReleaseDate: @@release-date@@
 
-Locales\locales.xml
 libs.xml
+
+Locales\locales.xml
 
 XPMultiBar.lua
 XPMultiBar_Event.lua
