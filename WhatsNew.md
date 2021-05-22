@@ -1,5 +1,5 @@
 # Changes
 
-- Support for Classic 1.13.7
+- Support for TBC Classic 2.5.1
 
 #### Complete Changelog

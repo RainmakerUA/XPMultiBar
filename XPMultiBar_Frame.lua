@@ -52,6 +52,16 @@ local margins = {
 local defaultBorderColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 }
 local noBorderColor = { r = 0, g = 0, b = 0, a = 0 }
 
+-- luacheck: push globals XPMultiBarButtonBackdropInfo
+
+XPMultiBarButtonBackdropInfo = {
+	edgeFile = "Interface\\FriendsFrame\\UI-Toast-Border",
+	edgeSize = 10,
+	insets = { left = 5, right = 5, top = 5, bottom = 5 },
+}
+
+-- luacheck: pop
+
 -- luacheck: push globals XPMultiBarInnerBarFrameMixin XPMultiBarFrameMixin XPMultiBarButtonMixin
 
 XPMultiBarInnerBarFrameMixin = {}

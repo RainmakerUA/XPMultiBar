@@ -1,4 +1,4 @@
-## Interface: 11307
+## Interface: 20501
 ## Title: XP MultiBar
 ## Notes: XP / Reputation bar
 ## Notes-ruRU: Полоса опыта / репутации

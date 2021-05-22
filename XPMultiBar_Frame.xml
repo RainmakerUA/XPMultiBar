@@ -32,13 +32,10 @@
 				<BarTexture parentKey="tex" file="Interface\AddOns\XPMultiBar\Textures\bubbles" />
 				<BarColor r="0" g="0" b="0" a="0.5" />
 			</StatusBar>
-			<Button parentKey="button" mixin="XPMultiBarButtonMixin" setAllPoints="true">
-				<Backdrop edgeFile="Interface\FriendsFrame\UI-Toast-Border" alphaMode="BLEND">
-					<EdgeSize>
-						<AbsValue val="10"/>
-					</EdgeSize>
-					<BackgroundInsets left="5" right="5" top="5" bottom="5" />
-				</Backdrop>
+			<Button parentKey="button" inherits="BackdropTemplate" mixin="XPMultiBarButtonMixin" setAllPoints="true">
+				<KeyValues>
+					<KeyValue key="backdropInfo" value="XPMultiBarButtonBackdropInfo" type="global"/>
+				</KeyValues>
 				<Layers>
 					<Layer level="BACKGROUND">
 						<FontString parentKey="text" inherits="GameFontNormal">

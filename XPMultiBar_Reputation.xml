@@ -41,15 +41,7 @@
 						<BarTexture file="Interface\TargetingFrame\UI-StatusBar" />
 						<BarColor r="0.5" g="0.5" b="0.5" a="1" />
 					</StatusBar>
-					<Frame parentKey="border" setAllPoints="true" frameLevel="3">
-						<Backdrop edgeFile="Interface\Tooltips\UI-Tooltip-Border" alphaMode="BLEND">
-							<EdgeSize>
-								<AbsValue val="10" />
-								<BackgroundInsets>
-									<AbsInset left="5" right="5" top="5" bottom="5"/>
-								</BackgroundInsets>
-							</EdgeSize>
-						</Backdrop>
+					<Frame parentKey="border" inherits="BackdropTemplate" mixin="ReputationTooltipStatusBarBorderMixin" setAllPoints="true" frameLevel="3">
 						<Layers>
 							<Layer level="OVERLAY">
 								<FontString parentKey="leftText" inherits="TextStatusBarText">
@@ -64,6 +56,9 @@
 								</FontString>
 							</Layer>
 						</Layers>
+						<Scripts>
+							<OnLoad method="OnLoad" inherit="prepend" />
+						</Scripts>
 					</Frame>
 				</Frames>
 			</Frame>

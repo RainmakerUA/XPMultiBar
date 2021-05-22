@@ -82,12 +82,14 @@ end
 -- Remove all known globals after this point
 -- luacheck: std none
 
--- luacheck: push globals ReputationTooltipStatusBarMixin ReputationDetailFavoriteFactionCheckBoxMixin
+-- luacheck: push globals ReputationTooltipStatusBarMixin ReputationDetailFavoriteFactionCheckBoxMixin ReputationTooltipStatusBarBorderMixin
 ReputationTooltipStatusBarMixin = {}
 ReputationDetailFavoriteFactionCheckBoxMixin = {}
+ReputationTooltipStatusBarBorderMixin = {}
 
 local rb = ReputationTooltipStatusBarMixin
 local fav = ReputationDetailFavoriteFactionCheckBoxMixin
+local bx = ReputationTooltipStatusBarBorderMixin
 -- luacheck: pop
 
 -- luacheck: push globals ReputationDetailFrame
@@ -117,6 +119,16 @@ end
 
 local function GetErrorText(text)
 	return RED_FONT_COLOR:WrapTextInColorCode(text)
+end
+
+--[[ Border methods ]]
+
+function bx:OnLoad()
+	self:SetBackdrop({
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		edgeSize = 10,
+		insets = { left = 5, right = 5, top = 5, bottom = 5 },
+	})
 end
 
 --[[ Favorite Checkbox methods ]]
