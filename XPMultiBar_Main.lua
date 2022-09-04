@@ -59,11 +59,11 @@ local IsAzeriteItemAtMaxLevel = emptyFun
 
 if not wowClassic then
 	SetTimeout = C_Timer.After
-	FindActiveAzeriteItem = C_AzeriteItem.FindActiveAzeriteItem
+	--FindActiveAzeriteItem = C_AzeriteItem.FindActiveAzeriteItem
 	GetAzeriteItemXPInfo = C_AzeriteItem.GetAzeriteItemXPInfo
 	GetAzeritePowerLevel = C_AzeriteItem.GetPowerLevel
-	HasActiveAzeriteItem = C_AzeriteItem.HasActiveAzeriteItem
-	IsAzeriteItemAtMaxLevel = C_AzeriteItem.IsAzeriteItemAtMaxLevel
+	--HasActiveAzeriteItem = C_AzeriteItem.HasActiveAzeriteItem
+	--IsAzeriteItemAtMaxLevel = C_AzeriteItem.IsAzeriteItemAtMaxLevel
 end
 
 -- Remove all known globals after this point

@@ -216,10 +216,10 @@ function R:OnInitialize()
 	end
 
 	-- Secure hook ReputationFrame_Update
-	local mod = self
+	local repModule = self
 
 	hooksecurefunc("ReputationFrame_Update", function()
-		mod:OnReputationFrameUpdate()
+		repModule:OnReputationFrameUpdate()
 	end)
 end
 

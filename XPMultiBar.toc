@@ -1,4 +1,4 @@
-## Interface: 90005
+## Interface: 90207
 ## Title: XP MultiBar
 ## Notes: XP / Reputation / Azerite power bar
 ## Notes-ruRU: Полоса опыта / репутации / силы азерита
