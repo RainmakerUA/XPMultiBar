@@ -1222,8 +1222,7 @@ do
 					bardesc = {
 						type = "description",
 						order = 0,
-						name = wowClassic and L["Options for XP / reputation bars"]
-								or L["Options for XP / reputation / azerite power bars"],
+						name = L["Options for XP / reputation bars"],
 					},
 					xpgroup = {
 						type = "group",
@@ -1248,8 +1247,7 @@ do
 								order = 35,
 								width = 1.5,
 								name = L["Display icons"],
-								desc = wowClassic and L["Display icon for max. player level"]
-										or L["Display icons for max. level, disabled XP gain and level cap due to limited account"],
+								desc = L["Display icons for max. level, disabled XP gain and level cap due to limited account"],
 							},
 							indicaterest = {
 								type = "toggle",
