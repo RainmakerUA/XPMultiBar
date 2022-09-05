@@ -174,7 +174,7 @@ function bx:OnDragStop()
 end
 
 function bx:OnUpdate()
-	if self.piGlow:IsShown() then
+	if (not Utils.IsClassic) and self.piGlow:IsShown() then
 		local alpha
 		local time = GetTime()
 		local value = time - math_floor(time)

@@ -48,7 +48,7 @@ local GameLimitedMode_IsActive = GameLimitedMode_IsActive
 local GetAddOnMetadata = GetAddOnMetadata
 local GetRestrictedAccountData = GetRestrictedAccountData
 local InterfaceOptionsFrame_OpenToCategory = InterfaceOptionsFrame_OpenToCategory
-local IsXPUserDisabled = IsXPUserDisabled
+local IsXPUserDisabled = IsXPUserDisabled or Utils.EmptyFn
 local UnitLevel = UnitLevel
 
 local ARTIFACT_QUALITY_TYPE = Enum.ItemQuality.Artifact;

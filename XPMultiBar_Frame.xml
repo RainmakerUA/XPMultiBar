@@ -62,7 +62,7 @@
 								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
 							</Anchors>
 						</Texture>
-						<Texture parentKey="atWarIcon" file="interface\worldstateframe\combatswords.blp">
+						<Texture parentKey="atWarIcon" file="interface\worldstateframe\combatswords">
 							<Size x="16" y="16" />
 							<TexCoords left="0" right="0.5" top="0" bottom="0.5" />
 							<Anchors>
@@ -75,18 +75,19 @@
 								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
 							</Anchors>
 						</Texture>
-						<Texture parentKey="expStopIcon" atlas="Map-MarkedDefeated" useAtlasSize="true">
+						<Texture parentKey="expStopIcon" file="interface\raidframe\readycheck-notready">
+                            <Size x="16" y="16" />
 							<Anchors>
 								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
 							</Anchors>
 						</Texture>
-						<Texture parentKey="expCapIcon" file="interface\icons\spell_holy_borrowedtime.blp">
+						<Texture parentKey="expCapIcon" file="interface\icons\spell_holy_borrowedtime">
 							<Size x="16" y="16" />
 							<Anchors>
 								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
 							</Anchors>
 						</Texture>
-						<Texture parentKey="azerMaxIcon" file="interface/icons/inv_radientazeriteheart.blp">
+						<Texture parentKey="azerMaxIcon" file="interface/icons/inv_radientazeriteheart">
 							<Size x="16" y="16" />
 							<Anchors>
 								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
