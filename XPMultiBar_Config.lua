@@ -9,7 +9,7 @@ local Utils = LibStub("rmUtils-1.1")
 local XPMultiBar = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local Config = XPMultiBar:NewModule("Config", "AceConsole-3.0")
 
-local wowClassic = Utils.IsWoWClassic
+local wowClassic = true
 
 local C = Config
 
@@ -208,9 +208,6 @@ local defaults = {
 			xpicons = true,
 			indicaterest = true,
 			showremaining = true,
-			-- Azerite bar
-			azerstr = "[name]: [curXP]/[maxXP] :: [curPC] through level [pLVL] :: [needXP] AP left",
-			azicons = true,
 			-- Reputation bar
 			repstring = "Rep: [faction] ([standing]) [curRep]/[maxRep] :: [repPC]",
 			repicons = true,
@@ -221,10 +218,8 @@ local defaults = {
 			remaining = { r = 0.82, g = 0, b = 0, a = 1 },
 			background = { r = 0.5, g = 0.5, b = 0.5, a = 0.5 },
 			exalted = { r = 0, g = 0.77, b = 0.63, a = 1 },
-			azerite = artColor, -- azerite bar default color is a color of artifact item title
 			xptext = { r = 1, g = 1, b = 1, a = 1 },
 			reptext = { r = 1, g = 1, b = 1, a = 1 },
-			azertext = { r = 1, g = 1, b = 1, a = 1 },
 			-- Bar priority
 			priority = wowClassic
 						and {
@@ -279,7 +274,7 @@ local defaults = {
 local GetOptions, GetHelp
 
 do
-	local GROUPS = 5
+	local GROUPS = wowClassic and 4 or 5
 	local BARS_IN_GROUP = 3
 	local FLAG_NOTEXT = 4
 	local priorities
@@ -1331,7 +1326,7 @@ do
 							},
 						},
 					},
-					azergroup = {
+					azergroup = (not wowClassic) and {
 						type = "group",
 						order = 20,
 						name = L["Azerite Bar"],
@@ -1384,7 +1379,7 @@ do
 								},
 							},
 						},
-					},
+					} or nil,
 					repgroup = {
 						type = "group",
 						order = 30,
@@ -1861,7 +1856,7 @@ do
 									}
 								),
 							},
-							azergroup = {
+							azergroup = (not wowClassic) and {
 								type = "group",
 								order = 20,
 								name = L["Azerite Bar"],
@@ -1879,7 +1874,7 @@ do
 										{ "nLVL",	L["Next azerite level"] },
 									}
 								),
-							},
+							} or nil,
 							repgroup = {
 								type = "group",
 								order = 30,
@@ -1986,6 +1981,12 @@ local function MigrateSettings(sv)
 						end
 					end
 				end
+
+				data.bars.azerstr = nil
+				data.bars.azicons = nil
+				data.bars.azerite = nil
+				data.bars.azertext = nil
+				data.bars.priority = nil -- reset priority
 			end
 		end
 
