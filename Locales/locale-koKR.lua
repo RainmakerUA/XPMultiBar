@@ -1,5 +1,6 @@
 -- This file is generated with AddonUploader::Update-Localization
-local L = LibStub("AceLocale-3.0"):NewLocale("XPMultiBar", "koKR")
+local addonName = ...
+local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "koKR")
 if not L then return end
 ---------- Total: 233 ----------
 L["General"] = "기본 설정"
@@ -50,6 +51,8 @@ L["Enter settings action text"] = "Enter settings action text"
 L["Author"] = "제작자"
 L["Version"] = "버전"
 L["Date"] = "날짜"
+L["Show message on player login"] = "Show message on player login"
+L["Show 'Thank you...' message on player login"] = "Show 'Thank you...' message on player login"
 L["Same as Anchor"] = "기준점과 같은 위치"
 L["Position"] = "위치"
 L["Lock movement"] = "위치 잠금"
@@ -211,9 +214,6 @@ L["Ctrl+Click to remove %1$s from favorite factions"] = "Ctrl+Click시 %1$s|1을
 L["Faction error!"] = "Faction error!"
 L["No favorite factions selected"] = "즐겨찾는 목록에 추가된 진영이 없습니다"
 L["Add some favorite factions"] = "즐겨찾는 목록에 진영을 추가"
-L["MESSAGE.WELCOME"] = "|cFFFFFF00[XPMultiBar]: XPMultiBar|r를 사용해주셔서 감사합니다!"
-L["ERROR.RETAIL_ON_CLASSIC"] = "|cFFFFFF00[XPMultiBar]:|r |cFFFF4040클래식 클라이언트에 리테일용 애드온을 사용하고 있습니다! 클래식용 버전으로 설치해주세요!|r"
-L["ERROR.CLASSIC_ON_RETAIL"] = "|cFFFFFF00[XPMultiBar]:|r |cFFFF4040리테일 클라이언트에 클래식용 애드온을 사용하고 있습니다! 리테일용 버전으로 설치해주세요!!|r"
 L["ANCHOR.CENTER"] = "중앙"
 L["ANCHOR.LEFT"] = "왼쪽"
 L["ANCHOR.RIGHT"] = "오른쪽"
@@ -235,3 +235,4 @@ L["HELP.FAVORITEFACTIONS"] = "평판 메뉴나 기본 블리자드 평판창에�
 L["HELP.XPBARTEMPLATE"] = "형식 템플릿은 경험치 바에 특정 정보를 나타내기 위해 사용됩니다"
 L["HELP.AZBARTEMPLATE"] = "형식 템플릿은 유물력 바에 특정 정보를 나타내기 위해 사용됩니다"
 L["HELP.REPBARTEMPLATE"] = "형식 템플릿은 평판 바에 특정 정보를 나타내기 위해 사용됩니다"
+L["MESSAGE.WELCOME"] = "|cFFFFFF00[XPMultiBar]: XPMultiBar|r를 사용해주셔서 감사합니다!"

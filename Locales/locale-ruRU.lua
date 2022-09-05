@@ -1,5 +1,6 @@
 -- This file is generated with AddonUploader::Update-Localization
-local L = LibStub("AceLocale-3.0"):NewLocale("XPMultiBar", "ruRU")
+local addonName = ...
+local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "ruRU")
 if not L then return end
 ---------- Total: 233 ----------
 L["General"] = "Общие"
@@ -50,6 +51,8 @@ L["Enter settings action text"] = "Введите текст действия н
 L["Author"] = "Автор"
 L["Version"] = "Версия"
 L["Date"] = "Дата"
+L["Show message on player login"] = "Отображать сообщение при входе в игру"
+L["Show 'Thank you...' message on player login"] = "Отображать сообщение 'Спасибо, что используете XPMultiBar!' при входе в игру"
 L["Same as Anchor"] = "Совпадает с точкой привязки на панели"
 L["Position"] = "Расположение"
 L["Lock movement"] = "Блокировка перемещения"
@@ -211,9 +214,6 @@ L["Ctrl+Click to remove %1$s from favorite factions"] = "Ctrl+ЛКМ, чтобы
 L["Faction error!"] = "Ошибка!"
 L["No favorite factions selected"] = "Нет избранных фракций"
 L["Add some favorite factions"] = "Выберите одну или несколько избранных фракций"
-L["MESSAGE.WELCOME"] = "|cFFFFFF00[XPMultiBar]: Спасибо, что используете XPMultiBar!|r"
-L["ERROR.RETAIL_ON_CLASSIC"] = "|cFFFFFF00[XPMultiBar]:|r |cFFFF4040Вы используете версию для текущей версии в WoW Classic! Пожалуйста, установите версию для Classic!|r"
-L["ERROR.CLASSIC_ON_RETAIL"] = "|cFFFFFF00[XPMultiBar]:|r |cFFFF4040Вы используете версию для WoW Classic в текущей версии! Пожалуйста, установите версию для текущей версии WoW!|r"
 L["ANCHOR.CENTER"] = "По центру"
 L["ANCHOR.LEFT"] = "Слева"
 L["ANCHOR.RIGHT"] = "Справа"
@@ -235,3 +235,4 @@ L["HELP.FAVORITEFACTIONS"] = "Избранные фракции можно до�
 L["HELP.XPBARTEMPLATE"] = "Шаблоны формата используются для вставки значений в текст полосы опыта"
 L["HELP.AZBARTEMPLATE"] = "Шаблоны формата используются для вставки значений в текст полосы азерита"
 L["HELP.REPBARTEMPLATE"] = "Шаблоны формата используются для вставки значений в текст полосы репутации"
+L["MESSAGE.WELCOME"] = "|cFFFFFF00[XPMultiBar]: Спасибо, что используете XPMultiBar!|r"

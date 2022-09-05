@@ -1,5 +1,6 @@
 -- This file is generated with AddonUploader::Update-Localization
-local L = LibStub("AceLocale-3.0"):NewLocale("XPMultiBar", "enUS", true)
+local addonName = ...
+local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "enUS", true)
 if not L then return end
 ---------- Total: 233 ----------
 L["General"] = true
@@ -50,6 +51,8 @@ L["Enter settings action text"] = true
 L["Author"] = true
 L["Version"] = true
 L["Date"] = true
+L["Show message on player login"] = true
+L["Show 'Thank you...' message on player login"] = true
 L["Same as Anchor"] = true
 L["Position"] = true
 L["Lock movement"] = true
@@ -211,9 +214,6 @@ L["Ctrl+Click to remove %1$s from favorite factions"] = true
 L["Faction error!"] = true
 L["No favorite factions selected"] = true
 L["Add some favorite factions"] = true
-L["MESSAGE.WELCOME"] = "|cFFFFFF00[XPMultiBar]: Thank you for using XPMultiBar!|r"
-L["ERROR.RETAIL_ON_CLASSIC"] = "|cFFFFFF00[XPMultiBar]:|r |cFFFF4040You are using Retail version on WoW Classic! Please install version for Classic!|r"
-L["ERROR.CLASSIC_ON_RETAIL"] = "|cFFFFFF00[XPMultiBar]:|r |cFFFF4040You are using Classic version on WoW Mainline version! Please install version for Mainline WoW!|r"
 L["ANCHOR.CENTER"] = "Center"
 L["ANCHOR.LEFT"] = "Left"
 L["ANCHOR.RIGHT"] = "Right"
@@ -235,3 +235,4 @@ L["HELP.FAVORITEFACTIONS"] = "Favorite factions can be added or removed using Re
 L["HELP.XPBARTEMPLATE"] = "Format templates are used to insert specific values into XP text string"
 L["HELP.AZBARTEMPLATE"] = "Format templates are used to insert specific values into Azerite power text string"
 L["HELP.REPBARTEMPLATE"] = "Format templates are used to insert specific values into reputation text string"
+L["MESSAGE.WELCOME"] = "|cFFFFFF00[XPMultiBar]: Thank you for using XPMultiBar!|r"

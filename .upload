@@ -7,9 +7,9 @@
 		"log": "No changes provided",
 		"date": "Recenly",
 		"gameVersions": [
-			"9.0.5",
-			"9.0.2",
-			"9.0.1"
+			"9.2.7",
+			"1.14.3",
+			"3.4.0"
 		]
 	},
 	"exclude": [
@@ -36,6 +36,6 @@
 		"Widgets",
 		"AceEvent-3.0",
 		"LibQTip-1.0",
-		"rmUtils-1.0"
+		"rmUtils-1.1"
 	]
 }

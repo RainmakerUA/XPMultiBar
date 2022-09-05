@@ -1,7 +1,7 @@
 ## Interface: 90207
 ## Title: XP MultiBar
-## Notes: XP / Reputation / Azerite power bar
-## Notes-ruRU: Полоса опыта / репутации / силы азерита
+## Notes: XP / Reputation bar
+## Notes-ruRU: Полоса опыта / репутации
 ## Author: @@author@@
 ## Version: @@release-version@@
 ## SavedVariables: XPMultiBarDB
@@ -16,7 +16,6 @@ libs.xml
 Locales\locales.xml
 
 XPMultiBar.lua
-XPMultiBar_Event.lua
 XPMultiBar_Data.lua
 XPMultiBar_Bars.lua
 XPMultiBar_Config.lua

@@ -5,11 +5,9 @@
 --]=====]
 
 local addonName = ...
-local Utils = LibStub("rmUtils-1.0")
+local Utils = LibStub("rmUtils-1.1")
 local XPMultiBar = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local Config = XPMultiBar:NewModule("Config", "AceConsole-3.0")
-
-local Event
 
 local wowClassic = Utils.IsWoWClassic
 
@@ -60,8 +58,8 @@ local AceGUIWidgetLSMlists = AceGUIWidgetLSMlists
 -- Remove all known globals after this point
 -- luacheck: std none
 
-local DB_VERSION_NUM = 823
-local DB_VERSION = "V" .. tostring(DB_VERSION_NUM) .. (wowClassic and "C" or "")
+local DB_VERSION_NUM = 10
+local DB_VERSION = "V" .. tostring(DB_VERSION_NUM)
 
 --@debug@
 L = Utils.DebugL(L)
@@ -878,6 +876,30 @@ do
 								name = L["Date"],
 								get = function() return FormatDate(md.date) end,
 								dialogControl = "InteractiveText",
+							},
+						},
+					},
+					globalGroup = {
+						type = "group",
+						order = 20,
+						name = "",
+						inline = true,
+						width = "full",
+						get = function(info)
+							local key = info[#info]
+							return C.db.sv[key]
+						end,
+						set = function(info, value)
+							local key = info[#info]
+							C.db.sv[key] = value
+						end,
+						args = {
+							showStartupMessage = {
+								type = "toggle",
+								order = 0,
+								width = "full",
+								name = L["Show message on player login"],
+								desc = L["Show 'Thank you...' message on player login"],
 							},
 						},
 					},
@@ -1923,48 +1945,52 @@ local function MigrateSettings(sv)
 	end
 	local dbVer, dbClassic = getDBVersion(sv.VER)
 
-	if sv.profiles then
-		for name, data in pairs(sv.profiles) do
-			-- new positioning mode
-			if dbVer < 821 then
-				data.general.anchor = "TOPLEFT"
-				data.general.anchorRelative = "BOTTOMLEFT"
-			end
-			-- border texture picker
-			if dbVer < 822 then
-				local borderTexNames = {
-									"Blizzard Dialog", "Blizzard Toast",
-									"Blizzard Minimap Tooltip", "Blizzard Tooltip"
-								}
-				if not data.general.borderTexture then
-					local style = data.general.borderStyle or 1
-					local tex = borderTexNames[style]
-					data.general.borderTexture = tex
-					data.general.borderStyle = nil
+	if dbVer > 10 then
+		sv.showStartupMessage = true
+
+		if sv.profiles then
+			for name, data in pairs(sv.profiles) do
+				-- new positioning mode
+				if dbVer < 821 then
+					data.general.anchor = "TOPLEFT"
+					data.general.anchorRelative = "BOTTOMLEFT"
 				end
-			end
-			if dbVer < 823 then
-				-- Bar priority
-				local bars = data.bars
-				if bars then
-					--[[ No migration ]]
-					bars.showmaxlevel = nil
-					bars.showmaxazerite = nil
-					bars.showrepbar = nil
-					-- AutoTracking settings
-					local rep = data.reputation
-					if rep then
-						rep.autowatchrep = bars.autowatchrep
-						rep.autotrackguild = bars.autotrackguild
-						bars.autowatchrep = nil
-						bars.autotrackguild = nil
+				-- border texture picker
+				if dbVer < 822 then
+					local borderTexNames = {
+										"Blizzard Dialog", "Blizzard Toast",
+										"Blizzard Minimap Tooltip", "Blizzard Tooltip"
+									}
+					if not data.general.borderTexture then
+						local style = data.general.borderStyle or 1
+						local tex = borderTexNames[style]
+						data.general.borderTexture = tex
+						data.general.borderStyle = nil
+					end
+				end
+				if dbVer < 823 then
+					-- Bar priority
+					local bars = data.bars
+					if bars then
+						--[[ No migration ]]
+						bars.showmaxlevel = nil
+						bars.showmaxazerite = nil
+						bars.showrepbar = nil
+						-- AutoTracking settings
+						local rep = data.reputation
+						if rep then
+							rep.autowatchrep = bars.autowatchrep
+							rep.autotrackguild = bars.autotrackguild
+							bars.autowatchrep = nil
+							bars.autotrackguild = nil
+						end
 					end
 				end
 			end
 		end
-	end
 
-	sv.VER = DB_VERSION
+		sv.VER = DB_VERSION
+	end
 end
 
 C.Empty = empty
@@ -2038,8 +2064,6 @@ function C.RegisterProfileChanged(...)
 end
 
 function C:OnInitialize()
-	Event = XPMultiBar:GetModule("Event")
-
 	self.db = AceDB:New(addonName .. "DB", defaults, true)
 
 	MigrateSettings(self.db.sv)
@@ -2075,8 +2099,8 @@ function C:OnInitialize()
 	self.db.RegisterCallback(self, "OnProfileCopied", self.EVENT_PROFILE_CHANGED)
 	self.db.RegisterCallback(self, "OnProfileReset", self.EVENT_PROFILE_CHANGED)
 
-	configChangedEvent = Event:New(C.EVENT_CONFIG_CHANGED)
-	profileChangedEvent = Event:New(C.EVENT_PROFILE_CHANGED)
+	configChangedEvent = Utils.Event:New(C.EVENT_CONFIG_CHANGED)
+	profileChangedEvent = Utils.Event:New(C.EVENT_PROFILE_CHANGED)
 end
 
 function C:ProfileChanged(event, database, newProfileKey)
