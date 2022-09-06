@@ -1,7 +1,7 @@
 ## Interface: 90207
 ## Title: XP MultiBar
 ## Notes: XP / Reputation bar
-## Notes-ruRU: Полоса опыта / репутации
+## Notes-ruRU: Панель досвіду / репутації
 ## Author: @@author@@
 ## Version: @@release-version@@
 ## SavedVariables: XPMultiBarDB

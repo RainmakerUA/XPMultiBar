@@ -46,6 +46,7 @@ local unpack = unpack
 
 local GameLimitedMode_IsActive = GameLimitedMode_IsActive
 local GetAddOnMetadata = GetAddOnMetadata
+local GetLocale = GetLocale
 local GetRestrictedAccountData = GetRestrictedAccountData
 local InterfaceOptionsFrame_OpenToCategory = InterfaceOptionsFrame_OpenToCategory
 local IsXPUserDisabled = IsXPUserDisabled or Utils.EmptyFn
@@ -832,6 +833,7 @@ do
 																end
 															)
 		local getRepColor, setRepColor = CreateGetSetColorFunctions("reputation")
+        local isRu = GetLocale() == "ruRU"
 
 		if appName == addonName then
 			return {
@@ -889,7 +891,11 @@ do
 							C.db.sv[key] = value
 						end,
 						args = {
-							showStartupMessage = {
+							showStartupMessage = isRu and {
+                                type = "description",
+                                order = 0,
+                                name = L["MESSAGE.WELCOME"]
+                            } or {
 								type = "toggle",
 								order = 0,
 								width = "full",

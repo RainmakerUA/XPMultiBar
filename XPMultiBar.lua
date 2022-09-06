@@ -11,11 +11,14 @@ local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local _G = _G
 local pairs = pairs
 local print = print
+local GetLocale = GetLocale
 
 local GetAddOnMetadata = GetAddOnMetadata
 
 -- Remove all known globals after this point
 -- luacheck: std none
+
+local isRuLocale
 
 if addonTable.master then
 	addonTable.master(XPMultiBar)
@@ -33,19 +36,23 @@ function XPMultiBar:OnInitialize()
 		XPMultiBar[k] = v
 	end
 	--@end-debug@
-	local version = GetAddOnMetadata(addonName, "Version") or ""
+	
+    local version = GetAddOnMetadata(addonName, "Version") or ""
 	local _, _, vernum, vertype = version:find("^(%d+%.%d+%.%d+)-(%w+)$")
-	XPMultiBar.Version = {
+	
+    XPMultiBar.Version = {
 		Number = vernum or "test",
 		Type = vertype,
 	}
+
+    isRuLocale = GetLocale() == "ruRU"
 end
 
 function XPMultiBar:OnEnable()
 	local config = XPMultiBar:GetModule("Config")
     local savedVars = config.db.sv
 
-	if savedVars.showStartupMessage then
+	if isRuLocale or savedVars.showStartupMessage then
 		ShowStartupMessage()
 	end
 end
