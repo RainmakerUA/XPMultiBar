@@ -38,28 +38,9 @@ local visibleBar = nil
 local mouseOverWithShift = nil
 
 local function GetCurrentBars(state)
-	--[[	1.	0 0 ?
-			2.	0 1 ?
-			2C.	1 0 ?
-			3.	1 1 0
-			4.	1 1 1
-			5.  1 0 0 -- For 9.0.1 Prepatch
-	]]
-	local prio, maxLevelXP, hasAzerite, maxLevelAzer
-			= state.priority, state.isMaxLevelXP, state.hasAzerite, state.isMaxLevelAzerite
-	local index
-
-	if not maxLevelXP and not hasAzerite then
-		index = 1
-	elseif not maxLevelXP then
-		index = 2
-	elseif not hasAzerite then
-		index = 5
-	elseif not maxLevelAzer then
-		index = 3
-	else
-		index = 4
-	end
+	local prio, maxLevelXP = state.priority, state.isMaxLevelXP
+	local index = maxLevelXP and 3 or 1
+    
 	return Utils.SliceLength(prio, (index - 1) * 3 + 1, 3)
 end
 
