@@ -2104,8 +2104,8 @@ function C:OnInitialize()
 	self.db.RegisterCallback(self, "OnProfileCopied", self.EVENT_PROFILE_CHANGED)
 	self.db.RegisterCallback(self, "OnProfileReset", self.EVENT_PROFILE_CHANGED)
 
-	configChangedEvent = Utils.Event:New(C.EVENT_CONFIG_CHANGED)
-	profileChangedEvent = Utils.Event:New(C.EVENT_PROFILE_CHANGED)
+	configChangedEvent = Utils.Event.New(C.EVENT_CONFIG_CHANGED)
+	profileChangedEvent = Utils.Event.New(C.EVENT_PROFILE_CHANGED)
 end
 
 function C:ProfileChanged(event, database, newProfileKey)

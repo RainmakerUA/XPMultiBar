@@ -298,7 +298,7 @@ end
 function UI:OnInitialize()
 	self.barFrame = barFrame
 
-	barEvent = Utils.Event:New("OnBarEvent")
+	barEvent = Utils.Event.New("OnBarEvent")
 end
 
 function UI:OnEnable(...)
