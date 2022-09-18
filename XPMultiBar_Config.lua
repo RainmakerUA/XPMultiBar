@@ -833,7 +833,7 @@ do
 																end
 															)
 		local getRepColor, setRepColor = CreateGetSetColorFunctions("reputation")
-        local isRu = GetLocale() == "ruRU"
+		local isRu = GetLocale() == "ruRU"
 
 		if appName == addonName then
 			return {
@@ -892,10 +892,10 @@ do
 						end,
 						args = {
 							showStartupMessage = isRu and {
-                                type = "description",
-                                order = 0,
-                                name = L["MESSAGE.WELCOME"]
-                            } or {
+								type = "description",
+								order = 0,
+								name = L["MESSAGE.WELCOME"]
+							} or {
 								type = "toggle",
 								order = 0,
 								width = "full",
@@ -1986,11 +1986,13 @@ local function MigrateSettings(sv)
 					end
 				end
 
-				data.bars.azerstr = nil
-				data.bars.azicons = nil
-				data.bars.azerite = nil
-				data.bars.azertext = nil
-				data.bars.priority = nil -- reset priority
+				if data.bars then
+					data.bars.azerstr = nil
+					data.bars.azicons = nil
+					data.bars.azerite = nil
+					data.bars.azertext = nil
+					data.bars.priority = nil -- reset priority
+				end
 			end
 		end
 
