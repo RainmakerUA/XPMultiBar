@@ -21,6 +21,7 @@ local UI
 
 local emptyFun = Utils.EmptyFn
 
+local ipairs = ipairs
 local next = next
 local pairs = pairs
 local select = select
@@ -29,7 +30,9 @@ local tonumber = tonumber
 local tostring = tostring
 local type = type
 local unpack = unpack
+local math_abs = math.abs
 local math_floor = math.floor
+local tinsert = table.insert
 
 local _G = _G
 local FACTION_ALLIANCE = FACTION_ALLIANCE
@@ -71,6 +74,8 @@ local SetWatchedFactionIndex = SetWatchedFactionIndex
 local GetFactionParagonInfo = emptyFun
 local IsFactionParagon = emptyFun
 local GetFriendshipReputation = GetFriendshipReputation or emptyFun
+
+local ReputationBarMixin = ReputationBarMixin
 
 if not wowClassic then
 	GetFactionParagonInfo = C_Reputation.GetFactionParagonInfo
@@ -117,6 +122,17 @@ end
 
 local function GetErrorText(text)
 	return RED_FONT_COLOR:WrapTextInColorCode(text)
+end
+
+local function unpackIndices(table, ...)
+	local tableToUnpack = {}
+	local indices = {...}
+
+	for _, index in ipairs(indices) do
+		tinsert(tableToUnpack, table[index])
+	end
+
+	return unpack(tableToUnpack)
 end
 
 --[[ Border methods ]]
@@ -201,6 +217,27 @@ end
 
 --[[ Module methods ]]
 
+local function UpdateFavoriteCheckbox(checkbox)
+	local config = Config.GetDB().reputation
+	local factionID = select(14, GetFactionInfo(GetSelectedFaction()))
+	if config.showFavorites and repDetailFrame:IsShown() then
+		local hasLfgCheckbox = lfgBonusRepCheckbox and lfgBonusRepCheckbox:IsShown()
+		local relCheckbox = hasLfgCheckbox and lfgBonusRepCheckbox or watchedCheckbox
+		repDetailFrame:SetHeight(hasLfgCheckbox and 247 or 225)
+		checkbox.factionID = factionID
+		if wowClassic then
+			checkbox:SetPoint("BOTTOMLEFT", repDetailFrame, "BOTTOMLEFT", 14, 56)
+		else
+			checkbox:SetPoint("TOPLEFT", relCheckbox, "BOTTOMLEFT", 0, 3)
+		end
+		checkbox:SetChecked(config.favorites[factionID] or false)
+		checkbox:Show()
+	else
+		checkbox:ClearAllPoints()
+		checkbox:Hide()
+	end
+end
+
 function R:OnInitialize()
 	Config = XPMultiBar:GetModule("Config")
 	UI = XPMultiBar:GetModule("UI")
@@ -215,39 +252,34 @@ function R:OnInitialize()
 		return result
 	end
 
-	-- Secure hook ReputationFrame_Update
-	local repModule = self
+	local favCheckbox = self.favoriteCheckbox
 
-	hooksecurefunc("ReputationFrame_Update", function()
-		repModule:OnReputationFrameUpdate()
-	end)
+	if wowClassic then
+		-- Secure hook ReputationFrame_Update
+		hooksecurefunc("ReputationFrame_Update", function()
+			UpdateFavoriteCheckbox(favCheckbox)
+		end)
+	else
+		repDetailFrame:HookScript("OnSizeChanged", function(frame, width, height)
+			local neededHeight = lfgBonusRepCheckbox and lfgBonusRepCheckbox:IsShown() and 247 or 225
+			if math_abs(height - neededHeight) > 0.1 then
+				frame:SetHeight(neededHeight)
+			end
+		end)
+
+		local oldOnClick = ReputationBarMixin.OnClick
+		ReputationBarMixin.OnClick = function(...)
+			local result = oldOnClick(...)
+			UpdateFavoriteCheckbox(favCheckbox)
+			return result
+		end
+	end
 end
 
 function R:OnEnable()
 end
 
 function R:OnDisable()
-end
-
-function R:OnReputationFrameUpdate()
-	local config = Config.GetDB().reputation
-	local factionID = select(14, GetFactionInfo(GetSelectedFaction()))
-	if config.showFavorites and repDetailFrame:IsShown() then
-		local hasLfgCheckbox = lfgBonusRepCheckbox and lfgBonusRepCheckbox:IsShown()
-		local relCheckbox = hasLfgCheckbox and lfgBonusRepCheckbox or watchedCheckbox
-		repDetailFrame:SetHeight(hasLfgCheckbox and 247 or 225)
-		self.favoriteCheckbox.factionID = factionID
-		if wowClassic then
-			self.favoriteCheckbox:SetPoint("BOTTOMLEFT", repDetailFrame, "BOTTOMLEFT", 14, 56)
-		else
-			self.favoriteCheckbox:SetPoint("TOPLEFT", relCheckbox, "BOTTOMLEFT", 0, 3)
-		end
-		self.favoriteCheckbox:SetChecked(config.favorites[factionID] or false)
-		self.favoriteCheckbox:Show()
-	else
-		self.favoriteCheckbox:ClearAllPoints()
-		self.favoriteCheckbox:Hide()
-	end
 end
 
 -- Reputation colors
@@ -346,27 +378,18 @@ local function GetFactionReputationData(factionID)
 		isFactionParagon = IsFactionParagon(factionID)
 		-- Check faction with Exalted standing to have paragon reputation.
 		-- If so, adjust values to show bar to next paragon bonus.
-		if repStanding == STANDING_EXALTED then
-			if isFactionParagon then
-				local parValue, parThresh, paragonQuestID, hasReward, tooLowLevelForParagon
-																		= GetFactionParagonInfo(factionID)
-				paragonRewardQuestID = paragonQuestID
-				hasParagonReward = not tooLowLevelForParagon and hasReward
-				-- parValue is cumulative. We need to get modulo by the current threshold.
-				repMax = parThresh
-				paragonCount = math_floor(parValue / parThresh)
-				repValue = parValue % parThresh
-				-- if we have reward pending, show overflow
-				if hasParagonReward then
-					repValue = repValue + parThresh
-				end
-			else
-				repMax = 1000
-				repValue = 999
+		if repStanding == STANDING_EXALTED and isFactionParagon then
+			local parValue, parThresh, paragonQuestID, hasReward, tooLowLevelForParagon = GetFactionParagonInfo(factionID)
+			paragonRewardQuestID = paragonQuestID
+			hasParagonReward = not tooLowLevelForParagon and hasReward
+			-- parValue is cumulative. We need to get modulo by the current threshold.
+			repMax = parThresh
+			paragonCount = math_floor(parValue / parThresh)
+			repValue = parValue % parThresh
+			-- if we have reward pending, show overflow
+			if hasParagonReward then
+				repValue = repValue + parThresh
 			end
-		else
-			repMax = repMax - repMin
-			repValue = repValue - repMin
 		end
 	end
 
@@ -574,18 +597,37 @@ local function FillReputationMenu(config)
 	repMenu:Clear()
 
 	for factionNum = 1, GetNumFactions() do
-		-- GetFactionInfo returns only 10 values for 'Other' header so factionID is nil
-		-- Use 0 instead
-		local factionID = select(14, GetFactionInfo(factionNum)) or 0
-		local factionInfo = { GetFactionReputationData(factionID) }
-		local _, repName, repStanding, repStandingText, repStandingColor,
+		-- GetFactionInfo returns only 10 values for 'Other'/'Inactive' headers so factionID is nil
+		-- Use original values
+		-- name, description, standingID, barMin, barMax, barValue, atWarWith,
+		-- canToggleAtWar, isHeader, isCollapsed, hasRep, isWatched, isChild,
+		-- factionID, hasBonusRepGain, canBeLFGBonus = GetFactionInfo(factionIndex)
+		local factionID, repName, repStanding, repStandingText, repStandingColor,
+				repMin, repMax, repValue, hasBonusRep, isLFGBonus,
+				isFactionParagon, hasParagonReward, isAtWar,
+				isHeader, hasRep, isCollapsed, isChild, isWatched, repDesc
+		local factionInfo = { GetFactionInfo(factionNum) }
+
+		repName, isHeader, isCollapsed, isChild, factionID = unpackIndices(factionInfo, 1, 9, 10, 13, 14)
+
+		if factionID then
+			factionInfo = { GetFactionReputationData(factionID) }
+			factionID, repName, repStanding, repStandingText, repStandingColor,
 				repMin, repMax, repValue, hasBonusRep, isLFGBonus,
 				isFactionParagon, hasParagonReward, isAtWar,
 				isHeader, hasRep, isCollapsed, isChild, isWatched, repDesc = unpack(factionInfo)
-				local icons = config.showIcons
-								and GetFactionIcons(hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward, isAtWar)
-								or ""
-		local isFavorite = config.favorites[factionID]
+		else
+			factionInfo = {
+							nil, repName, 1, nil, nil, 0, 1, 1,
+							false, false, false, false, false,
+							isHeader, false, isCollapsed, false, false, nil
+						}
+		end
+
+		local icons = config.showIcons
+						and GetFactionIcons(hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward, isAtWar)
+						or ""
+		local isFavorite = factionID and config.favorites[factionID]
 		local instruction
 		--[[
 			Menu columns:
@@ -611,8 +653,7 @@ local function FillReputationMenu(config)
 					instruction = (isFavorite and instructions.unfavorite or instructions.favorite)
 									.. "|n" .. instruction
 				end
-				instruction = (isWatched and instructions.unwatch or instructions.watch)
-									.. "|n" .. instruction
+				instruction = (isWatched and instructions.unwatch or instructions.watch) .. "|n" .. instruction
 			end
 
 			lineNum = repMenu:AddLine()
