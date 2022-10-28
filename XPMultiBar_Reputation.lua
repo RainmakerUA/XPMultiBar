@@ -390,6 +390,9 @@ local function GetFactionReputationData(factionID)
 			if hasParagonReward then
 				repValue = repValue + parThresh
 			end
+		else
+			repMax = repMax - repMin
+			repValue = repValue - repMin
 		end
 	end
 
