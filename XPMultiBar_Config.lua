@@ -2114,3 +2114,8 @@ function C:ProfileChanged(event, database, newProfileKey)
 	db = database.profile
 	profileChangedEvent(db)
 end
+
+function C:SetFactionFavorite(factionID, isFavorite)
+    local favorites = self.GetDB().reputation.favorites
+	favorites[factionID] = isFavorite and true or nil
+end

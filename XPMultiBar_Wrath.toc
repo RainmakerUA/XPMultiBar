@@ -20,6 +20,8 @@ XPMultiBar_Data.lua
 XPMultiBar_Bars.lua
 XPMultiBar_Config.lua
 XPMultiBar_Frame.lua
+XPMultiBar_ReputationInfo.lua
+XPMultiBar_ReputationFavoriteCheckbox.lua
 XPMultiBar_Reputation.lua
 XPMultiBar_Main.lua
 

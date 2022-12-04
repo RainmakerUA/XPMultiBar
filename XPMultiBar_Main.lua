@@ -74,6 +74,7 @@ local Bars
 local Config
 local Data
 local Reputation
+local RepInfo
 local UI
 
 local function Commify(num)
@@ -364,6 +365,7 @@ function M:OnInitialize()
 	Data = XPMultiBar:GetModule("Data")
 	UI = XPMultiBar:GetModule("UI")
 	Reputation = XPMultiBar:GetModule("Reputation")
+	RepInfo = XPMultiBar:GetModule("ReputationInfo")
 
 	self.xpData = Data:New("XP", true)
 	self.restData = Data:New("XPRested")
@@ -464,7 +466,7 @@ function M:OnInitialize()
 		azicons = onDisplayIconsUpdated,
 		repicons = onDisplayIconsUpdated,
 		priority = onBarSettingsUpdated,
-		exaltedColor = { Reputation.SetExaltedColor, true, ["self"] = Reputation }
+		exaltedColor = { RepInfo.SetExaltedColor, true, ["self"] = RepInfo }
 	}
 
 	Config.RegisterConfigChanged(
@@ -568,7 +570,7 @@ function M:OnProfileChanged(db, skipBarUpdate)
 	self:SetFontOptions(db.general)
 	self:UpdateBarSettings(db.bars.priority)
 	self:SetBars()
-	Reputation:SetExaltedColor(db.bars.exalted)
+	RepInfo:SetExaltedColor(db.bars.exalted)
 
 	if not skipBarUpdate then
 		self:UpdateActiveBar()
@@ -695,7 +697,7 @@ function M:COMBAT_TEXT_UPDATE(event, msgtype)
 
 	-- If we are watching reputations automatically
 	if db.reputation.autowatchrep then
-		Reputation:SetWatchedFaction(factionName, amount, db.reputation.autotrackguild)
+		RepInfo:SetWatchedFaction(factionName, amount, db.reputation.autotrackguild)
 	end
 end
 
@@ -760,7 +762,7 @@ end
 
 function M:UpdateReputationData(updateBar)
 	local prevData = updateBar and self.repData:Get() or nil
-	local repInfo = { Reputation:GetWatchedFactionData() }
+	local repInfo = { RepInfo:GetWatchedFactionData() }
 	local repName, repStanding, repMax, repValue = repInfo[2], repInfo[3], repInfo[7], repInfo[8]
 
 	if prevData and not prevData.curr then

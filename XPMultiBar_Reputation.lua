@@ -11,44 +11,30 @@ local Reputation = XPMultiBar:NewModule("Reputation")
 
 local LibQT = LibStub("LibQTip-1.0")
 
-local wowClassic = Utils.IsWoWClassic
 local R = Reputation
 
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 local Config
+local FavCB
+local RepInfo
 local UI
-
-local emptyFun = Utils.EmptyFn
 
 local ipairs = ipairs
 local next = next
 local pairs = pairs
-local select = select
-local setmetatable = setmetatable
-local tonumber = tonumber
 local tostring = tostring
 local type = type
 local unpack = unpack
-local math_abs = math.abs
-local math_floor = math.floor
 local tinsert = table.insert
 
-local _G = _G
-local FACTION_ALLIANCE = FACTION_ALLIANCE
-local FACTION_BAR_COLORS = FACTION_BAR_COLORS
-local FACTION_HORDE = FACTION_HORDE
-local GUILD = GUILD
 local RED_FONT_COLOR = RED_FONT_COLOR
-local SOUNDKIT = SOUNDKIT
 local GameTooltip = GameTooltip
 local GameTooltipTextSmall = GameTooltipTextSmall
 local UIParent = UIParent
 local WorldFrame = WorldFrame
 
-local hooksecurefunc = hooksecurefunc
 local CollapseFactionHeader = CollapseFactionHeader
-local CreateColor = CreateColor
 local CreateFramePool = CreateFramePool
 local ExpandFactionHeader = ExpandFactionHeader
 local GameTooltip_AddColoredLine = GameTooltip_AddColoredLine
@@ -59,48 +45,21 @@ local GameTooltip_InsertFrame = GameTooltip_InsertFrame
 local GameTooltip_SetDefaultAnchor = GameTooltip_SetDefaultAnchor
 local GameTooltip_SetTitle = GameTooltip_SetTitle
 local GetCursorPosition = GetCursorPosition
-local GetFactionInfo = GetFactionInfo
-local GetFactionInfoByID = GetFactionInfoByID
-local GetGuildInfo = GetGuildInfo
 local GetNumFactions = GetNumFactions
-local GetSelectedFaction = GetSelectedFaction
-local GetWatchedFactionInfo = GetWatchedFactionInfo
 local IsAltKeyDown = IsAltKeyDown
 local IsControlKeyDown = IsControlKeyDown
 local IsShiftKeyDown = IsShiftKeyDown
-local PlaySound = PlaySound
 local SetWatchedFactionIndex = SetWatchedFactionIndex
-
-local GetFactionParagonInfo = emptyFun
-local IsFactionParagon = emptyFun
-local GetFriendshipReputation = GetFriendshipReputation or emptyFun
-
-local ReputationBarMixin = ReputationBarMixin
-
-if not wowClassic then
-	GetFactionParagonInfo = C_Reputation.GetFactionParagonInfo
-	IsFactionParagon = C_Reputation.IsFactionParagon
-end
 
 -- Remove all known globals after this point
 -- luacheck: std none
 
--- luacheck: push globals ReputationTooltipStatusBarMixin ReputationDetailFavoriteFactionCheckBoxMixin ReputationTooltipStatusBarBorderMixin
+-- luacheck: push globals ReputationTooltipStatusBarMixin ReputationTooltipStatusBarBorderMixin
 ReputationTooltipStatusBarMixin = {}
-ReputationDetailFavoriteFactionCheckBoxMixin = {}
 ReputationTooltipStatusBarBorderMixin = {}
 
 local rb = ReputationTooltipStatusBarMixin
-local fav = ReputationDetailFavoriteFactionCheckBoxMixin
 local bx = ReputationTooltipStatusBarBorderMixin
--- luacheck: pop
-
--- luacheck: push globals ReputationDetailFrame
-local repDetailFrame = ReputationDetailFrame
--- luacheck: pop
--- luacheck: push globals ReputationDetailMainScreenCheckBox ReputationDetailLFGBonusReputationCheckBox
-local watchedCheckbox = ReputationDetailMainScreenCheckBox
-local lfgBonusRepCheckbox = ReputationDetailLFGBonusReputationCheckBox
 -- luacheck: pop
 
 --[[ Common local functions ]]
@@ -114,10 +73,6 @@ end
 
 local function GetColorRGBA(color)
 	return color.r or 0, color.g or 0, color.b or 0, color.a or 1
-end
-
-local function CreateColorMixin(color)
-	return CreateColor(GetColorRGBA(color))
 end
 
 local function GetErrorText(text)
@@ -143,33 +98,6 @@ function bx:OnLoad()
 		edgeSize = 10,
 		insets = { left = 5, right = 5, top = 5, bottom = 5 },
 	})
-end
-
---[[ Favorite Checkbox methods ]]
-
-function fav:OnLoad()
-	_G[self:GetName() .. "Text"]:SetText(L["Favorite faction"])
-	self:Hide()
-	R.favoriteCheckbox = self
-end
-
-function fav:OnClick()
-	local checked = self:GetChecked()
-	PlaySound(checked
-				and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON
-				or SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF
-			)
-	self:SetFactionFavorite(self.factionID, checked)
-end
-
-function fav:OnEnter()
-	GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-	GameTooltip:SetText(L["Choose faction to show in favorites list"], nil, nil, nil, nil, true);
-end
-
-function fav:SetFactionFavorite(factionID, isFavorite)
-	local favorites = Config.GetDB().reputation.favorites
-	favorites[factionID] = isFavorite and true or nil
 end
 
 --[[ Rep StatusBar methods ]]
@@ -217,29 +145,10 @@ end
 
 --[[ Module methods ]]
 
-local function UpdateFavoriteCheckbox(checkbox)
-	local config = Config.GetDB().reputation
-	local factionID = select(14, GetFactionInfo(GetSelectedFaction()))
-	if config.showFavorites and repDetailFrame:IsShown() then
-		local hasLfgCheckbox = lfgBonusRepCheckbox and lfgBonusRepCheckbox:IsShown()
-		local relCheckbox = hasLfgCheckbox and lfgBonusRepCheckbox or watchedCheckbox
-		repDetailFrame:SetHeight(hasLfgCheckbox and 247 or 225)
-		checkbox.factionID = factionID
-		if wowClassic then
-			checkbox:SetPoint("BOTTOMLEFT", repDetailFrame, "BOTTOMLEFT", 14, 56)
-		else
-			checkbox:SetPoint("TOPLEFT", relCheckbox, "BOTTOMLEFT", 0, 3)
-		end
-		checkbox:SetChecked(config.favorites[factionID] or false)
-		checkbox:Show()
-	else
-		checkbox:ClearAllPoints()
-		checkbox:Hide()
-	end
-end
-
 function R:OnInitialize()
 	Config = XPMultiBar:GetModule("Config")
+	FavCB = XPMultiBar:GetModule("ReputationFavoriteCheckbox")
+	RepInfo = XPMultiBar:GetModule("ReputationInfo")
 	UI = XPMultiBar:GetModule("UI")
 
 	-- Patch LibQTip
@@ -251,76 +160,12 @@ function R:OnInitialize()
 		proto.fontString:SetWordWrap(false)
 		return result
 	end
-
-	local favCheckbox = self.favoriteCheckbox
-
-	if wowClassic then
-		-- Secure hook ReputationFrame_Update
-		hooksecurefunc("ReputationFrame_Update", function()
-			UpdateFavoriteCheckbox(favCheckbox)
-		end)
-	else
-		repDetailFrame:HookScript("OnSizeChanged", function(frame, width, height)
-			local neededHeight = lfgBonusRepCheckbox and lfgBonusRepCheckbox:IsShown() and 247 or 225
-			if math_abs(height - neededHeight) > 0.1 then
-				frame:SetHeight(neededHeight)
-			end
-		end)
-
-		local oldOnClick = ReputationBarMixin.OnClick
-		ReputationBarMixin.OnClick = function(...)
-			local result = oldOnClick(...)
-			UpdateFavoriteCheckbox(favCheckbox)
-			return result
-		end
-	end
 end
 
 function R:OnEnable()
 end
 
 function R:OnDisable()
-end
-
--- Reputation colors
-local STANDING_EXALTED = 8
-local reputationColors
-
--- Reputation colors are automatically generated and cached when first looked up
-do
-	reputationColors = setmetatable({}, {
-		__index = function(t, k)
-			local fbc
-
-			if k == STANDING_EXALTED then
-				-- Exalted color is set separately
-				-- Return default value if it is not set
-				fbc = { r = 0, g = 0.77, b = 0.63 }
-			else
-				fbc = FACTION_BAR_COLORS[k]
-			end
-
-			-- Wrap in mixin to use ColorMixin:WrapTextInColorCode(text)
-			local colorMixin = CreateColorMixin(fbc)
-			t[k] = colorMixin
-
-			return colorMixin
-		end,
-	})
-end
-
--- Cache FACTION_STANDING_LABEL
--- When a lookup is first attempted on this cable, we go and lookup the real value and cache it
-local factionStandingLabel
-
-do
-	factionStandingLabel = setmetatable({}, {
-		__index = function(t, k)
-			local fsl = _G["FACTION_STANDING_LABEL"..k]
-			t[k] = fsl
-			return fsl
-		end,
-	})
 end
 
 local repMenuTooltipKey = addonName .. "RepMenuTT"
@@ -344,107 +189,6 @@ local instructions = {
 	favorite = L["Ctrl+Click to add %1$s to favorite factions"],
 	unfavorite = L["Ctrl+Click to remove %1$s from favorite factions"],
 }
-
-local function GetFactionReputationData(factionID)
-	local repName, repDesc, repStanding, repMin, repMax, repValue,
-			atWarWith, _--[[canToggleAtWar]], isHeader,
-			isCollapsed, hasRep, isWatched, isChild,
-			_--[[factionID]], hasBonusRep, canBeLFGBonus = GetFactionInfoByID(factionID)
-	local isFactionParagon, hasParagonReward, paragonCount = false, false, 0
-	local repStandingText, repStandingColor, isLFGBonus, paragonRewardQuestID
-
-	if not repName then
-		-- Return nil for non-existent factions
-		return nil
-	end
-
-	local friendID, friendRep, friendMaxRep, _--[[friendName]], _, _,
-				friendTextLevel, friendThresh, nextFriendThresh = GetFriendshipReputation(factionID)
-
-	if friendID then
-		if nextFriendThresh then
-			-- Not yet "Exalted" with friend, use provided max for current level.
-			repMax = nextFriendThresh
-			repValue = friendRep - friendThresh
-		else
-			-- "Exalted". Fake the maxRep.
-			repMax = friendMaxRep + 1
-			repValue = 1
-		end
-		repMax = repMax - friendThresh
-		repStandingText = friendTextLevel
-	else
-		repStandingText = repStanding and factionStandingLabel[repStanding]
-		isFactionParagon = IsFactionParagon(factionID)
-		-- Check faction with Exalted standing to have paragon reputation.
-		-- If so, adjust values to show bar to next paragon bonus.
-		if repStanding == STANDING_EXALTED and isFactionParagon then
-			local parValue, parThresh, paragonQuestID, hasReward, tooLowLevelForParagon = GetFactionParagonInfo(factionID)
-			paragonRewardQuestID = paragonQuestID
-			hasParagonReward = not tooLowLevelForParagon and hasReward
-			-- parValue is cumulative. We need to get modulo by the current threshold.
-			repMax = parThresh
-			paragonCount = math_floor(parValue / parThresh)
-			repValue = parValue % parThresh
-			-- if we have reward pending, show overflow
-			if hasParagonReward then
-				repValue = repValue + parThresh
-			end
-		else
-			repMax = repMax - repMin
-			repValue = repValue - repMin
-		end
-	end
-
-	repMin = 0
-	repStandingColor = repStanding and reputationColors[repStanding]
-	isLFGBonus = false
-
-	return factionID, repName, repStanding, repStandingText, repStandingColor,
-			repMin, repMax, repValue, hasBonusRep, isLFGBonus,
-			isFactionParagon, hasParagonReward, atWarWith,
-			isHeader, hasRep, isCollapsed, isChild, isWatched, repDesc,
-			paragonRewardQuestID, paragonCount
-end
-
-local function SetWatchedFactionByName(factionName, amount, autotrackGuild)
-	if factionName == FACTION_HORDE or factionName == FACTION_ALLIANCE then
-		-- Do not track Horde / Alliance classic faction header
-		return
-	end
-
-	if tonumber(amount) <= 0 then
-		-- We do not want to watch factions we are losing reputation with
-		return
-	end
-
-	-- Fix for auto tracking guild reputation since the COMBAT_TEXT_UPDATE does not contain
-	-- the guild name, it just contains "Guild"
-	if factionName == GUILD then
-		if autotrackGuild then
-			factionName = GetGuildInfo("player")
-		else
-			return
-		end
-	end
-
-	-- Everything ok? Watch the faction!
-	for i = 1, GetNumFactions() do
-		-- name, description, standingID, barMin, barMax, barValue, atWarWith,
-		-- canToggleAtWar, isHeader, isCollapsed, hasRep, isWatched, isChild,
-		-- factionID, hasBonusRepGain, canBeLFGBonus = GetFactionInfo(factionIndex);
-		local fi = { GetFactionInfo(i) }
-		local name, isHeader, hasRep, isWatched = fi[1], fi[9], fi[11], fi[12]
-
-		if name == factionName then
-			-- If it is not watched and it is not a header without rep, watch it.
-			if not isWatched and (not isHeader or hasRep) then
-				SetWatchedFactionIndex(i)
-			end
-			return
-		end
-	end
-end
 
 local function ClearFrame(pool, frame)
 	frame:Hide()
@@ -495,7 +239,7 @@ local function GetReputationFrame(faction, showHeader, commifyNumbers)
 	end
 
 	if type(faction) == "number" then
-		faction = { GetFactionReputationData(faction) }
+		faction = { RepInfo:GetFactionData(faction) }
 	end
 
 	local _, name, _, standingName, color, min, max, current,
@@ -548,7 +292,7 @@ local function ClickMenuItem(_, faction, button)
 		menu:UpdateScrolling()
 	elseif not isHeader or hasRep then
 		if button == "MiddleButton" or button == "LeftButton" and isCtrl then
-			fav:SetFactionFavorite(factionID, not isFavorite)
+			FavCB:SetFactionFavorite(factionID, not isFavorite)
 			R:ShowFactionMenu(true)
 			if R.favoriteCheckbox and R.favoriteCheckbox.factionID == factionID then
 				R.favoriteCheckbox:SetChecked(not isFavorite)
@@ -614,7 +358,7 @@ local function FillReputationMenu(config)
 		repName, isHeader, isCollapsed, isChild, factionID = unpackIndices(factionInfo, 1, 9, 10, 13, 14)
 
 		if factionID then
-			factionInfo = { GetFactionReputationData(factionID) }
+			factionInfo = { RepInfo:GetFactionData(factionID) }
 			factionID, repName, repStanding, repStandingText, repStandingColor,
 				repMin, repMax, repValue, hasBonusRep, isLFGBonus,
 				isFactionParagon, hasParagonReward, isAtWar,
@@ -760,11 +504,6 @@ local function ShowFactionMenu(acquire)
 	repMenu:Show()
 end
 
-function R:SetExaltedColor(color)
-	color.a = 1
-	reputationColors[STANDING_EXALTED] = CreateColorMixin(color)
-end
-
 function R:ToggleBarTooltip(visibility)
 	if visibility and not IsFactionMenuShown() then
 		local db = Config.GetDB()
@@ -808,28 +547,6 @@ function R:ToggleBarTooltip(visibility)
 		GameTooltip:SetMinimumWidth(0, false)
 		ReleaseFrames()
 	end
-end
-
-function R:GetWatchedFactionData()
-	local watchedFactionInfo = { GetWatchedFactionInfo() }
-	if not watchedFactionInfo[1] then
-		-- watched faction name == nil - watched faction not set
-		return nil
-	else
-		return GetFactionReputationData(watchedFactionInfo[6])
-	end
-end
-
-function R:GetFactionData(factionID)
-	if not factionID then
-		return nil
-	else
-		return GetFactionReputationData(factionID)
-	end
-end
-
-function R:SetWatchedFaction(factionName, amount, autotrackGuild)
-	return SetWatchedFactionByName(factionName, amount, autotrackGuild)
 end
 
 function R:ShowFactionMenu(redraw)
