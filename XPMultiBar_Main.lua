@@ -21,7 +21,6 @@ local print = print
 local select = select
 local tostring = tostring
 local type = type
-local unpack = unpack
 
 -- Math
 local math_ceil = math.ceil
@@ -193,18 +192,16 @@ do
 end
 
 local function GetReputationText(repFormat, repInfo)
-	local repID, repName, repStanding, repStandingText, repStandingColor,
-			repMin, repMax, repValue, hasBonusRep, isLFGBonus,
-			isFactionParagon, hasParagonReward = unpack(repInfo)
+	local max, value = repInfo.maxValue, repInfo.value
 
 	return Utils.MultiReplace(repFormat, {
-			["%[faction%]"] = repName,
-			["%[standing%]"] = repStandingText,
-			["%[curRep%]"] = Commify(repValue),
-			["%[maxRep%]"] = Commify(repMax),
-			["%[repPC%]"] = Utils.FormatPercents(repValue, repMax),
-			["%[needRep%]"] = Commify(repMax - repValue),
-			["%[needPC%]"] = Utils.FormatRemainingPercents(repValue, repMax),
+			["%[faction%]"] = repInfo.name,
+			["%[standing%]"] = repInfo.standingText,
+			["%[curRep%]"] = Commify(value),
+			["%[maxRep%]"] = Commify(max),
+			["%[repPC%]"] = Utils.FormatPercents(value, max),
+			["%[needRep%]"] = Commify(max - value),
+			["%[needPC%]"] = Utils.FormatRemainingPercents(value, max),
 		})
 end
 
@@ -324,13 +321,8 @@ local function UpdateReputationBar(updateData)
 	local db, showText, data, prevData
 			= updateData.db, updateData.showText, updateData.data, updateData.prevData
 	local repInfo = data.extra
-	local repFactionID, repName, repStanding,
-			repStandingText, repStandingColor,
-			repMin, repMax, repValue,
-			hasBonusRep, isLFGBonus,
-			isFactionParagon, hasParagonReward, isAtWar = unpack(repInfo)
 
-	if repName == nil then
+	if not repInfo then
 		UI:SetMainBarVisible(false, DoSetBorderColor(db.general))
 		UI:SetRemainingBarVisible(false)
 		UI:SetBarText(L["You need to select a faction to watch"])
@@ -341,19 +333,20 @@ local function UpdateReputationBar(updateData)
 	--if prevData then
 		-- todo: animate
 	do--else
-		UI:SetFactionInfo(repFactionID, db.bars.repicons and showText and {
-					hasBonusRep,
-					isLFGBonus,
-					isFactionParagon,
-					hasParagonReward,
-					isAtWar,
+		UI:SetFactionInfo(repInfo.id, db.bars.repicons and showText and {
+					repInfo.hasBonusRep,
+					false,
+					repInfo.paragon,
+					repInfo.paragon and repInfo.paragon.hasReward,
+					repInfo.isAtWar,
+					repInfo.renown,
 				} or nil)
 
 		UI:SetMainBarVisible(true)
 		UI:SetRemainingBarVisible(false)
 
-		UI:SetMainBarValues(repMin, repMax, repValue)
-		UI:SetMainBarColor(repStandingColor, DoSetBorderColor(db.general))
+		UI:SetMainBarValues(0, repInfo.maxValue, repInfo.value)
+		UI:SetMainBarColor(repInfo.standingColor, DoSetBorderColor(db.general))
 		UI:SetBarText(showText and GetReputationText(db.bars.repstring, repInfo) or nil)
 		UI:SetBarTextColor(showText and db.bars.reptext or nil)
 	end
@@ -370,6 +363,7 @@ function M:OnInitialize()
 	self.xpData = Data:New("XP", true)
 	self.restData = Data:New("XPRested")
 	self.repData = Data:New()
+
 	if not wowClassic then
 		self.azerData = Data:New("AP")
 	end
@@ -466,7 +460,7 @@ function M:OnInitialize()
 		azicons = onDisplayIconsUpdated,
 		repicons = onDisplayIconsUpdated,
 		priority = onBarSettingsUpdated,
-		exaltedColor = { RepInfo.SetExaltedColor, true, ["self"] = RepInfo }
+		exaltedColor = { self.SetExaltedColor, true }
 	}
 
 	Config.RegisterConfigChanged(
@@ -681,6 +675,11 @@ function M:SetBorder(general)
 	UI:SetBorder(texPath, (not general.borderDynamicColor) and general.borderColor or nil)
 end
 
+function M:SetExaltedColor(color)
+    RepInfo:SetExaltedColor(color)
+    self:UpdateReputationData(true);
+end
+
 -- LSM3 Updates.
 function M:MediaUpdate()
 end
@@ -762,8 +761,12 @@ end
 
 function M:UpdateReputationData(updateBar)
 	local prevData = updateBar and self.repData:Get() or nil
-	local repInfo = { RepInfo:GetWatchedFactionData() }
-	local repName, repStanding, repMax, repValue = repInfo[2], repInfo[3], repInfo[7], repInfo[8]
+	local repInfo = RepInfo:GetFactionInfo()
+	local repName, repStanding, repMax, repValue
+
+	if repInfo then
+		repName, repStanding, repMax, repValue = repInfo.name, repInfo.standing, repInfo.maxValue, repInfo.value
+	end
 
 	if prevData and not prevData.curr then
 		prevData = nil
@@ -772,9 +775,9 @@ function M:UpdateReputationData(updateBar)
 	self:ShowReputationList(true)
 	self.repData:Update(repName, repStanding, repValue, repMax, repInfo)
 
-	if updateBar then
-		local isParagon, paragonCount, paragonCountPrev = repInfo[11], repInfo[21], prevData and prevData.extra[21] or 0
-		--print("M:UpdateReputationData paragonCount:", paragonCountPrev, "->", paragonCount)
+	if repInfo and updateBar then
+		local isParagon, paragonCount, paragonCountPrev = repInfo.paragon, repInfo.paragon and repInfo.paragon.level or 0,
+															prevData and prevData.extra and prevData.extra.paragon and prevData.extra.paragon.level or 0
 		if isParagon and paragonCount > paragonCountPrev then
 			-- paragon threshold was overcome
 			-- set timeout to allow hasReward to be updated
@@ -786,7 +789,10 @@ function M:UpdateReputationData(updateBar)
 end
 
 function M:CheckParagonRewardQuest(event, questID)
-	if select(20, Reputation:GetWatchedFactionData()) == questID then
+	local repInfo = Reputation:GetFactionInfo()
+	local paragonQuestID = repInfo.paragon and repInfo.paragon.questID or nil
+
+	if paragonQuestID == questID then
 		-- set timeout to allow hasReward to be updated
 		SetTimeout(0.5, Utils.Bind(self.UpdateReputationData, self, true))
 	end

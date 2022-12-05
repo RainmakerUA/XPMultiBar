@@ -20,15 +20,13 @@ local FavCB
 local RepInfo
 local UI
 
-local ipairs = ipairs
 local next = next
 local pairs = pairs
 local tostring = tostring
 local type = type
-local unpack = unpack
-local tinsert = table.insert
 
 local RED_FONT_COLOR = RED_FONT_COLOR
+local REPUTATION_PROGRESS_FORMAT = REPUTATION_PROGRESS_FORMAT
 local GameTooltip = GameTooltip
 local GameTooltipTextSmall = GameTooltipTextSmall
 local UIParent = UIParent
@@ -39,6 +37,7 @@ local CreateFramePool = CreateFramePool
 local ExpandFactionHeader = ExpandFactionHeader
 local GameTooltip_AddColoredLine = GameTooltip_AddColoredLine
 local GameTooltip_AddErrorLine = GameTooltip_AddErrorLine
+local GameTooltip_AddHighlightLine = GameTooltip_AddHighlightLine
 local GameTooltip_AddInstructionLine = GameTooltip_AddInstructionLine
 local GameTooltip_AddNormalLine = GameTooltip_AddNormalLine
 local GameTooltip_InsertFrame = GameTooltip_InsertFrame
@@ -77,17 +76,6 @@ end
 
 local function GetErrorText(text)
 	return RED_FONT_COLOR:WrapTextInColorCode(text)
-end
-
-local function unpackIndices(table, ...)
-	local tableToUnpack = {}
-	local indices = {...}
-
-	for _, index in ipairs(indices) do
-		tinsert(tableToUnpack, table[index])
-	end
-
-	return unpack(tableToUnpack)
 end
 
 --[[ Border methods ]]
@@ -171,14 +159,18 @@ end
 local repMenuTooltipKey = addonName .. "RepMenuTT"
 local repMenu
 
+local repMenuLineHeight = 16
+
 local tags = {
-	minus = [[|TInterface\Buttons\UI-MinusButton-Up:16:16:1:-1|t]],
-	plus = [[|TInterface\Buttons\UI-PlusButton-Up:16:16:1:-1|t]],
-	lfgBonus = [[|TInterface\Common\ReputationStar:12:12:0:0:32:32:0:15:0:15|t]],
-	repBonus = [[|TInterface\Common\ReputationStar:12:12:0:0:32:32:16:31:16:31|t]],
-	atWar = [[|TInterface\WorldStateFrame\CombatSwords:16:16:0:0:32:32:0:15:0:15|t]],
+	empty = ([[|TInterface\AddOns\XPMultiBar\Textures\transp-dot:%d|t]]):format(repMenuLineHeight),
+	minus = [[|TInterface\Buttons\UI-MinusButton-Up:0:0:1:-1|t]],
+	plus = [[|TInterface\Buttons\UI-PlusButton-Up:0:0:1:-1|t]],
+	lfgBonus = [[|TInterface\Common\ReputationStar:0:0:0:0:32:32:0:15:0:15|t]],
+	repBonus = [[|TInterface\Common\ReputationStar:0:0:0:0:32:32:16:31:16:31|t]],
+	atWar = [[|TInterface\WorldStateFrame\CombatSwords:0:0:0:0:32:32:0:15:0:15|t]],
 	paragon = [[|A:ParagonReputation_Bag:12:10:0:0|a]],
 	paragonReward = [[|A:ParagonReputation_Bag:12:10:0:0|a|A:ParagonReputation_Checkmark:10:10:-10:0|a]],
+	renown = [[|Tinterface\targetingframe\ui-raidtargetingicon_1:0|t]],
 }
 
 local instructions = {
@@ -212,9 +204,12 @@ local function AcquireRepMenuTooltip(frame, repConfig)
 	return repMenu
 end
 
-local function GetFactionIcons(hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward, isAtWar)
+local function GetFactionIcons(hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward, isAtWar, isRenown)
 	local icons = ""
 
+	if isRenown then
+		icons = icons .. tags.renown
+	end
 	if isAtWar then
 		icons = icons .. tags.atWar
 	end
@@ -239,11 +234,11 @@ local function GetReputationFrame(faction, showHeader, commifyNumbers)
 	end
 
 	if type(faction) == "number" then
-		faction = { RepInfo:GetFactionData(faction) }
+		faction = RepInfo:GetFactionInfo(faction)
 	end
 
-	local _, name, _, standingName, color, min, max, current,
-			hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward, isAtWar = unpack(faction)
+	local name, current, max, isParagon, hasParagonReward
+			= faction.name, faction.value, faction.maxValue, faction.paragon, faction.paragon and faction.paragon.hasReward
 	local frame = R.framePool:Acquire()
 	local commify = commifyNumbers and Utils.Commify or tostring
 
@@ -251,13 +246,13 @@ local function GetReputationFrame(faction, showHeader, commifyNumbers)
 
 	if name then
 		if showHeader == 2 then
-			name = name .. "\32" .. GetFactionIcons(hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward, isAtWar)
+			name = name .. "\32" .. GetFactionIcons(faction.hasBonusRep, false, isParagon, hasParagonReward, faction.isAtWar, faction.renown)
 		end
 
 		frame:SetHeader(name)
-		frame:SetStatusBarValues(min, max, current)
-		frame:SetStatusBarColor(color)
-		frame:SetStatusBarTexts(standingName, ("%s/%s"):format(commify(current or 0), commify(max or 0)))
+		frame:SetStatusBarValues(0, max, current)
+		frame:SetStatusBarColor(faction.standingColor)
+		frame:SetStatusBarTexts(faction.standingText, REPUTATION_PROGRESS_FORMAT:format(commify(current or 0), commify(max or 0)))
 	else
 		frame:SetError(L["Faction error!"])
 	end
@@ -312,9 +307,11 @@ local function ShowMenuItemTooltip(line, tip)
 		GameTooltip_AddNormalLine(GameTooltip, tip.desc)
 	end
 
-	local isHeader, hasRep = unpack(tip.faction, 14, 15)
+	if tip.extraText then
+		GameTooltip_AddHighlightLine(GameTooltip, tip.extraText)
+	end
 
-	if not isHeader or hasRep then
+	if not tip.faction.isHeader or tip.faction.hasRep then
 		local commify = Config.GetDB().general.commify
 		local repStatus = GetReputationFrame(tip.faction, 0, commify)
 		local height = GameTooltip_InsertFrame(GameTooltip, repStatus)
@@ -344,37 +341,18 @@ local function FillReputationMenu(config)
 	repMenu:Clear()
 
 	for factionNum = 1, GetNumFactions() do
-		-- GetFactionInfo returns only 10 values for 'Other'/'Inactive' headers so factionID is nil
-		-- Use original values
-		-- name, description, standingID, barMin, barMax, barValue, atWarWith,
-		-- canToggleAtWar, isHeader, isCollapsed, hasRep, isWatched, isChild,
-		-- factionID, hasBonusRepGain, canBeLFGBonus = GetFactionInfo(factionIndex)
-		local factionID, repName, repStanding, repStandingText, repStandingColor,
-				repMin, repMax, repValue, hasBonusRep, isLFGBonus,
-				isFactionParagon, hasParagonReward, isAtWar,
-				isHeader, hasRep, isCollapsed, isChild, isWatched, repDesc
-		local factionInfo = { GetFactionInfo(factionNum) }
-
-		repName, isHeader, isCollapsed, isChild, factionID = unpackIndices(factionInfo, 1, 9, 10, 13, 14)
-
-		if factionID then
-			factionInfo = { RepInfo:GetFactionData(factionID) }
-			factionID, repName, repStanding, repStandingText, repStandingColor,
-				repMin, repMax, repValue, hasBonusRep, isLFGBonus,
-				isFactionParagon, hasParagonReward, isAtWar,
-				isHeader, hasRep, isCollapsed, isChild, isWatched, repDesc = unpack(factionInfo)
-		else
-			factionInfo = {
-							nil, repName, 1, nil, nil, 0, 1, 1,
-							false, false, false, false, false,
-							isHeader, false, isCollapsed, false, false, nil
-						}
-		end
-
-		local icons = config.showIcons
-						and GetFactionIcons(hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward, isAtWar)
-						or ""
-		local isFavorite = factionID and config.favorites[factionID]
+		local info = RepInfo:GetFactionInfoByIndex(factionNum)
+		local icons = config.showIcons and GetFactionIcons(
+												info.hasBonusRep,
+												false,
+												info.paragon,
+												info.paragon and info.paragon.hasReward,
+												info.isAtWar,
+												info.renown
+											) or ""
+		local id, name, text, color, isHeader, isCollapsed, hasRep, isWatched
+				= info.id, info.name, info.standingText, info.standingColor, info.isHeader, info.isCollapsed, info.hasRep, info.isWatched
+		local isFavorite = id and config.favorites[id]
 		local instruction
 		--[[
 			Menu columns:
@@ -388,9 +366,9 @@ local function FillReputationMenu(config)
 			local columnForTag, columnForName, nameColumnSpan = 1, 2, 4
 			local tag = isCollapsed and tags.plus or tags.minus
 			instruction = isCollapsed and instructions.expand or instructions.collapse
-			isUnderChildHeader = isChild
+			isUnderChildHeader = info.isChild
 
-			if isChild then
+			if isUnderChildHeader then
 				columnForTag, columnForName, nameColumnSpan = 2, 3, 3
 			end
 
@@ -405,10 +383,10 @@ local function FillReputationMenu(config)
 
 			lineNum = repMenu:AddLine()
 			repMenu:SetCell(lineNum, columnForTag, tag, normalFont)
-			repMenu:SetCell(lineNum, columnForName, repName, normalFont, nameColumnSpan, nil, nil, nil, 160)
+			repMenu:SetCell(lineNum, columnForName, name, normalFont, nameColumnSpan, nil, nil, nil, 160)
 
 			if hasRep then
-				repMenu:SetCell(lineNum, 4, repStandingColor:WrapTextInColorCode(repStandingText), normalFont)
+				repMenu:SetCell(lineNum, 4, color:WrapTextInColorCode(text), normalFont)
 
 				if icons then
 					repMenu:SetCell(lineNum, 5, icons, normalFont)
@@ -428,12 +406,13 @@ local function FillReputationMenu(config)
 			end
 
 			lineNum = repMenu:AddLine()
+			repMenu:SetCell(lineNum, 1, tags.empty, smallFont)
 			repMenu:SetCell(
 						lineNum, columnForName,
-						repStandingColor:WrapTextInColorCode(repName),
+						color:WrapTextInColorCode(name),
 						smallFont, nameColumnSpan, nil, nil, nil, 160
 					)
-			repMenu:SetCell(lineNum, 4, repStandingColor:WrapTextInColorCode(repStandingText), smallFont)
+			repMenu:SetCell(lineNum, 4, color:WrapTextInColorCode(text), smallFont)
 
 			if icons then
 				repMenu:SetCell(lineNum, 5, icons, normalFont)
@@ -446,24 +425,32 @@ local function FillReputationMenu(config)
 			repMenu:SetLineColor(lineNum, GetColorRGBA(config.favoriteFactionLineColor))
 		end
 
+		local tooltipName = name
+		local friend = info.friend
+
+		if friend then
+			tooltipName = name .. " (" .. REPUTATION_PROGRESS_FORMAT:format(friend.level, friend.maxLevel) .. ")"
+		end
+
 		local onEnterArgs = {
-			faction = factionInfo,
-			name = repName .. "\32" .. icons,
-			desc = repDesc,
-			instruction = instruction:format(repName),
+			faction = info,
+			name = tooltipName .. "\32" .. icons,
+			desc = info.description,
+			extraText = friend and friend.description,
+			instruction = instruction:format(name),
 		}
 
 		repMenu:SetLineScript(
 							lineNum, "OnMouseUp", ClickMenuItem,
 							{
-								id = factionID,
+								id = id,
 								index = factionNum,
 								isCollapsed = isCollapsed,
 								isHeader = isHeader,
 								hasRep = hasRep,
 								isFavorite = isFavorite,
 								isWatched = isWatched,
-								name = repName,
+								name = name,
 								menu = repMenu,
 							}
 						)

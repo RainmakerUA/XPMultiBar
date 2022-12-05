@@ -87,7 +87,13 @@
 								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
 							</Anchors>
 						</Texture>
-						<Texture parentKey="azerMaxIcon" file="interface/icons/inv_radientazeriteheart">
+						<Texture parentKey="azerMaxIcon" file="interface\icons\inv_radientazeriteheart">
+							<Size x="16" y="16" />
+							<Anchors>
+								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />
+							</Anchors>
+						</Texture>
+						<Texture parentKey="renownIcon" file="interface\targetingframe\ui-raidtargetingicon_1">
 							<Size x="16" y="16" />
 							<Anchors>
 								<Anchor point="RIGHT" relativeKey="$parent.text" relativePoint="LEFT" x="-5" y="0" />

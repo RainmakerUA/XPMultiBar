@@ -36,7 +36,7 @@ local repDetailFrame = ReputationDetailFrame
 -- luacheck: pop
 -- luacheck: push globals ReputationDetailMainScreenCheckBox ReputationDetailLFGBonusReputationCheckBox ReputationDetailViewRenownButton
 local watchedCheckbox = ReputationDetailMainScreenCheckBox
--->local lfgBonusRepCheckbox = ReputationDetailLFGBonusReputationCheckBox absent in all versions
+local lfgBonusRepCheckbox = ReputationDetailLFGBonusReputationCheckBox --absent in all versions
 local viewRenownButton = ReputationDetailViewRenownButton
 -- luacheck: pop
 
@@ -83,7 +83,7 @@ function FavCB:OnInitialize()
 			UpdateFavoriteCheckbox(favCheckbox)
 		end)
 	else
-		repDetailFrame:HookScript("OnSizeChanged", function(frame, --[[width]]_, height)
+		repDetailFrame:HookScript("OnSizeChanged", function(frame, _--[[width]], height)
 			local neededHeight = GetReputationDetailFrameHeight()
 			if math_abs(height - neededHeight) > 0.1 then
 				frame:SetHeight(neededHeight)

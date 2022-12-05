@@ -12,35 +12,63 @@ local RI = XPMultiBar:NewModule("ReputationInfo")
 local wowClassic = Utils.IsWoWClassic
 local emptyFun = Utils.EmptyFn
 
+local ipairs = ipairs
 local math_floor = math.floor
 local setmetatable = setmetatable
 local tonumber = tonumber
+local tinsert = table.insert
+local unpack = unpack
 
 local CreateColor = CreateColor
 local GetFactionInfo = GetFactionInfo
 local GetFactionInfoByID = GetFactionInfoByID
 local GetGuildInfo = GetGuildInfo
 local GetNumFactions = GetNumFactions
+local GetText = GetText
 local GetWatchedFactionInfo = GetWatchedFactionInfo
 local SetWatchedFactionIndex = SetWatchedFactionIndex
+local UnitSex = UnitSex
 
-local _G = _G
+local BLUE_FONT_COLOR = BLUE_FONT_COLOR
 local FACTION_ALLIANCE = FACTION_ALLIANCE
 local FACTION_BAR_COLORS = FACTION_BAR_COLORS
 local FACTION_HORDE = FACTION_HORDE
 local GUILD = GUILD
+local MAX_REPUTATION_REACTION = MAX_REPUTATION_REACTION or 8
+local RENOWN_LEVEL_LABEL = RENOWN_LEVEL_LABEL
+local REPUTATION_PROGRESS_FORMAT = REPUTATION_PROGRESS_FORMAT
 
-local GetFactionParagonInfo = emptyFun
 local IsFactionParagon = emptyFun
-local GetFriendshipReputation = GetFriendshipReputation or emptyFun
+local GetFactionParagonInfo = emptyFun
+local GetFriendshipReputation = emptyFun
+local GetFriendshipReputationRanks = emptyFun
+local IsMajorFaction = emptyFun
+local GetMajorFactionData = emptyFun
+local HasMaximumRenown = emptyFun
 
 if not wowClassic then
-	GetFactionParagonInfo = C_Reputation.GetFactionParagonInfo
 	IsFactionParagon = C_Reputation.IsFactionParagon
+	GetFactionParagonInfo = C_Reputation.GetFactionParagonInfo
+	GetFriendshipReputation = C_GossipInfo.GetFriendshipReputation
+	GetFriendshipReputationRanks = C_GossipInfo.GetFriendshipReputationRanks
+	IsMajorFaction = C_Reputation.IsMajorFaction
+	GetMajorFactionData = C_MajorFactions.GetMajorFactionData
+	HasMaximumRenown = C_MajorFactions.HasMaximumRenown
 end
 
 -- Remove all known globals after this point
 -- luacheck: std none
+
+local function UnpackIndices(table, ...)
+	local tableToUnpack = {}
+	local indices = {...}
+
+	for _, index in ipairs(indices) do
+		tinsert(tableToUnpack, table[index])
+	end
+
+	return unpack(tableToUnpack)
+end
 
 local function GetColorRGBA(color)
 	return color.r or 0, color.g or 0, color.b or 0, color.a or 1
@@ -50,23 +78,13 @@ local function CreateColorMixin(color)
 	return CreateColor(GetColorRGBA(color))
 end
 
--- Reputation colors
-local STANDING_EXALTED = 8
 local reputationColors
 
 -- Reputation colors are automatically generated and cached when first looked up
 do
 	reputationColors = setmetatable({}, {
 		__index = function(t, k)
-			local fbc
-
-			if k == STANDING_EXALTED then
-				-- Exalted color is set separately
-				-- Return default value if it is not set
-				fbc = { r = 0, g = 0.77, b = 0.63 }
-			else
-				fbc = FACTION_BAR_COLORS[k]
-			end
+			local fbc = FACTION_BAR_COLORS[k]
 
 			-- Wrap in mixin to use ColorMixin:WrapTextInColorCode(text)
 			local colorMixin = CreateColorMixin(fbc)
@@ -77,6 +95,9 @@ do
 	})
 end
 
+local renownColor = BLUE_FONT_COLOR
+local friendColor = reputationColors[5]
+
 -- Cache FACTION_STANDING_LABEL
 -- When a lookup is first attempted on this cable, we go and lookup the real value and cache it
 local factionStandingLabel
@@ -84,73 +105,123 @@ local factionStandingLabel
 do
 	factionStandingLabel = setmetatable({}, {
 		__index = function(t, k)
-			local fsl = _G["FACTION_STANDING_LABEL"..k]
+			local fsl = GetText("FACTION_STANDING_LABEL" .. k, UnitSex("player"))
 			t[k] = fsl
 			return fsl
 		end,
 	})
 end
 
-local function GetFactionReputationData(factionID)
-	local repName, repDesc, repStanding, repMin, repMax, repValue,
-			atWarWith, _--[[canToggleAtWar]], isHeader,
+local function GetFactionReputationInfo(factionID)
+	local name, desc, standing, minValue, maxValue, value,
+			atWarWith, canToggleAtWar, isHeader,
 			isCollapsed, hasRep, isWatched, isChild,
-			_--[[factionID]], hasBonusRep, canBeLFGBonus = GetFactionInfoByID(factionID)
-	local isFactionParagon, hasParagonReward, paragonCount = false, false, 0
-	local repStandingText, repStandingColor, isLFGBonus, paragonRewardQuestID
+			_--[[factionID]], hasBonusRep, canSetInactive = GetFactionInfoByID(factionID)
+	local standingText, standingColor
 
-	if not repName then
+	if not name then
 		-- Return nil for non-existent factions
 		return nil
 	end
 
-	local friendID, friendRep, friendMaxRep, _--[[friendName]], _, _,
-				friendTextLevel, friendThresh, nextFriendThresh = GetFriendshipReputation(factionID)
+	local rep = {
+		id = factionID,
+		name = name,
+		description = desc,
+		isAtWar = atWarWith,
+		canBeAtWar = canToggleAtWar,
+		isHeader = isHeader,
+		isCollapsed = isCollapsed,
+		hasRep = hasRep,
+		isChild = isChild,
+		isWatched = isWatched,
+		hasBonusRep = hasBonusRep,
+		canSetInactive = canSetInactive
+	}
 
-	if friendID then
-		if nextFriendThresh then
-			-- Not yet "Exalted" with friend, use provided max for current level.
-			repMax = nextFriendThresh
-			repValue = friendRep - friendThresh
+	local frienshipInfo = GetFriendshipReputation(factionID)
+
+	if frienshipInfo and frienshipInfo.friendshipFactionID > 0 then
+		if frienshipInfo.nextThreshold then
+			maxValue = frienshipInfo.nextThreshold - frienshipInfo.reactionThreshold
+			value = frienshipInfo.standing - frienshipInfo.reactionThreshold
 		else
-			-- "Exalted". Fake the maxRep.
-			repMax = friendMaxRep + 1
-			repValue = 1
+			maxValue = 1
+			value = 1
 		end
-		repMax = repMax - friendThresh
-		repStandingText = friendTextLevel
+
+		local ranks = GetFriendshipReputationRanks(factionID)
+		local level, maxLevel = ranks.currentLevel, ranks.maxLevel
+
+		--[[if level < maxLevel then
+			standingText = frienshipInfo.reaction .. " (" .. REPUTATION_PROGRESS_FORMAT:format(level, maxLevel) .. ")"
+		else
+		end]]
+
+		standingText = frienshipInfo.reaction
+		standingColor = friendColor
+
+		rep.friend = {
+			level = level,
+			maxLevel = maxLevel,
+			text = frienshipInfo.reaction,
+			description = frienshipInfo.text
+		}
+	elseif IsMajorFaction(factionID) then
+		local renown = GetMajorFactionData(factionID)
+		local isCapped = HasMaximumRenown(factionID)
+		local level = renown.renownLevel
+
+		value = isCapped and renown.renownLevelThreshold or renown.renownReputationEarned or 0
+		maxValue = renown.renownLevelThreshold
+		standingText = RENOWN_LEVEL_LABEL .. level
+		standingColor = renownColor
+
+		rep.renown = {
+			isUnlocked = renown.isUnlocked,
+			unlockDesc = renown.unlockDescription,
+			level = level
+		}
 	else
-		repStandingText = repStanding and factionStandingLabel[repStanding]
-		isFactionParagon = IsFactionParagon(factionID)
-		-- Check faction with Exalted standing to have paragon reputation.
-		-- If so, adjust values to show bar to next paragon bonus.
-		if repStanding == STANDING_EXALTED and isFactionParagon then
-			local parValue, parThresh, paragonQuestID, hasReward, tooLowLevelForParagon = GetFactionParagonInfo(factionID)
-			paragonRewardQuestID = paragonQuestID
-			hasParagonReward = not tooLowLevelForParagon and hasReward
-			-- parValue is cumulative. We need to get modulo by the current threshold.
-			repMax = parThresh
-			paragonCount = math_floor(parValue / parThresh)
-			repValue = parValue % parThresh
-			-- if we have reward pending, show overflow
-			if hasParagonReward then
-				repValue = repValue + parThresh
+		standingText = standing and factionStandingLabel[standing]
+		standingColor = standing and reputationColors[standing]
+
+		if not wowClassic and standing == MAX_REPUTATION_REACTION then
+			if IsFactionParagon(factionID) then
+				local parValue, parThresh, paragonQuestID, hasReward, tooLowLevelForParagon = GetFactionParagonInfo(factionID)
+				local level = math_floor(parValue / parThresh)
+
+				value = parValue % parThresh
+				maxValue = parThresh
+				hasReward = not tooLowLevelForParagon and hasReward
+
+				if hasReward then
+					value = value + parThresh
+				end
+
+				rep.paragon = {
+					level = level,
+					hasReward = hasReward,
+					questID = paragonQuestID
+				}
+			else
+				value = 1
+				maxValue = 1
 			end
 		else
-			repMax = repMax - repMin
-			repValue = repValue - repMin
+			maxValue = maxValue - minValue
+			value = value - minValue
 		end
 	end
 
-	repMin = 0
-	repStandingColor = repStanding and reputationColors[repStanding]
-	isLFGBonus = false
-
-	return factionID, repName, repStanding, repStandingText, repStandingColor,
-			repMin, repMax, repValue, hasBonusRep, isLFGBonus,
-			isFactionParagon, hasParagonReward, atWarWith,
-			isHeader, hasRep, isCollapsed, isChild, isWatched, repDesc,
-			paragonRewardQuestID, paragonCount
+	return Utils.Override(rep, {
+		standing = standing,
+		standingText = standingText,
+		standingColor = standingColor,
+		-- minValue is always 0
+		value = value,
+		maxValue = maxValue,
+	})
 end
 
 local function SetWatchedFactionByName(factionName, amount, autotrackGuild)
@@ -192,26 +263,37 @@ local function SetWatchedFactionByName(factionName, amount, autotrackGuild)
 	end
 end
 
-function RI:GetWatchedFactionData()
-	local watchedFactionInfo = { GetWatchedFactionInfo() }
-	if not watchedFactionInfo[1] then
-		-- watched faction name == nil - watched faction not set
-		return nil
-	else
-		return GetFactionReputationData(watchedFactionInfo[6])
-	end
-end
-
-function RI:GetFactionData(factionID)
+function RI:GetFactionInfo(factionID)
 	if factionID then
-		return GetFactionReputationData(factionID)
+		return GetFactionReputationInfo(factionID)
 	end
+
+	local name, _, _, _, _, id = GetWatchedFactionInfo()
+
+	if name then
+		return GetFactionReputationInfo(id)
+	end
+
 	return nil
 end
 
+function RI:GetFactionInfoByIndex(index)
+	local factionInfo = { GetFactionInfo(index) }
+	local name, isHeader, isCollapsed, isChild, factionID = UnpackIndices(factionInfo, 1, 9, 10, 13, 14)
+
+	return factionID and GetFactionReputationInfo(factionID) or {
+		name = name,
+		standing = 1,
+		isHeader = isHeader,
+		isCollapsed = isCollapsed,
+		isChild = isChild
+	}
+end
+
+-- Remove if default color is fine
 function RI:SetExaltedColor(color)
 	color.a = 1
-	reputationColors[STANDING_EXALTED] = CreateColorMixin(color)
+	reputationColors[MAX_REPUTATION_REACTION] = CreateColorMixin(color)
 end
 
 function RI:SetWatchedFaction(factionName, amount, autotrackGuild)

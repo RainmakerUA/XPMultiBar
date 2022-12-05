@@ -36,10 +36,10 @@ function XPMultiBar:OnInitialize()
 		XPMultiBar[k] = v
 	end
 	--@end-debug@
-	
+
     local version = GetAddOnMetadata(addonName, "Version") or ""
 	local _, _, vernum, vertype = version:find("^(%d+%.%d+%.%d+)-(%w+)$")
-	
+
     XPMultiBar.Version = {
 		Number = vernum or "test",
 		Type = vertype,

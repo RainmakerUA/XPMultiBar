@@ -9,7 +9,7 @@ local Utils = LibStub("rmUtils-1.1")
 local XPMultiBar = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local Config = XPMultiBar:NewModule("Config", "AceConsole-3.0")
 
-local wowClassic = true
+local isClassic = Utils.IsClassic
 
 local C = Config
 
@@ -20,6 +20,7 @@ local ACCmd = LibStub("AceConfigCmd-3.0")
 local ADBO = LibStub("AceDBOptions-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
+local _G = _G
 local ALT_KEY = ALT_KEY
 local CTRL_KEY = CTRL_KEY
 local SHIFT_KEY = SHIFT_KEY
@@ -32,8 +33,9 @@ local KEY_BUTTON1 = KEY_BUTTON1
 local KEY_BUTTON2 = KEY_BUTTON2
 local KEY_BUTTON3 = KEY_BUTTON3
 local TRACKER_SORT_MANUAL = TRACKER_SORT_MANUAL
+local BLUE_FONT_COLOR = BLUE_FONT_COLOR
+local FACTION_BAR_COLORS = FACTION_BAR_COLORS
 
-local _G = _G
 local ipairs = ipairs
 local next = next
 local pairs = pairs
@@ -51,8 +53,6 @@ local GetRestrictedAccountData = GetRestrictedAccountData
 local InterfaceOptionsFrame_OpenToCategory = InterfaceOptionsFrame_OpenToCategory
 local IsXPUserDisabled = IsXPUserDisabled or Utils.EmptyFn
 local UnitLevel = UnitLevel
-
-local ARTIFACT_QUALITY_TYPE = Enum.ItemQuality.Artifact;
 
 local AceGUIWidgetLSMlists = AceGUIWidgetLSMlists
 
@@ -87,19 +87,6 @@ local profileChangedEvent
 -- Current settings
 local db
 
--- Artifact item title color
-local artColor
-
-do
-	local color = ITEM_QUALITY_COLORS[ARTIFACT_QUALITY_TYPE]
-	artColor = {
-		r = color.r,
-		g = color.g,
-		b = color.b,
-		a = color.a
-	}
-end
-
 local FilterBorderTextures
 
 do
@@ -122,6 +109,10 @@ do
 		end
 		return result
 	end
+end
+
+local function GetColorComponents(color)
+	return { r = color.r, g = color.g, b = color.b, a = color.a }
 end
 
 local frameAnchors = {
@@ -218,24 +209,18 @@ local defaults = {
 			resting = { r = 1.0, g = 0.82, b = 0.25, a = 1 },
 			remaining = { r = 0.82, g = 0, b = 0, a = 1 },
 			background = { r = 0.5, g = 0.5, b = 0.5, a = 0.5 },
-			exalted = { r = 0, g = 0.77, b = 0.63, a = 1 },
+			exalted = { r = 0, g = 0.6, b = 0.1, a = 1 },
+			friendColor = (not isClassic) and GetColorComponents(FACTION_BAR_COLORS[5]) or nil,
+			renownColor = (not isClassic) and GetColorComponents(BLUE_FONT_COLOR) or nil,
 			xptext = { r = 1, g = 1, b = 1, a = 1 },
 			reptext = { r = 1, g = 1, b = 1, a = 1 },
 			-- Bar priority
-			priority = wowClassic
-						and {
-							X, R, 0,
-							0, 0, 0,
-							R, X, 0,
-							0, 0, 0,
-						}
-						or {
-							X, R, 0,
-							X, R, A,
-							A, R, X,
-							R, A, X,
-							R, X, 0
-						},
+			priority = {
+						X, R, 0,
+						0, 0, 0,
+						R, X, 0,
+						0, 0, 0,
+					},
 		},
 		reputation = {
 			autowatchrep = false,
@@ -275,31 +260,21 @@ local defaults = {
 local GetOptions, GetHelp
 
 do
-	local GROUPS = wowClassic and 4 or 5
+	local GROUPS = 4
 	local BARS_IN_GROUP = 3
 	local FLAG_NOTEXT = 4
 	local priorities
 	do
 		local N = FLAG_NOTEXT
-		priorities = wowClassic
-						and {
-								{ X, R, 0, 0, 0, 0, R, X, 0, 0, 0, 0, },
-								{},
-								{ R, X, 0, 0, 0, 0, R, X, 0, 0, 0, 0, },
-								-- No-Text presets
-								{ X+N, X, R, 0, 0, 0, R+N, R, X, 0, 0, 0, },
-								{},
-								{ R+N, R, X, 0, 0, 0, R+N, R, X, 0, 0, 0, },
-							}
-						or {
-								{ X, R, 0, X, R, A, A, R, X, R, A, X, R, X, 0, },
-								{ X, R, 0, A, R, X, A, R, X, R, A, X, R, X, 0, },
-								{ R, X, 0, R, X, A, R, A, X, R, A, X, R, X, 0, },
-								-- No-Text presets
-								{ X+N, X, R, X+N, X, R, A+N, A, R, R+N, R, X, R+N, R, X, },
-								{ X+N, X, R, A+N, A, R, A+N, A, R, R+N, R, A, R+N, R, X, },
-								{ R+N, R, X, R+N, R, X, R+N, R, A, R+N, R, 0, R+N, R, X, },
-							}
+		priorities = {
+						{ X, R, 0, 0, 0, 0, R, X, 0, 0, 0, 0, },
+						{},
+						{ R, X, 0, 0, 0, 0, R, X, 0, 0, 0, 0, },
+						-- No-Text presets
+						{ X+N, X, R, 0, 0, 0, R+N, R, X, 0, 0, 0, },
+						{},
+						{ R+N, R, X, 0, 0, 0, R+N, R, X, 0, 0, 0, },
+					}
 	end
 	C.FLAG_NOTEXT = FLAG_NOTEXT
 
@@ -364,11 +339,6 @@ do
 		["settings:reputation showFavorites"] = MakeActionName(settingsTopic, reputationSub, L["Show favorite factions"]),
 		["settings:reputation showRepMenu"] = MakeActionName(settingsTopic, reputationSub, L["Show reputation menu"]),
 	}
-
-	if not wowClassic then
-		actions["settings:bars prioGroup buttongroup setAzeritePrio"]
-				= MakeActionName(settingsTopic, barsSub, prioritySub, L["Set Azerite power bar priority"])
-	end
 
 	local icons = {
 		exclamation = [[|Tinterface\gossipframe\availablelegendaryquesticon:0|t]],
@@ -465,21 +435,20 @@ do
 	]]
 
 	local function CreatePriorityGroups()
-		local barsNoAzerite = {
+		local bars = {
 			[0] = L["Off"],
 			[X] = L["Experience Bar"],
 			[R] = L["Reputation Bar"],
 		}
-		local bars = (not wowClassic) and Utils.Merge({ [A] = L["Azerite Bar"] }, barsNoAzerite) or barsNoAzerite
 		local result = {}
 		local textTitle = L["Show text"]
 		local textDesc = L["Show text on the bar"]
 
 		for i = 1, GROUPS do
-			result["prioritygroup" .. i] = (not wowClassic or i % 2 == 1) and {
+			result["prioritygroup" .. i] = (i % 2 == 1) and {
 				type = "group",
 				order = (i + 1) * 100,
-				name = L["PRIOGROUP_" .. i .. (wowClassic and "C" or "") .. ".NAME"],
+				name = L["PRIOGROUP_" .. i .. "C.NAME"],
 				inline = true,
 				width = "full",
 				get = GetPriority,
@@ -1330,60 +1299,6 @@ do
 							},
 						},
 					},
-					azergroup = (not wowClassic) and {
-						type = "group",
-						order = 20,
-						name = L["Azerite Bar"],
-						width = "full",
-						args = {
-							azerdesc = {
-								type = "description",
-								order = 0,
-								name = L["Azerite bar related options"],
-							},
-							azerstr = {
-								name = L["Text format"],
-								desc = L["Set Azerite bar text format"],
-								type = "input",
-								order = 10,
-								width = "full",
-							},
-							azicons = {
-								type = "toggle",
-								order = 20,
-								width = 1.5,
-								name = L["Display icons"],
-								desc = L["Display icons for maximum Heart level"]
-							},
-							azercolorgroup = {
-								type = "group",
-								order = 40,
-								name = "",
-								inline = true,
-								width = "full",
-								get = getBarColor,
-								set = setBarColor,
-								args = {
-									azertext = {
-										type = "color",
-										order = 10,
-										width = 1.5,
-										name = L["Azerite text"],
-										desc = L["Set Azerite text color"],
-										hasAlpha = true,
-									},
-									azerite = {
-										type = "color",
-										order = 20,
-										width = 1.5,
-										name = L["Azerite bar"],
-										desc = L["Set Azerite power bar color"],
-										hasAlpha = true,
-									},
-								},
-							},
-						},
-					} or nil,
 					repgroup = {
 						type = "group",
 						order = 30,
@@ -1407,7 +1322,7 @@ do
 								order = 45,
 								width = 1.5,
 								name = L["Display icons"],
-								desc = wowClassic and L["Display icon you are at war with the faction"]
+								desc = isClassic and L["Display icon you are at war with the faction"]
 										or L["Display icons for paragon reputation and reputation bonuses"],
 							},
 							repcolorgroup = {
@@ -1425,7 +1340,7 @@ do
 										width = 1.5,
 										name = L["Reputation text"],
 										desc = L["Set reputation text color"],
-										hasAlpha = true,
+										hasAlpha = false,
 									},
 									exalted = {
 										type = "color",
@@ -1433,8 +1348,24 @@ do
 										width = 1.5,
 										name = _G.FACTION_STANDING_LABEL8,
 										desc = L["Set exalted reputation bar color"],
-										hasAlpha = true,
+										hasAlpha = false,
 									},
+									friendColor = (not isClassic) and {
+										type = "color",
+										order = 30,
+										width = 1.5,
+										name = _G.FRIEND,
+										desc = L["Set reputation bar color for friendship"],
+										hasAlpha = false,
+									} or nil,
+									renownColor = (not isClassic) and {
+										type = "color",
+										order = 40,
+										width = 1.5,
+										name = _G.RENOWN_LEVEL_LABEL,
+										desc = L["Set reputation bar color for major factions (renown)"],
+										hasAlpha = false,
+									} or nil,
 								},
 							},
 						},
@@ -1460,22 +1391,15 @@ do
 											setDefaultPrio = {
 												type = "execute",
 												order = 1000,
-												width = wowClassic and 1.5 or 1,
+												width = isClassic and 1.5 or 1,
 												name = L["XP bar priority"],
 												desc = L["Activate preset with priority for XP bar display"],
 												func = SetPrioritiesFromIndex(1)
 											},
-											setAzeritePrio = (not wowClassic) and {
-												type = "execute",
-												order = 2000,
-												name = L["Azerite bar priority"],
-												desc = L["Activate preset with priority for Azerite power bar display"],
-												func = SetPrioritiesFromIndex(2)
-											} or nil,
 											setReputationPrio = {
 												type = "execute",
 												order = 3000,
-												width = wowClassic and 1.5 or 1,
+												width = isClassic and 1.5 or 1,
 												name = L["Reputation bar priority"],
 												desc = L["Activate preset with priority for Reputation bar display"],
 												func = SetPrioritiesFromIndex(3)
@@ -1488,22 +1412,15 @@ do
 											setDefaultPrioNoText = {
 												type = "execute",
 												order = 4000,
-												width = wowClassic and 1.5 or 1,
+												width = isClassic and 1.5 or 1,
 												name = L["XP bar priority"],
 												desc = L["Activate preset with priority for XP bar display"],
 												func = SetPrioritiesFromIndex(4)
 											},
-											setAzeritePrioNoText = (not wowClassic) and {
-												type = "execute",
-												order = 5000,
-												name = L["Azerite bar priority"],
-												desc = L["Activate preset with priority for Azerite power bar display"],
-												func = SetPrioritiesFromIndex(5)
-											} or nil,
 											setReputationPrioNoText = {
 												type = "execute",
 												order = 6000,
-												width = wowClassic and 1.5 or 1,
+												width = isClassic and 1.5 or 1,
 												name = L["Reputation bar priority"],
 												desc = L["Activate preset with priority for Reputation bar display"],
 												func = SetPrioritiesFromIndex(6)
@@ -1834,8 +1751,7 @@ do
 							bardesc = {
 								type = "header",
 								order = 0,
-								name = wowClassic and L["Format templates for XP and reputation bars"]
-										or L["Format templates for XP / reputation / azerite power bars"],
+								name = L["Format templates for XP and reputation bars"]
 							},
 							xpgroup = {
 								type = "group",
@@ -1860,25 +1776,6 @@ do
 									}
 								),
 							},
-							azergroup = (not wowClassic) and {
-								type = "group",
-								order = 20,
-								name = L["Azerite Bar"],
-								width = "full",
-								args = CreateGroupItems(
-									L["HELP.AZBARTEMPLATE"],
-									{
-										{ "name",	L["Name of artifact necklace: Heart of Azeroth"] },
-										{ "curXP",	L["Current azerite power value on the level"] },
-										{ "maxXP",	L["Maximum azerite power value for the current level"] },
-										{ "needXP",	L["Remaining azerite power value till the next level"] },
-										{ "curPC",	L["Current azerite power value in percents"] },
-										{ "needPC",	L["Remaining azerite power value in percents"] },
-										{ "pLVL",	L["Current azerite level"] },
-										{ "nLVL",	L["Next azerite level"] },
-									}
-								),
-							} or nil,
 							repgroup = {
 								type = "group",
 								order = 30,
@@ -2116,6 +2013,6 @@ function C:ProfileChanged(event, database, newProfileKey)
 end
 
 function C:SetFactionFavorite(factionID, isFavorite)
-    local favorites = self.GetDB().reputation.favorites
+	local favorites = self.GetDB().reputation.favorites
 	favorites[factionID] = isFavorite and true or nil
 end

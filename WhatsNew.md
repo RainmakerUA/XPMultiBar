@@ -1,5 +1,5 @@
 # Changes
 
-- Fix Favorite Faction checkbox compatibility for Dragonflight
+- Support for Renown and Friendship reputation in 10.0.2 Dragonflight
 
 #### Complete Changelog

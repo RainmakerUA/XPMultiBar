@@ -141,7 +141,7 @@ end
 function bx:OnLoad()
 	self.xpIcons = { self.expMaxIcon, self.expStopIcon, self.expCapIcon }
 	self.azerIcons = { self.azerMaxIcon }
-	self.repIcons = { self.piGlow, self.piIcon, self.piCheck, self.lfgBonusIcon, self.repBonusIcon, self.atWarIcon }
+	self.repIcons = { self.piGlow, self.piIcon, self.piCheck, self.lfgBonusIcon, self.repBonusIcon, self.atWarIcon, self.renownIcon }
 	self.icons = Utils.Append(self.xpIcons, self.azerIcons, self.repIcons)
 	self:HideAllIcons()
 end
@@ -266,7 +266,7 @@ end
 function bx:SetFactionIcons(info)
 	self:HideAllIcons()
 	if type(info) == "table" then
-		local hasBonus, hasLfgBonus, isParagon, hasParagonReward, isAtWar = unpack(info)
+		local hasBonus, hasLfgBonus, isParagon, hasParagonReward, isAtWar, isRenown = unpack(info)
 		if hasBonus then
 			self.repBonusIcon:Show()
 		end
@@ -288,6 +288,9 @@ function bx:SetFactionIcons(info)
 		end
 		if isAtWar then
 			self.atWarIcon:Show()
+		end
+		if isRenown then
+			self.renownIcon:Show()
 		end
 	end
 	self:AdjustTextPoint()
