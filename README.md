@@ -1,10 +1,10 @@
 # XP MultiBar
 
-XP / Reputation / Azerite power bar
+XP / Reputation bar
 
 ### Description
 
-Highly customizable bar displaying XP, reputation and azerite artifact power.
+Highly customizable bar displaying XP and reputation.
 
 ### Features
 
@@ -15,19 +15,14 @@ Highly customizable bar displaying XP, reputation and azerite artifact power.
 - Optional display of rested XP bonus as extra bar over XP bar.
 - Optional icons for disabled XP gain and maximum level.
 
-#### **Azerite Bar:**
-
-- Text display configuration using templates.
-- Color configuration.
-- Optional icon for maximum azerite level.
-
 #### **Reputation Bar:**
 
+- Supports regular reputation, friendships and Dragonflight's major factions (renown).
 - Text display configuration using templates.
 - Color configuration.
 - Automatic faction switch when reputation is increased (automatic watch).
 - Mouse click combo on the bar for faction selection.
-- Optional icons for faction reputation bonus and paragon reputation award.
+- Optional icons for faction reputation bonus, paragon reputation award etc.
 
 #### **Customizable setup of bar priority depending on character status.**
 
@@ -60,8 +55,8 @@ Highly customizable bar displaying XP, reputation and azerite artifact power.
 
 ### /xpbar
 
-Without arguments: Open addon settings.\
-With command line: set option value (complete list is in the Help page).
+###### Without arguments: Open addon settings.
+###### With command line: set option value (complete list is in the Help page).
 
 ## Translations
 

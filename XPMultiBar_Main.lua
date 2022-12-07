@@ -789,7 +789,7 @@ function M:UpdateReputationData(updateBar)
 end
 
 function M:CheckParagonRewardQuest(event, questID)
-	local repInfo = Reputation:GetFactionInfo()
+	local repInfo = RepInfo:GetFactionInfo()
 	local paragonQuestID = repInfo.paragon and repInfo.paragon.questID or nil
 
 	if paragonQuestID == questID then
