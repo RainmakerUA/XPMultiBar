@@ -16,7 +16,6 @@ local R = Reputation
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 local Config
-local FavCB
 local RepInfo
 local UI
 
@@ -135,7 +134,6 @@ end
 
 function R:OnInitialize()
 	Config = XPMultiBar:GetModule("Config")
-	FavCB = XPMultiBar:GetModule("ReputationFavoriteCheckbox")
 	RepInfo = XPMultiBar:GetModule("ReputationInfo")
 	UI = XPMultiBar:GetModule("UI")
 
@@ -287,7 +285,7 @@ local function ClickMenuItem(_, faction, button)
 		menu:UpdateScrolling()
 	elseif not isHeader or hasRep then
 		if button == "MiddleButton" or button == "LeftButton" and isCtrl then
-			FavCB:SetFactionFavorite(factionID, not isFavorite)
+			Config:SetFactionFavorite(factionID, not isFavorite)
 			R:ShowFactionMenu(true)
 			if R.favoriteCheckbox and R.favoriteCheckbox.factionID == factionID then
 				R.favoriteCheckbox:SetChecked(not isFavorite)
