@@ -108,6 +108,7 @@ local function GetXPText(cXP, nXP, remXP, restedXP, level, maxLevel, ktl)
 			["%[pLVL%]"] = level,
 			["%[nLVL%]"] = nextLevel,
 			["%[mLVL%]"] = maxLevel,
+			["%[restLVL%]"] = ("%.2F"):format(restedXP / nXP),
 			["%[needXP%]"] = Commify(remXP),
 			["%[KTL%]"] = ktl > 0 and Commify(ktl) or "?",
 			["%[BTL%]"] = ("%d"):format(math_ceil(20 - ((cXP / nXP * 100) / 5)))

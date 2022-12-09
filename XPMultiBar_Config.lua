@@ -1771,6 +1771,7 @@ do
 										{ "pLVL",	L["Current level"] },
 										{ "nLVL",	L["Next level"] },
 										{ "mLVL",	L["Maximum character level (current level when XP gain is disabled"] },
+										{ "restLVL", L["Rested XP bonus levels"] },
 										{ "KTL",	L["Remaining kill number till next level"] },
 										{ "BTL",	L["Remaining bubble (scale tick) number till next level"] },
 									}
