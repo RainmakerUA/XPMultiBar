@@ -1,7 +1,7 @@
 <!--
-		## XP MultiBar ver. 10.0.1-final
-		## XPMultiBar_Reputation.xml - module
-		Reputation UI markup for XPMultiBar addon
+		## XP MultiBar ver. @@release-version@@
+		## XPMultiBar_CompatRetail.xml - module
+		Add template missing in Retail for XPMultiBar addon
 -->
 <Ui xmlns="http://www.blizzard.com/wow/ui/"
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

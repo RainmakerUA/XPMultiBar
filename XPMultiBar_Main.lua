@@ -791,7 +791,7 @@ end
 
 function M:CheckParagonRewardQuest(event, questID)
 	local repInfo = RepInfo:GetFactionInfo()
-	local paragonQuestID = repInfo.paragon and repInfo.paragon.questID or nil
+	local paragonQuestID = repInfo and repInfo.paragon and repInfo.paragon.questID or nil
 
 	if paragonQuestID == questID then
 		-- set timeout to allow hasReward to be updated
