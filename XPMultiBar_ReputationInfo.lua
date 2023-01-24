@@ -167,12 +167,12 @@ local function GetFactionReputationInfo(factionID)
 			text = frienshipInfo.reaction,
 			description = frienshipInfo.text
 		}
-	elseif IsMajorFaction(factionID) then
+	elseif IsMajorFaction(factionID) and not HasMaximumRenown(factionID) then
 		local renown = GetMajorFactionData(factionID)
-		local isCapped = HasMaximumRenown(factionID)
+		--local isCapped = HasMaximumRenown(factionID)
 		local level = renown.renownLevel
 
-		value = isCapped and renown.renownLevelThreshold or renown.renownReputationEarned or 0
+		value = --[[isCapped and renown.renownLevelThreshold or]] renown.renownReputationEarned or 0
 		maxValue = renown.renownLevelThreshold
 		standingText = RENOWN_LEVEL_LABEL .. level
 		standingColor = renownColor
