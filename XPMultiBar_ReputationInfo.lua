@@ -113,6 +113,32 @@ do
 end
 
 local function GetFactionReputationInfo(factionID)
+	local function getParagonRep(repData)
+		local val, maxVal
+		if IsFactionParagon(repData.id) then
+			local parValue, parThresh, paragonQuestID, hasReward, tooLowLevelForParagon = GetFactionParagonInfo(factionID)
+			local level = math_floor(parValue / parThresh)
+
+			val = parValue % parThresh
+			maxVal = parThresh
+			hasReward = not tooLowLevelForParagon and hasReward
+
+			if hasReward then
+				val = val + parThresh
+			end
+
+			repData.paragon = {
+				level = level,
+				hasReward = hasReward,
+				questID = paragonQuestID
+			}
+		else
+			val = 1
+			maxVal = 1
+		end
+		return val, maxVal
+	end
+
 	local name, desc, standing, minValue, maxValue, value,
 			atWarWith, canToggleAtWar, isHeader,
 			isCollapsed, hasRep, isWatched, isChild,
@@ -167,13 +193,25 @@ local function GetFactionReputationInfo(factionID)
 			text = frienshipInfo.reaction,
 			description = frienshipInfo.text
 		}
-	elseif IsMajorFaction(factionID) and not HasMaximumRenown(factionID) then
+	elseif IsMajorFaction(factionID) then
 		local renown = GetMajorFactionData(factionID)
-		--local isCapped = HasMaximumRenown(factionID)
 		local level = renown.renownLevel
+		local isCapped = HasMaximumRenown(factionID)
 
-		value = --[[isCapped and renown.renownLevelThreshold or]] renown.renownReputationEarned or 0
-		maxValue = renown.renownLevelThreshold
+		if isCapped then
+			local val, maxVal = getParagonRep(rep)
+
+			if rep.paragon then
+				value, maxValue = val, maxVal
+			else
+				value = renown.renownLevelThreshold
+				maxValue = renown.renownLevelThreshold
+			end
+		else
+			value = renown.renownReputationEarned or 0
+			maxValue = renown.renownLevelThreshold
+		end
+
 		standingText = RENOWN_LEVEL_LABEL .. level
 		standingColor = renownColor
 
@@ -187,27 +225,7 @@ local function GetFactionReputationInfo(factionID)
 		standingColor = standing and reputationColors[standing]
 
 		if not wowClassic and standing == MAX_REPUTATION_REACTION then
-			if IsFactionParagon(factionID) then
-				local parValue, parThresh, paragonQuestID, hasReward, tooLowLevelForParagon = GetFactionParagonInfo(factionID)
-				local level = math_floor(parValue / parThresh)
-
-				value = parValue % parThresh
-				maxValue = parThresh
-				hasReward = not tooLowLevelForParagon and hasReward
-
-				if hasReward then
-					value = value + parThresh
-				end
-
-				rep.paragon = {
-					level = level,
-					hasReward = hasReward,
-					questID = paragonQuestID
-				}
-			else
-				value = 1
-				maxValue = 1
-			end
+			value, maxValue = getParagonRep(rep)
 		else
 			maxValue = maxValue - minValue
 			value = value - minValue

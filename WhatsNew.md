@@ -1,7 +1,6 @@
 # Changes
 
-- Support for Renown and Friendship reputation in 10.0.2 Dragonflight
-- Add [restLVL] pattern for XP bar format
-- Bugfixes
+- Interface version for Retail 10.0.5 and WotLKC 3.4.1
+- Add Renown->Paragon switching on max. Renown level
 
 #### Complete Changelog
