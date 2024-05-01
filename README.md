@@ -2,6 +2,8 @@
 
 XP / Reputation bar
 
+### No longer developed! Fixes and compatibility updates (hopefully) only!
+
 ### Description
 
 Highly customizable bar displaying XP and reputation.

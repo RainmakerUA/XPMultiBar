@@ -1,6 +1,6 @@
 # Changes
 
-- Interface version for Retail 10.0.5 and WotLKC 3.4.1
-- Add Renown->Paragon switching on max. Renown level
+- Interface version for Retail 10.2.6 and CataClassic 4.4.0.
+- Add detection of Cata Classic.
 
 #### Complete Changelog
