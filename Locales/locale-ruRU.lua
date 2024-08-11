@@ -2,7 +2,7 @@
 local addonName = ...
 local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "ruRU")
 if not L then return end
----------- Total: 213 ----------
+---------- Total: 211 ----------
 L["General"] = "Загальні"
 L["Bars"] = "Смуги"
 L["Help"] = "Довідка"
@@ -193,8 +193,6 @@ L["Ctrl+Click to remove %1$s from favorite factions"] = "Ctrl+ЛКМ, щоб в�
 L["Faction error!"] = "Помилка!"
 L["No favorite factions selected"] = "Немає обраних фракцій"
 L["Add some favorite factions"] = "Виберіть одну або декілька обраних фракцій"
-L["Favorite faction"] = "Обрана фракція"
-L["Choose faction to show in favorites list"] = "Виберіть фракцію для відображения в обраних"
 L["ANCHOR.CENTER"] = "В центрі"
 L["ANCHOR.LEFT"] = "Ліворуч"
 L["ANCHOR.RIGHT"] = "Праворуч"

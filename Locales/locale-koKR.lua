@@ -2,7 +2,7 @@
 local addonName = ...
 local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "koKR")
 if not L then return end
----------- Total: 213 ----------
+---------- Total: 211 ----------
 L["General"] = "기본 설정"
 L["Bars"] = "바"
 L["Help"] = "도움말"
@@ -193,8 +193,6 @@ L["Ctrl+Click to remove %1$s from favorite factions"] = "Ctrl+Click시 %1$s|1을
 L["Faction error!"] = "Faction error!"
 L["No favorite factions selected"] = "즐겨찾는 목록에 추가된 진영이 없습니다"
 L["Add some favorite factions"] = "즐겨찾는 목록에 진영을 추가"
-L["Favorite faction"] = "즐겨찾는 목록"
-L["Choose faction to show in favorites list"] = "즐겨찾는 목록에 추가할 진영을 선택합니다"
 L["ANCHOR.CENTER"] = "중앙"
 L["ANCHOR.LEFT"] = "왼쪽"
 L["ANCHOR.RIGHT"] = "오른쪽"

@@ -2,7 +2,7 @@
 local addonName = ...
 local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "enUS", true)
 if not L then return end
----------- Total: 213 ----------
+---------- Total: 211 ----------
 L["General"] = true
 L["Bars"] = true
 L["Help"] = true
@@ -193,8 +193,6 @@ L["Ctrl+Click to remove %1$s from favorite factions"] = true
 L["Faction error!"] = true
 L["No favorite factions selected"] = true
 L["Add some favorite factions"] = true
-L["Favorite faction"] = true
-L["Choose faction to show in favorites list"] = true
 L["ANCHOR.CENTER"] = "Center"
 L["ANCHOR.LEFT"] = "Left"
 L["ANCHOR.RIGHT"] = "Right"
