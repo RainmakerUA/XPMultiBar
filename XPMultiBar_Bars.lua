@@ -40,7 +40,6 @@ local mouseOverWithShift = nil
 local function GetCurrentBars(state)
 	local prio, maxLevelXP = state.priority, state.isMaxLevelXP
 	local index = maxLevelXP and 3 or 1
-    
 	return Utils.SliceLength(prio, (index - 1) * 3 + 1, 3)
 end
 

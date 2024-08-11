@@ -1,4 +1,4 @@
-## Interface: 100207
+## Interface: 11503, 40400, 110000, 110002
 ## Title: XP MultiBar
 ## Notes: XP / Reputation bar
 ## Notes-ruRU: Панель досвіду / репутації
@@ -20,11 +20,10 @@ XPMultiBar_Data.lua
 XPMultiBar_Bars.lua
 XPMultiBar_Config.lua
 XPMultiBar_Frame.lua
+XPMultiBar_ReputationCompat.lua
 XPMultiBar_ReputationInfo.lua
-XPMultiBar_ReputationFavoriteCheckbox.lua
 XPMultiBar_Reputation.lua
 XPMultiBar_Main.lua
 
-XPMultiBar_CompatRetail.xml
 XPMultiBar_Frame.xml
 XPMultiBar_Reputation.xml
