@@ -19,14 +19,16 @@ local tonumber = tonumber
 local tinsert = table.insert
 local unpack = unpack
 
+local RC = XPMultiBar:GetModule("ReputationCompat")
+
 local CreateColor = CreateColor
-local GetFactionInfo = GetFactionInfo
-local GetFactionInfoByID = GetFactionInfoByID
+local GetFactionInfo = GetFactionInfo or RC.GetFactionInfo
+local GetFactionInfoByID = GetFactionInfoByID or RC.GetFactionInfoByID
 local GetGuildInfo = GetGuildInfo
-local GetNumFactions = GetNumFactions
+local GetNumFactions = GetNumFactions or RC.GetNumFactions
 local GetText = GetText
-local GetWatchedFactionInfo = GetWatchedFactionInfo
-local SetWatchedFactionIndex = SetWatchedFactionIndex
+local GetWatchedFactionInfo = GetWatchedFactionInfo or RC.GetWatchedFactionInfo
+local SetWatchedFactionIndex = SetWatchedFactionIndex or RC.SetWatchedFactionIndex
 local UnitSex = UnitSex
 
 local BLUE_FONT_COLOR = BLUE_FONT_COLOR

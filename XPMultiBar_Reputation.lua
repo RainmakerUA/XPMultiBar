@@ -31,9 +31,11 @@ local GameTooltipTextSmall = GameTooltipTextSmall
 local UIParent = UIParent
 local WorldFrame = WorldFrame
 
-local CollapseFactionHeader = CollapseFactionHeader
+local RC = XPMultiBar:GetModule("ReputationCompat")
+
+local CollapseFactionHeader = CollapseFactionHeader or RC.CollapseFactionHeader
 local CreateFramePool = CreateFramePool
-local ExpandFactionHeader = ExpandFactionHeader
+local ExpandFactionHeader = ExpandFactionHeader or RC.ExpandFactionHeader
 local GameTooltip_AddColoredLine = GameTooltip_AddColoredLine
 local GameTooltip_AddErrorLine = GameTooltip_AddErrorLine
 local GameTooltip_AddHighlightLine = GameTooltip_AddHighlightLine
@@ -43,11 +45,11 @@ local GameTooltip_InsertFrame = GameTooltip_InsertFrame
 local GameTooltip_SetDefaultAnchor = GameTooltip_SetDefaultAnchor
 local GameTooltip_SetTitle = GameTooltip_SetTitle
 local GetCursorPosition = GetCursorPosition
-local GetNumFactions = GetNumFactions
+local GetNumFactions = GetNumFactions or RC.GetNumFactions
 local IsAltKeyDown = IsAltKeyDown
 local IsControlKeyDown = IsControlKeyDown
 local IsShiftKeyDown = IsShiftKeyDown
-local SetWatchedFactionIndex = SetWatchedFactionIndex
+local SetWatchedFactionIndex = SetWatchedFactionIndex or RC.SetWatchedFactionIndex
 
 -- Remove all known globals after this point
 -- luacheck: std none
