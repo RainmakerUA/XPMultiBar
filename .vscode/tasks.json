@@ -16,7 +16,7 @@
         {
             "label": "Publish to curseforge.com",
             "type": "shell",
-            "command": "Import-Module ..\\..\\PS\\AddonUploader; Publish-AddonFile -NoUpload -NoCleanup"
+            "command": "Import-Module ..\\..\\PS\\AddonUploader; Publish-AddonFile"
         }
     ]
 }
