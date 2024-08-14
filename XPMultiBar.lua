@@ -13,7 +13,7 @@ local pairs = pairs
 local print = print
 local GetLocale = GetLocale
 
-local GetAddOnMetadata = GetAddOnMetadata
+local GetAddOnMetadata = GetAddOnMetadata or C_AddOns.GetAddOnMetadata
 
 -- Remove all known globals after this point
 -- luacheck: std none

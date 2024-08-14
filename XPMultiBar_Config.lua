@@ -47,7 +47,7 @@ local type = type
 local unpack = unpack
 
 local GameLimitedMode_IsActive = GameLimitedMode_IsActive
-local GetAddOnMetadata = GetAddOnMetadata
+local GetAddOnMetadata = GetAddOnMetadata or C_AddOns.GetAddOnMetadata
 local GetLocale = GetLocale
 local GetRestrictedAccountData = GetRestrictedAccountData
 local InterfaceOptionsFrame_OpenToCategory = InterfaceOptionsFrame_OpenToCategory
