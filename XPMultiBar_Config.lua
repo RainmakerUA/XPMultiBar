@@ -51,6 +51,7 @@ local GetAddOnMetadata = GetAddOnMetadata or C_AddOns.GetAddOnMetadata
 local GetLocale = GetLocale
 local GetRestrictedAccountData = GetRestrictedAccountData
 local InterfaceOptionsFrame_OpenToCategory = InterfaceOptionsFrame_OpenToCategory
+local OpenToCategory = Settings and Settings.OpenToCategory
 local IsXPUserDisabled = IsXPUserDisabled or Utils.EmptyFn
 local UnitLevel = UnitLevel
 
@@ -86,6 +87,8 @@ local profileChangedEvent
 
 -- Current settings
 local db
+
+local settingsCategoryID
 
 local FilterBorderTextures
 
@@ -1811,14 +1814,13 @@ do
 end
 
 local function OpenSettings()
-	--[[
-		First opening Bars subcategory should expand addon options,
-		but it does not work now. Although this is required
-		for addon root category to be selected in Options dialog.
-		UPD: It works when opening General after Bars.
-	]]
-	InterfaceOptionsFrame_OpenToCategory(L["Bars"])
-	InterfaceOptionsFrame_OpenToCategory(L["General"])
+	if settingsCategoryID then
+		if OpenToCategory then
+			OpenToCategory(settingsCategoryID)
+		else
+			InterfaceOptionsFrame_OpenToCategory(settingsCategoryID)
+		end
+	end
 end
 
 local function HandleSettingsCommand(input)
@@ -1986,7 +1988,7 @@ function C:OnInitialize()
 	local popts = ADBO:GetOptionsTable(self.db)
 	ACRegistry:RegisterOptionsTable(appNames.profiles[1], popts)
 
-	ACDialog:AddToBlizOptions(appNames.main[1], myName)
+	_, settingsCategoryID = ACDialog:AddToBlizOptions(appNames.main[1], myName)
 	ACDialog:AddToBlizOptions(appNames.general[1], appNames.general[2], myName)
 	ACDialog:AddToBlizOptions(appNames.bars[1], appNames.bars[2], myName)
 	ACDialog:AddToBlizOptions(appNames.reputation[1], appNames.reputation[2], myName)

@@ -1,5 +1,5 @@
 # Changes
 
-- Fix for 11.0.2: GetAddOnMetadata in namespace
+- Fix opening addon settings (Shift+RMouse and /xpbar)
 
 #### Complete Changelog
