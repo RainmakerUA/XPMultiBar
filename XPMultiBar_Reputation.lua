@@ -334,7 +334,6 @@ end
 local function FillReputationMenu(config)
 	local normalFont = repMenu:GetFont()
 	local smallFont = GameTooltipTextSmall
-	local isUnderChildHeader = false
 	local lineNum
 
 	repMenu:Hide()
@@ -350,25 +349,25 @@ local function FillReputationMenu(config)
 												info.isAtWar,
 												info.renown
 											) or ""
-		local id, name, text, color, isHeader, isCollapsed, hasRep, isWatched
-				= info.id, info.name, info.standingText, info.standingColor, info.isHeader, info.isCollapsed, info.hasRep, info.isWatched
+		local id, name, text, color, isHeader, isCollapsed, hasRep, isWatched, isChild
+				= info.id, info.name, info.standingText, info.standingColor,
+					info.isHeader, info.isCollapsed, info.hasRep, info.isWatched, info.isChild
 		local isFavorite = id and config.favorites[id]
 		local instruction
 		--[[
 			Menu columns:
 			I	II		III		IV		V
-			[-]	Header text		stand.	icons
-				Fraction name	stand.	icons
-				[-]		Head	stand.	icons
-						Fract.	stand.	icons
+			[-]	Header text		stand.	icons -- top-level header (no rep. by def.) (header = true, headerWithRep = false, isChild = false)
+				Fraction name	stand.	icons -- top-level faction (header = false, headerWithRep = false, isChild = false)
+				[-]		Head	stand.	icons -- subheader (faction/group) (header = true, headerWithRep = ?, isChild = true)
+						Fract.	stand.	icons -- subfaction (header = false, headerWithRep = false, isChild = true)
 		]]
 		if isHeader then
 			local columnForTag, columnForName, nameColumnSpan = 1, 2, 4
 			local tag = isCollapsed and tags.plus or tags.minus
 			instruction = isCollapsed and instructions.expand or instructions.collapse
-			isUnderChildHeader = info.isChild
 
-			if isUnderChildHeader then
+			if isChild then
 				columnForTag, columnForName, nameColumnSpan = 2, 3, 3
 			end
 
@@ -401,7 +400,7 @@ local function FillReputationMenu(config)
 									.. (isFavorite and instructions.unfavorite or instructions.favorite)
 			end
 
-			if isUnderChildHeader then
+			if isChild then
 				columnForName, nameColumnSpan = 3, 1
 			end
 
