@@ -181,10 +181,13 @@ local function GetFactionReputationInfo(factionID)
 		local ranks = GetFriendshipReputationRanks(factionID)
 		local level, maxLevel = ranks.currentLevel, ranks.maxLevel
 
-		--[[if level < maxLevel then
-			standingText = frienshipInfo.reaction .. " (" .. REPUTATION_PROGRESS_FORMAT:format(level, maxLevel) .. ")"
-		else
-		end]]
+		if level == maxLevel then
+			local val, maxVal = getParagonRep(rep)
+
+			if rep.paragon then
+				value, maxValue = val, maxVal
+			end
+		end
 
 		standingText = frienshipInfo.reaction
 		standingColor = friendColor

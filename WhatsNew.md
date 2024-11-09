@@ -1,5 +1,5 @@
 # Changes
 
-- Fix grouping factions under the subheaders (e.g. Brann under The Severed Threads in TWW)
+- Fix reputation display when friend has paragon mode (TWW: The Severed Threads' members)
 
 #### Complete Changelog
