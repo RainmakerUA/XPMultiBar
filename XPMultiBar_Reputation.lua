@@ -19,9 +19,10 @@ local Config
 local RepInfo
 local UI
 
-local next = next
+local ipairs = ipairs
 local pairs = pairs
 local tostring = tostring
+local table = table
 local type = type
 
 local RED_FONT_COLOR = RED_FONT_COLOR
@@ -77,6 +78,19 @@ end
 
 local function GetErrorText(text)
 	return RED_FONT_COLOR:WrapTextInColorCode(text)
+end
+
+local function SortFavoritesDesc(favTable)
+	local ids = {}
+	if favTable then
+		for k, v in pairs(favTable) do
+			if v and type(k) == "number" then
+				table.insert(ids, k)
+			end
+		end
+		table.sort(ids, function(a, b) return b < a end)
+	end
+	return ids
 end
 
 --[[ Border methods ]]
@@ -494,26 +508,24 @@ function R:ToggleBarTooltip(visibility)
 	if visibility and not IsFactionMenuShown() then
 		local db = Config.GetDB()
 		local bar = UI.barFrame
-		local factions = db.reputation.favorites
 		local commify = db.general.commify
+		local factions = SortFavoritesDesc(db.reputation.favorites)
 
 		GameTooltip:SetMinimumWidth(250, true)
 		GameTooltip:SetOwner(bar, "ANCHOR_NONE")
 
 		GameTooltip_SetTitle(GameTooltip, L["Favorite Factions"])
 
-		if not factions or next(factions) == nil then
+		if not factions or #factions == 0 then
 			GameTooltip_AddErrorLine(GameTooltip, L["No favorite factions selected"], true)
 			GameTooltip_AddInstructionLine(GameTooltip, L["Add some favorite factions"], true)
 		end
 
-		for k, v in pairs(factions) do
-			if v then
-				local showHeader = db.bars.repicons and 2 or 1
-				local repFrame = GetReputationFrame(k, showHeader, commify)
-				local fullHeight = GameTooltip_InsertFrame(GameTooltip, repFrame)
-				repFrame:AfterInsert(GameTooltip, fullHeight)
-			end
+		for _, id in ipairs(factions) do
+			local showHeader = db.bars.repicons and 2 or 1
+			local repFrame = GetReputationFrame(id, showHeader, commify)
+			local fullHeight = GameTooltip_InsertFrame(GameTooltip, repFrame)
+			repFrame:AfterInsert(GameTooltip, fullHeight)
 		end
 
 		local ttWidth = GameTooltip:GetWidth()

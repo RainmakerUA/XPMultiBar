@@ -291,6 +291,8 @@ function bx:SetFactionIcons(info)
 		end
 		if isRenown then
 			self.renownIcon:Show()
+			self.renownIcon:ClearAllPoints()
+			self.renownIcon:SetPoint("RIGHT", self.text, "LEFT", isParagon and -25 or -5, 0)
 		end
 	end
 	self:AdjustTextPoint()
