@@ -1,4 +1,4 @@
-## Interface: 11504, 40401, 110002, 110005, 110007
+## Interface: 11506, 40402, 110007, 110100
 ## Title: XP MultiBar
 ## Notes: XP / Reputation bar
 ## Notes-ruRU: Панель досвіду / репутації

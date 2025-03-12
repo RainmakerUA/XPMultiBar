@@ -1365,7 +1365,7 @@ do
 										type = "color",
 										order = 40,
 										width = 1.5,
-										name = _G.RENOWN_LEVEL_LABEL,
+										name = string.gsub(_G.RENOWN_LEVEL_LABEL, " %%d", ""),
 										desc = L["Set reputation bar color for major factions (renown)"],
 										hasAlpha = false,
 									} or nil,

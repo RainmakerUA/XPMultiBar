@@ -1,20 +1,16 @@
 --[=====[
 		## XP MultiBar ver. @@release-version@@
 		## XPMultiBar_ReputationApi.lua - module
-		Reputation API façade module for XPMultiBar addon
+		Legacy Reputation API façade module for XPMultiBar addon
 --]=====]
 
 local addonName = ...
-local Utils = LibStub("rmUtils-1.1")
 local XPMultiBar = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local RepC = XPMultiBar:NewModule("ReputationCompat")
 
-local emptyFun = Utils.EmptyFn
-local wowClassic = Utils.IsWoWClassic
-
-local C_GossipInfo = C_GossipInfo
-local C_MajorFactions = C_MajorFactions
-local C_Reputation = C_Reputation
+local GetFactionInfo = GetFactionInfo
+local GetFactionInfoByID = GetFactionInfoByID
+local GetWatchedFactionInfo = GetWatchedFactionInfo
 
 --[[
 	-- FactionData structure
@@ -39,33 +35,79 @@ local C_Reputation = C_Reputation
 
 --[[
 	name, description, standingID, barMin, barMax, barValue, atWarWith, canToggleAtWar,
-	isHeader, isCollapsed, hasRep, isWatched, isChild, factionID, hasBonusRepGain, canBeLFGBonus 
+	isHeader, isCollapsed, hasRep, isWatched, isChild, factionID, hasBonusRepGain, canBeLFGBonus
 ]]
 
-RepC.CollapseFactionHeader = C_Reputation.CollapseFactionHeader
-RepC.ExpandFactionHeader = C_Reputation.ExpandFactionHeader
-RepC.GetNumFactions = C_Reputation.GetNumFactions
-RepC.GetSelectedFaction = C_Reputation.GetSelectedFaction
-RepC.SetWatchedFactionIndex = C_Reputation.SetWatchedFactionByIndex
+--[[
+	Backported functions (C_Reputation.xxx):
+	- CollapseFactionHeader
+	- ExpandFactionHeader
+	- GetNumFactions
+	- GetSelectedFaction
+	- SetWatchedFactionByIndex
+	- GetFactionDataByIndex
+	- GetFactionDataByID
+	- GetWatchedFactionData
+]]
 
-function RepC.GetFactionInfo(index)
-	local data = C_Reputation.GetFactionDataByIndex(index)
-	if not data then return nil end
-	return data.name, data.description, data.reaction, data.currentReactionThreshold, data.nextReactionThreshold, data.currentStanding,
-			data.atWarWith, data.canToggleAtWar, data.isHeader, data.isCollapsed, data.isHeaderWithRep, data.isWatched, data.isChild,
-			data.factionID, data.hasBonusRepGain, data.canSetInactive
+RepC.CollapseFactionHeader = CollapseFactionHeader
+RepC.ExpandFactionHeader = ExpandFactionHeader
+RepC.GetNumFactions = GetNumFactions
+RepC.GetSelectedFaction = GetSelectedFaction
+RepC.SetWatchedFactionByIndex = SetWatchedFactionIndex
+
+function RepC.GetFactionDataByIndex(index)
+	local name, description, standingID, barMin, barMax, barValue, atWarWith, canToggleAtWar,
+		isHeader, isCollapsed, hasRep, isWatched, isChild, factionID, hasBonusRepGain = GetFactionInfo(index)
+	if not name then return nil end
+	return {
+		factionID = factionID,
+		name = name,
+		description = description,
+		reaction = standingID,
+		currentReactionThreshold = barMin,
+		nextReactionThreshold = barMax,
+		currentStanding = barValue,
+		atWarWith = atWarWith,
+		canToggleAtWar = canToggleAtWar,
+		isChild = isChild,
+		isHeader = isHeader,
+		isHeaderWithRep = hasRep,
+		isCollapsed = isCollapsed,
+		isWatched = isWatched,
+		hasBonusRepGain = hasBonusRepGain,
+		canSetInactive = false,
+		isAccountWide = false,
+	}
 end
 
-function RepC.GetFactionInfoByID(id)
-	local data = C_Reputation.GetFactionDataByID(id)
-	if not data then return nil end
-	return data.name, data.description, data.reaction, data.currentReactionThreshold, data.nextReactionThreshold, data.currentStanding,
-			data.atWarWith, data.canToggleAtWar, data.isHeader, data.isCollapsed, data.isHeaderWithRep, data.isWatched, data.isChild,
-			data.factionID, data.hasBonusRepGain, data.canSetInactive
+function RepC.GetFactionDataByID(id)
+	local name, description, standingID, barMin, barMax, barValue, atWarWith, canToggleAtWar,
+		isHeader, isCollapsed, hasRep, isWatched, isChild, factionID, hasBonusRepGain = GetFactionInfoByID(id)
+	if not name then return nil end
+	return {
+		factionID = factionID,
+		name = name,
+		description = description,
+		reaction = standingID,
+		currentReactionThreshold = barMin,
+		nextReactionThreshold = barMax,
+		currentStanding = barValue,
+		atWarWith = atWarWith,
+		canToggleAtWar = canToggleAtWar,
+		isChild = isChild,
+		isHeader = isHeader,
+		isHeaderWithRep = hasRep,
+		isCollapsed = isCollapsed,
+		isWatched = isWatched,
+		hasBonusRepGain = hasBonusRepGain,
+		canSetInactive = false,
+		isAccountWide = false,
+	}
 end
 
-function RepC.GetWatchedFactionInfo()
-	local data = C_Reputation.GetWatchedFactionData()
-	if not data then return nil end
-	return data.name, data.reaction, data.currentReactionThreshold, data.nextReactionThreshold, data.currentStanding, data.factionID
+function RepC.GetWatchedFactionData()
+	local factionID = select(6, GetWatchedFactionInfo())
+	if not factionID then return nil end
+	return RepC.GetFactionInfoByID(factionID)
 end

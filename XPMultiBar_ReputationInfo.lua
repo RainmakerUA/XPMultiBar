@@ -12,23 +12,15 @@ local RI = XPMultiBar:NewModule("ReputationInfo")
 local wowClassic = Utils.IsWoWClassic
 local emptyFun = Utils.EmptyFn
 
-local ipairs = ipairs
 local math_floor = math.floor
 local setmetatable = setmetatable
 local tonumber = tonumber
-local tinsert = table.insert
-local unpack = unpack
 
 local RC = XPMultiBar:GetModule("ReputationCompat")
 
 local CreateColor = CreateColor
-local GetFactionInfo = GetFactionInfo or RC.GetFactionInfo
-local GetFactionInfoByID = GetFactionInfoByID or RC.GetFactionInfoByID
 local GetGuildInfo = GetGuildInfo
-local GetNumFactions = GetNumFactions or RC.GetNumFactions
 local GetText = GetText
-local GetWatchedFactionInfo = GetWatchedFactionInfo or RC.GetWatchedFactionInfo
-local SetWatchedFactionIndex = SetWatchedFactionIndex or RC.SetWatchedFactionIndex
 local UnitSex = UnitSex
 
 local BLUE_FONT_COLOR = BLUE_FONT_COLOR
@@ -38,7 +30,14 @@ local FACTION_HORDE = FACTION_HORDE
 local GUILD = GUILD
 local MAX_REPUTATION_REACTION = MAX_REPUTATION_REACTION or 8
 local RENOWN_LEVEL_LABEL = RENOWN_LEVEL_LABEL
-local REPUTATION_PROGRESS_FORMAT = REPUTATION_PROGRESS_FORMAT
+
+local GetFactionDataByIndex = C_Reputation.GetFactionDataByIndex or RC.GetFactionDataByIndex
+local GetFactionDataByID = C_Reputation.GetFactionDataByID or RC.GetFactionDataByID
+--local GetFactionInfo = GetFactionInfo or RC.GetFactionInfo
+--local GetFactionInfoByID = GetFactionInfoByID or RC.GetFactionInfoByID
+local GetNumFactions = C_Reputation.GetNumFactions or RC.GetNumFactions
+local GetWatchedFactionData = C_Reputation.GetWatchedFactionData or RC.GetWatchedFactionData
+local SetWatchedFactionByIndex = C_Reputation.SetWatchedFactionByIndex or RC.SetWatchedFactionByIndex
 
 local IsFactionParagon = emptyFun
 local GetFactionParagonInfo = emptyFun
@@ -60,17 +59,6 @@ end
 
 -- Remove all known globals after this point
 -- luacheck: std none
-
-local function UnpackIndices(table, ...)
-	local tableToUnpack = {}
-	local indices = {...}
-
-	for _, index in ipairs(indices) do
-		tinsert(tableToUnpack, table[index])
-	end
-
-	return unpack(tableToUnpack)
-end
 
 local function GetColorRGBA(color)
 	return color.r or 0, color.g or 0, color.b or 0, color.a or 1
@@ -141,31 +129,34 @@ local function GetFactionReputationInfo(factionID)
 		return val, maxVal
 	end
 
-	local name, desc, standing, minValue, maxValue, value,
-			atWarWith, canToggleAtWar, isHeader,
-			isCollapsed, hasRep, isWatched, isChild,
-			_--[[factionID]], hasBonusRep, canSetInactive = GetFactionInfoByID(factionID)
-	local standingText, standingColor
+	local data = factionID and GetFactionDataByID(factionID) or nil
 
-	if not name then
+	if not data then
 		-- Return nil for non-existent factions
 		return nil
 	end
 
 	local rep = {
-		id = factionID,
-		name = name,
-		description = desc,
-		isAtWar = atWarWith,
-		canBeAtWar = canToggleAtWar,
-		isHeader = isHeader,
-		isCollapsed = isCollapsed,
-		hasRep = hasRep,
-		isChild = isChild,
-		isWatched = isWatched,
-		hasBonusRep = hasBonusRep,
-		canSetInactive = canSetInactive
+		id = data.factionID,
+		name = data.name,
+		description = data.description,
+		isAtWar = data.atWarWith,
+		canBeAtWar = data.canToggleAtWar,
+		isHeader = data.isHeader,
+		isCollapsed = data.isCollapsed,
+		hasRep = data.isHeaderWithRep,
+		isChild = data.isChild,
+		isWatched = data.isWatched,
+		hasBonusRep = data.hasBonusRepGain,
+		canSetInactive = data.canSetInactive,
+		isAccountWide = data.isAccountWide
 	}
+
+	local standing = data.reaction
+	local minValue = data.currentReactionThreshold
+	local value = data.currentStanding
+	local maxValue = data.nextReactionThreshold
+	local standingText, standingColor
 
 	local frienshipInfo = GetFriendshipReputation(factionID)
 
@@ -217,7 +208,7 @@ local function GetFactionReputationInfo(factionID)
 			maxValue = renown.renownLevelThreshold
 		end
 
-		standingText = RENOWN_LEVEL_LABEL .. level
+		standingText = string.format(RENOWN_LEVEL_LABEL, level)
 		standingColor = renownColor
 
 		rep.renown = {
@@ -273,13 +264,13 @@ local function SetWatchedFactionByName(factionName, amount, autotrackGuild)
 		-- name, description, standingID, barMin, barMax, barValue, atWarWith,
 		-- canToggleAtWar, isHeader, isCollapsed, hasRep, isWatched, isChild,
 		-- factionID, hasBonusRepGain, canBeLFGBonus = GetFactionInfo(factionIndex);
-		local fi = { GetFactionInfo(i) }
-		local name, isHeader, hasRep, isWatched = fi[1], fi[9], fi[11], fi[12]
+		local data = GetFactionDataByIndex(i)
+		local name, isHeader, hasRep, isWatched = data.name, data.isHeader, data.isHeaderWithRep, data.isWatched
 
 		if name == factionName then
 			-- If it is not watched and it is not a header without rep, watch it.
 			if not isWatched and (not isHeader or hasRep) then
-				SetWatchedFactionIndex(i)
+				SetWatchedFactionByIndex(i)
 			end
 			return
 		end
@@ -287,22 +278,16 @@ local function SetWatchedFactionByName(factionName, amount, autotrackGuild)
 end
 
 function RI:GetFactionInfo(factionID)
-	if factionID then
-		return GetFactionReputationInfo(factionID)
+	if not factionID then
+		local data = GetWatchedFactionData()
+		factionID = data and data.factionID
 	end
-
-	local name, _, _, _, _, id = GetWatchedFactionInfo()
-
-	if name then
-		return GetFactionReputationInfo(id)
-	end
-
-	return nil
+	return factionID and GetFactionReputationInfo(factionID) or nil
 end
 
 function RI:GetFactionInfoByIndex(index)
-	local factionInfo = { GetFactionInfo(index) }
-	local name, isHeader, isCollapsed, isChild, factionID = UnpackIndices(factionInfo, 1, 9, 10, 13, 14)
+	local data = GetFactionDataByIndex(index)
+	local name, isHeader, isCollapsed, isChild, factionID = data.name, data.isHeader, data.isCollapsed, data.isChild, data.factionID
 
 	return factionID and GetFactionReputationInfo(factionID) or {
 		name = name,

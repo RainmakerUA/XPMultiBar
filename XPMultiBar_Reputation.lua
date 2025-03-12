@@ -34,9 +34,7 @@ local WorldFrame = WorldFrame
 
 local RC = XPMultiBar:GetModule("ReputationCompat")
 
-local CollapseFactionHeader = CollapseFactionHeader or RC.CollapseFactionHeader
 local CreateFramePool = CreateFramePool
-local ExpandFactionHeader = ExpandFactionHeader or RC.ExpandFactionHeader
 local GameTooltip_AddColoredLine = GameTooltip_AddColoredLine
 local GameTooltip_AddErrorLine = GameTooltip_AddErrorLine
 local GameTooltip_AddHighlightLine = GameTooltip_AddHighlightLine
@@ -46,11 +44,14 @@ local GameTooltip_InsertFrame = GameTooltip_InsertFrame
 local GameTooltip_SetDefaultAnchor = GameTooltip_SetDefaultAnchor
 local GameTooltip_SetTitle = GameTooltip_SetTitle
 local GetCursorPosition = GetCursorPosition
-local GetNumFactions = GetNumFactions or RC.GetNumFactions
 local IsAltKeyDown = IsAltKeyDown
 local IsControlKeyDown = IsControlKeyDown
 local IsShiftKeyDown = IsShiftKeyDown
-local SetWatchedFactionIndex = SetWatchedFactionIndex or RC.SetWatchedFactionIndex
+
+local CollapseFactionHeader = C_Reputation.CollapseFactionHeader or RC.CollapseFactionHeader
+local ExpandFactionHeader = C_Reputation.ExpandFactionHeader or RC.ExpandFactionHeader
+local GetNumFactions = C_Reputation.GetNumFactions or RC.GetNumFactions
+local SetWatchedFactionByIndex = C_Reputation.SetWatchedFactionByIndex or RC.SetWatchedFactionByIndex
 
 -- Remove all known globals after this point
 -- luacheck: std none
@@ -307,7 +308,7 @@ local function ClickMenuItem(_, faction, button)
 				R.favoriteCheckbox:SetChecked(not isFavorite)
 			end
 		elseif button == "LeftButton" then
-			SetWatchedFactionIndex(isWatched and 0 or factionIndex)
+			SetWatchedFactionByIndex(isWatched and 0 or factionIndex)
 		end
 	end
 end
