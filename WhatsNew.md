@@ -1,5 +1,5 @@
 # Changes
 
-- Fix renown-related text display
+- Icon for Warband reputations, fixes
 
 #### Complete Changelog

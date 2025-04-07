@@ -186,6 +186,7 @@ local tags = {
 	paragon = [[|A:ParagonReputation_Bag:12:10:0:0|a]],
 	paragonReward = [[|A:ParagonReputation_Bag:12:10:0:0|a|A:ParagonReputation_Checkmark:10:10:-10:0|a]],
 	renown = [[|Tinterface\targetingframe\ui-raidtargetingicon_1:0|t]],
+	warband = [[|TInterface\warbands\uiwarbandsicons:0:0:0:0:64:64:1:23:4:26|t]],
 }
 
 local instructions = {
@@ -219,9 +220,14 @@ local function AcquireRepMenuTooltip(frame, repConfig)
 	return repMenu
 end
 
-local function GetFactionIcons(hasBonusRep, isLFGBonus, isFactionParagon, hasParagonReward, isAtWar, isRenown)
+local function GetFactionIcons(
+					hasBonusRep, isLFGBonus, isFactionParagon,
+					hasParagonReward, isAtWar, isRenown, isAccountWide)
 	local icons = ""
 
+	if isAccountWide then
+		icons = icons .. tags.warband
+	end
 	if isRenown then
 		icons = icons .. tags.renown
 	end
@@ -261,13 +267,19 @@ local function GetReputationFrame(faction, showHeader, commifyNumbers)
 
 	if name then
 		if showHeader == 2 then
-			name = name .. "\32" .. GetFactionIcons(faction.hasBonusRep, false, isParagon, hasParagonReward, faction.isAtWar, faction.renown)
+			name = name .. "\32" .. GetFactionIcons(
+											faction.hasBonusRep, false, isParagon, hasParagonReward,
+											faction.isAtWar, faction.renown, faction.isAccountWide
+										)
 		end
 
 		frame:SetHeader(name)
 		frame:SetStatusBarValues(0, max, current)
 		frame:SetStatusBarColor(faction.standingColor)
-		frame:SetStatusBarTexts(faction.standingText, REPUTATION_PROGRESS_FORMAT:format(commify(current or 0), commify(max or 0)))
+		frame:SetStatusBarTexts(
+								faction.standingText,
+								REPUTATION_PROGRESS_FORMAT:format(commify(current or 0), commify(max or 0))
+							)
 	else
 		frame:SetError(L["Faction error!"])
 	end
@@ -362,11 +374,13 @@ local function FillReputationMenu(config)
 												info.paragon,
 												info.paragon and info.paragon.hasReward,
 												info.isAtWar,
-												info.renown
+												info.renown,
+												info.isAccountWide
 											) or ""
 		local id, name, text, color, isHeader, isCollapsed, hasRep, isWatched, isChild
 				= info.id, info.name, info.standingText, info.standingColor,
-					info.isHeader, info.isCollapsed, info.hasRep, info.isWatched, info.isChild
+					info.isHeader, info.isCollapsed, info.hasRep,
+					info.isWatched, info.isChild
 		local isFavorite = id and config.favorites[id]
 		local instruction
 		--[[
