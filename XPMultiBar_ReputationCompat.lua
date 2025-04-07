@@ -109,5 +109,5 @@ end
 function RepC.GetWatchedFactionData()
 	local factionID = select(6, GetWatchedFactionInfo())
 	if not factionID then return nil end
-	return RepC.GetFactionInfoByID(factionID)
+	return RepC.GetFactionDataByID(factionID)
 end

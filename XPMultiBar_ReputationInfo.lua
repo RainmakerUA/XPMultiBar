@@ -33,8 +33,6 @@ local RENOWN_LEVEL_LABEL = RENOWN_LEVEL_LABEL
 
 local GetFactionDataByIndex = C_Reputation.GetFactionDataByIndex or RC.GetFactionDataByIndex
 local GetFactionDataByID = C_Reputation.GetFactionDataByID or RC.GetFactionDataByID
---local GetFactionInfo = GetFactionInfo or RC.GetFactionInfo
---local GetFactionInfoByID = GetFactionInfoByID or RC.GetFactionInfoByID
 local GetNumFactions = C_Reputation.GetNumFactions or RC.GetNumFactions
 local GetWatchedFactionData = C_Reputation.GetWatchedFactionData or RC.GetWatchedFactionData
 local SetWatchedFactionByIndex = C_Reputation.SetWatchedFactionByIndex or RC.SetWatchedFactionByIndex
