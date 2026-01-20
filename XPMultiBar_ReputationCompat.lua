@@ -1,6 +1,6 @@
 --[=====[
 		## XP MultiBar ver. @@release-version@@
-		## XPMultiBar_ReputationApi.lua - module
+		## XPMultiBar_ReputationCompat.lua - module
 		Legacy Reputation API façade module for XPMultiBar addon
 --]=====]
 
@@ -8,9 +8,19 @@ local addonName = ...
 local XPMultiBar = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local RepC = XPMultiBar:NewModule("ReputationCompat")
 
+local math_floor = math.floor
+
 local GetFactionInfo = GetFactionInfo
 local GetFactionInfoByID = GetFactionInfoByID
 local GetWatchedFactionInfo = GetWatchedFactionInfo
+local CollapseFactionHeader = CollapseFactionHeader
+local ExpandFactionHeader = ExpandFactionHeader
+local GetSelectedFaction = GetSelectedFaction
+local SetWatchedFactionIndex = SetWatchedFactionIndex
+local GetNumFactions = GetNumFactions
+
+-- Remove all known globals after this point
+-- luacheck: std none
 
 --[[
 	-- FactionData structure
@@ -111,3 +121,4 @@ function RepC.GetWatchedFactionData()
 	if not factionID then return nil end
 	return RepC.GetFactionDataByID(factionID)
 end
+

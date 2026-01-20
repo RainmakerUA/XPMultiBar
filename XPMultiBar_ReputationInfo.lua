@@ -12,11 +12,13 @@ local RI = XPMultiBar:NewModule("ReputationInfo")
 local wowClassic = Utils.IsWoWClassic
 local emptyFun = Utils.EmptyFn
 
+local issecretvalue = issecretvalue or function(_) return false end
 local math_floor = math.floor
 local setmetatable = setmetatable
 local tonumber = tonumber
 
 local RC = XPMultiBar:GetModule("ReputationCompat")
+local RT = XPMultiBar:GetModule("ReputationTracking")
 
 local CreateColor = CreateColor
 local GetGuildInfo = GetGuildInfo
@@ -36,6 +38,8 @@ local GetFactionDataByID = C_Reputation.GetFactionDataByID or RC.GetFactionDataB
 local GetNumFactions = C_Reputation.GetNumFactions or RC.GetNumFactions
 local GetWatchedFactionData = C_Reputation.GetWatchedFactionData or RC.GetWatchedFactionData
 local SetWatchedFactionByIndex = C_Reputation.SetWatchedFactionByIndex or RC.SetWatchedFactionByIndex
+local GetGuildFactionData = C_Reputation.GetGuildFactionData
+local SetWatchedFactionByID = C_Reputation.SetWatchedFactionByID
 
 local IsFactionParagon = emptyFun
 local GetFactionParagonInfo = emptyFun
@@ -93,7 +97,7 @@ local factionStandingLabel
 do
 	factionStandingLabel = setmetatable({}, {
 		__index = function(t, k)
-			local fsl = GetText("FACTION_STANDING_LABEL" .. k, UnitSex("player"))
+			local fsl = GetText("FACTION_STANDING_LABEL" .. k, UnitSex("player"), 1)
 			t[k] = fsl
 			return fsl
 		end,
@@ -104,7 +108,7 @@ local function GetFactionReputationInfo(factionID)
 	local function getParagonRep(repData)
 		local val, maxVal
 		if IsFactionParagon(repData.id) then
-			local parValue, parThresh, paragonQuestID, hasReward, tooLowLevelForParagon = GetFactionParagonInfo(factionID)
+			local parValue, parThresh, paragonQuestID, hasReward, tooLowLevelForParagon = GetFactionParagonInfo(repData.id)
 			local level = math_floor(parValue / parThresh)
 
 			val = parValue % parThresh
@@ -236,32 +240,53 @@ local function GetFactionReputationInfo(factionID)
 	})
 end
 
-local function SetWatchedFactionByName(factionName, amount, autotrackGuild)
+local function SetWatchedFaction(factionName, amount, autotrackGuild)
+	local factionID
+	if issecretvalue(factionName) or not factionName or #factionName == 0 then
+		-- Midnight+ workaround
+		local data = RT:GetChangedFactionData() or {}
+		factionID, factionName = data.id, data.name
+	end
+
+	if not factionName or #factionName == 0 then
+		return
+	end
+
 	if factionName == FACTION_HORDE or factionName == FACTION_ALLIANCE then
 		-- Do not track Horde / Alliance classic faction header
 		return
 	end
 
-	if tonumber(amount) <= 0 then
+	if not issecretvalue(amount) and tonumber(amount) <= 0 then
 		-- We do not want to watch factions we are losing reputation with
+		-- Automatically handled by ReputationTracking module
 		return
 	end
 
 	-- Fix for auto tracking guild reputation since the COMBAT_TEXT_UPDATE does not contain
 	-- the guild name, it just contains "Guild"
 	if factionName == GUILD then
-		if autotrackGuild then
-			factionName = GetGuildInfo("player")
-		else
+		if not autotrackGuild then
 			return
 		end
+		if GetGuildFactionData then
+			local guildData = GetGuildFactionData()
+			if guildData then
+				factionID, factionName = guildData.factionID, guildData.name
+			end
+		else
+			factionName = GetGuildInfo("player")
+		end
+	end
+
+	factionID = factionID or RT:GetFactionIDByName(factionName)
+
+	if factionID and SetWatchedFactionByID then
+		return SetWatchedFactionByID(factionID)
 	end
 
 	-- Everything ok? Watch the faction!
 	for i = 1, GetNumFactions() do
-		-- name, description, standingID, barMin, barMax, barValue, atWarWith,
-		-- canToggleAtWar, isHeader, isCollapsed, hasRep, isWatched, isChild,
-		-- factionID, hasBonusRepGain, canBeLFGBonus = GetFactionInfo(factionIndex);
 		local data = GetFactionDataByIndex(i)
 		local name, isHeader, hasRep, isWatched = data.name, data.isHeader, data.isHeaderWithRep, data.isWatched
 
@@ -284,7 +309,7 @@ function RI:GetFactionInfo(factionID)
 end
 
 function RI:GetFactionInfoByIndex(index)
-	local data = GetFactionDataByIndex(index)
+	local data = GetFactionDataByIndex(index) or {}
 	local name, isHeader, isCollapsed, isChild, factionID = data.name, data.isHeader, data.isCollapsed, data.isChild, data.factionID
 
 	return factionID and GetFactionReputationInfo(factionID) or {
@@ -303,5 +328,5 @@ function RI:SetExaltedColor(color)
 end
 
 function RI:SetWatchedFaction(factionName, amount, autotrackGuild)
-	return SetWatchedFactionByName(factionName, amount, autotrackGuild)
+	return SetWatchedFaction(factionName, amount, autotrackGuild)
 end

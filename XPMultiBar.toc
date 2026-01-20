@@ -13,7 +13,7 @@
 ## X-Embeds: Ace3, LibQTip-1.0, LibSharedMedia-3.0
 ## X-ReleaseDate: @@release-date@@
 
-libs.xml
+Libs.xml
 
 Locales\locales.xml
 
@@ -23,6 +23,7 @@ XPMultiBar_Bars.lua
 XPMultiBar_Config.lua
 XPMultiBar_Frame.lua
 XPMultiBar_ReputationCompat.lua
+XPMultiBar_ReputationTracking.lua
 XPMultiBar_ReputationInfo.lua
 XPMultiBar_Reputation.lua
 XPMultiBar_Main.lua
