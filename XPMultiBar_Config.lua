@@ -60,7 +60,7 @@ local AceGUIWidgetLSMlists = AceGUIWidgetLSMlists
 -- Remove all known globals after this point
 -- luacheck: std none
 
-local DB_VERSION_NUM = 10
+local DB_VERSION_NUM = 11
 local DB_VERSION = "V" .. tostring(DB_VERSION_NUM)
 
 --@debug@
@@ -193,7 +193,7 @@ local defaults = {
 			borderTexture = "Blizzard Dialog",
 			borderDynamicColor = true,
 			borderColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 },
-			bubbles = false,
+			bubbles = 0,
 			commify = true,
 			hidestatus = true,
 		},
@@ -1062,23 +1062,32 @@ do
 									texture = {
 										type = "select",
 										order = 1000,
+										width = 1.5,
 										name = L["Choose texture"],
 										desc = L["Choose bar texture"],
 										style = "dropdown",
 										dialogControl = "LSM30_Statusbar",
 										values = AceGUIWidgetLSMlists.statusbar,
 									},
-									horizTile = {
-										type = "toggle",
-										order = 2000,
-										name = L["Texture tiling"],
-										desc = L["Tile texture instead of stretching"],
-									},
 									bubbles = {
-										type = "toggle",
-										order = 3000,
+										type = "select",
+										order = 2000,
+										width = 1.5,
 										name = L["Bubbles"],
 										desc = L["Show ticks on the bar"],
+										style = "radio",
+										values = {
+											[0] = L["Off"],
+											[10] = L["Every 10%"],
+											[20] = L["Every 5%"],
+										},
+									},
+									horizTile = {
+										type = "toggle",
+										order = 3000,
+										width = 1.5,
+										name = L["Texture tiling"],
+										desc = L["Tile texture instead of stretching"],
 									},
 								},
 							},
@@ -1844,60 +1853,65 @@ local function MigrateSettings(sv)
 	end
 	local dbVer, dbClassic = getDBVersion(sv.VER)
 
-	if dbVer > 10 then
-		sv.showStartupMessage = true
+	if sv.profiles then
+		for name, data in pairs(sv.profiles) do
+			if dbVer < 11 then
+				data.general.bubbles = data.general.bubbles and 20 or 0
+			end
+			--@debug@
+			--[==[
+			-- new positioning mode
+			if dbVer < 821 then
+				data.general.anchor = "TOPLEFT"
+				data.general.anchorRelative = "BOTTOMLEFT"
+			end
 
-		if sv.profiles then
-			for name, data in pairs(sv.profiles) do
-				-- new positioning mode
-				if dbVer < 821 then
-					data.general.anchor = "TOPLEFT"
-					data.general.anchorRelative = "BOTTOMLEFT"
-				end
-				-- border texture picker
-				if dbVer < 822 then
-					local borderTexNames = {
-										"Blizzard Dialog", "Blizzard Toast",
-										"Blizzard Minimap Tooltip", "Blizzard Tooltip"
-									}
-					if not data.general.borderTexture then
-						local style = data.general.borderStyle or 1
-						local tex = borderTexNames[style]
-						data.general.borderTexture = tex
-						data.general.borderStyle = nil
-					end
-				end
-				if dbVer < 823 then
-					-- Bar priority
-					local bars = data.bars
-					if bars then
-						--[[ No migration ]]
-						bars.showmaxlevel = nil
-						bars.showmaxazerite = nil
-						bars.showrepbar = nil
-						-- AutoTracking settings
-						local rep = data.reputation
-						if rep then
-							rep.autowatchrep = bars.autowatchrep
-							rep.autotrackguild = bars.autotrackguild
-							bars.autowatchrep = nil
-							bars.autotrackguild = nil
-						end
-					end
-				end
-
-				if data.bars then
-					data.bars.azerstr = nil
-					data.bars.azicons = nil
-					data.bars.azerite = nil
-					data.bars.azertext = nil
-					data.bars.priority = nil -- reset priority
+			-- border texture picker
+			if dbVer < 822 then
+				local borderTexNames = {
+									"Blizzard Dialog", "Blizzard Toast",
+									"Blizzard Minimap Tooltip", "Blizzard Tooltip"
+								}
+				if not data.general.borderTexture then
+					local style = data.general.borderStyle or 1
+					local tex = borderTexNames[style]
+					data.general.borderTexture = tex
+					data.general.borderStyle = nil
 				end
 			end
-		end
 
-		sv.VER = DB_VERSION
+			if dbVer < 823 then
+				-- Bar priority
+				local bars = data.bars
+				if bars then
+					--[[ No migration ]]
+					bars.showmaxlevel = nil
+					bars.showmaxazerite = nil
+					bars.showrepbar = nil
+					-- AutoTracking settings
+					local rep = data.reputation
+					if rep then
+						rep.autowatchrep = bars.autowatchrep
+						rep.autotrackguild = bars.autotrackguild
+						bars.autowatchrep = nil
+						bars.autotrackguild = nil
+					end
+				end
+			end
+
+			if data.bars then
+				data.bars.azerstr = nil
+				data.bars.azicons = nil
+				data.bars.azerite = nil
+				data.bars.azertext = nil
+				data.bars.priority = nil -- reset priority
+			end
+			]==]
+			--@end-debug@
+		end
 	end
+
+	sv.VER = DB_VERSION
 end
 
 C.Empty = empty
@@ -1971,9 +1985,11 @@ function C.RegisterProfileChanged(...)
 end
 
 function C:OnInitialize()
-	self.db = AceDB:New(addonName .. "DB", defaults, true)
+	local savedVarsName = addonName .. "DB"
 
-	MigrateSettings(self.db.sv)
+	MigrateSettings(_G[savedVarsName])
+
+	self.db = AceDB:New(savedVarsName, defaults, true)
 
 	db = self.db.profile
 

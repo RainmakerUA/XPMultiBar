@@ -28,8 +28,12 @@
 			<StatusBar parentKey="background" inherits="XPMultiBarInnerBarTemplate" />
 			<StatusBar parentKey="remaining" inherits="XPMultiBarInnerBarTemplate" />
 			<StatusBar parentKey="xpbar" inherits="XPMultiBarInnerBarTemplate" />
-			<StatusBar parentKey="bubbles" inherits="XPMultiBarInnerBarTemplate">
-				<BarTexture parentKey="tex" file="Interface\AddOns\XPMultiBar\Textures\bubbles" />
+			<StatusBar parentKey="bubbles20" inherits="XPMultiBarInnerBarTemplate">
+				<BarTexture parentKey="tex" file="Interface\AddOns\XPMultiBar\Textures\bubbles20" />
+				<BarColor r="0" g="0" b="0" a="0.5" />
+			</StatusBar>
+			<StatusBar parentKey="bubbles10" inherits="XPMultiBarInnerBarTemplate">
+				<BarTexture parentKey="tex" file="Interface\AddOns\XPMultiBar\Textures\bubbles10" />
 				<BarColor r="0" g="0" b="0" a="0.5" />
 			</StatusBar>
 			<Button parentKey="button" inherits="BackdropTemplate" mixin="XPMultiBarButtonMixin" setAllPoints="true">

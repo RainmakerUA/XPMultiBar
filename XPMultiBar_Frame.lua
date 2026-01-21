@@ -82,15 +82,17 @@ function fx:OnLoad()
 	-- Set frame levels
 	self:SetFrameLevel(0)
 	local level = self:GetFrameLevel()
-	local children = { self.background, self.remaining, self.xpbar, self.bubbles, self.button }
+	local children = { self.background, self.remaining, self.xpbar, self.bubbles20, self.bubbles10, self.button }
 
 	for i, v in ipairs(children) do
 		v:SetFrameLevel(level + i)
 	end
 
 	-- Set bubbles texture not tiling
-	self.bubbles.tex:SetHorizTile(false)
+	self.bubbles10.tex:SetHorizTile(false)
+	self.bubbles20.tex:SetHorizTile(false)
 
+	-- Register button events
 	self.button:RegisterForDrag("LeftButton")
 	self.button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 end
@@ -428,7 +430,13 @@ end
 
 function UI:SetMargin(x, y)
 	Utils.ForEach(
-		{ self.barFrame.background, self.barFrame.remaining, self.barFrame.xpbar, self.barFrame.bubbles },
+		{
+			self.barFrame.background,
+			self.barFrame.remaining,
+			self.barFrame.xpbar,
+			self.barFrame.bubbles10,
+			self.barFrame.bubbles20,
+		},
 		function(bar)
 			bar:SetMargin(x, y)
 		end
@@ -459,10 +467,15 @@ function UI:SetBorder(texture, color)
 end
 
 function UI:ShowBubbles(value)
-	if value then
-		self.barFrame.bubbles:Show()
+	if value == 10 then
+		self.barFrame.bubbles10:Show()
+		self.barFrame.bubbles20:Hide()
+	elseif value == 20 then
+		self.barFrame.bubbles10:Hide()
+		self.barFrame.bubbles20:Show()
 	else
-		self.barFrame.bubbles:Hide()
+		self.barFrame.bubbles10:Hide()
+		self.barFrame.bubbles20:Hide()
 	end
 end
 

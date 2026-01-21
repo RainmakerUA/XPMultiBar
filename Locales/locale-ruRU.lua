@@ -2,7 +2,7 @@
 local addonName = ...
 local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "ruRU")
 if not L then return end
----------- Total: 211 ----------
+---------- Total: 213 ----------
 L["General"] = "Загальні"
 L["Bars"] = "Смуги"
 L["Help"] = "Довідка"
@@ -80,9 +80,11 @@ L["Visuals"] = "Візуальне оформлення"
 L["Texture"] = "Текстура"
 L["Choose texture"] = "Вибрати текстуру"
 L["Choose bar texture"] = "Вибрати текстуру для смуги"
+L["Bubbles"] = "Поділки"
+L["Every 10%"] = "Через 10%"
+L["Every 5%"] = "Через 5%"
 L["Texture tiling"] = "Повторювати текстуру"
 L["Tile texture instead of stretching"] = "Повторювати текстуру замість розтягування"
-L["Bubbles"] = "Поділки"
 L["Bar border"] = "Рамка смуги"
 L["Show border"] = "Відображати рамку"
 L["Border style"] = "Стиль рамки"

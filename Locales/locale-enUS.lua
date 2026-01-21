@@ -2,7 +2,7 @@
 local addonName = ...
 local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "enUS", true)
 if not L then return end
----------- Total: 211 ----------
+---------- Total: 213 ----------
 L["General"] = true
 L["Bars"] = true
 L["Help"] = true
@@ -80,9 +80,11 @@ L["Visuals"] = true
 L["Texture"] = true
 L["Choose texture"] = true
 L["Choose bar texture"] = true
+L["Bubbles"] = true
+L["Every 10%"] = true
+L["Every 5%"] = true
 L["Texture tiling"] = true
 L["Tile texture instead of stretching"] = true
-L["Bubbles"] = true
 L["Bar border"] = true
 L["Show border"] = true
 L["Border style"] = true

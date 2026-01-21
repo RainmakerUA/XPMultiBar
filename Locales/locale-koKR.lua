@@ -2,7 +2,7 @@
 local addonName = ...
 local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "koKR")
 if not L then return end
----------- Total: 211 ----------
+---------- Total: 213 ----------
 L["General"] = "기본 설정"
 L["Bars"] = "바"
 L["Help"] = "도움말"
@@ -80,9 +80,11 @@ L["Visuals"] = "외형"
 L["Texture"] = "무늬"
 L["Choose texture"] = "무늬 선택"
 L["Choose bar texture"] = "바의 무늬를 선택"
+L["Bubbles"] = "칸 표시"
+L["Every 10%"] = "Every 10%"
+L["Every 5%"] = "Every 5%"
 L["Texture tiling"] = "무늬에 타일 효과"
 L["Tile texture instead of stretching"] = "무늬에 기본 효과인 늘리기 대신 타일 효과를 입힙니다"
-L["Bubbles"] = "칸 표시"
 L["Bar border"] = "바 테두리"
 L["Show border"] = "테두리 사용"
 L["Border style"] = "테두리 모양"
