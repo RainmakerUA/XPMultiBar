@@ -2,8 +2,6 @@
 
 XP / Reputation bar
 
-### No longer developed! Fixes and compatibility updates (hopefully) only!
-
 ### Description
 
 Highly customizable bar displaying XP and reputation.
@@ -19,7 +17,7 @@ Highly customizable bar displaying XP and reputation.
 
 #### **Reputation Bar:**
 
-- Supports regular reputation, friendships and Dragonflight's major factions (renown).
+- Supports regular reputation, friendships and renown factions (+paragon reputation).
 - Text display configuration using templates.
 - Color configuration.
 - Automatic faction switch when reputation is increased (automatic watch).
