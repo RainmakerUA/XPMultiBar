@@ -1851,6 +1851,11 @@ local function MigrateSettings(sv)
 		local verText, c = ver:match("^V(%d+)(C?)$")
 		return tonumber(verText) or 0, c and #c > 0
 	end
+
+	if not sv then
+		return
+	end
+
 	local dbVer, dbClassic = getDBVersion(sv.VER)
 
 	if sv.profiles then
