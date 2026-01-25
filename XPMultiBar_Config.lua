@@ -1860,59 +1860,9 @@ local function MigrateSettings(sv)
 
 	if sv.profiles then
 		for name, data in pairs(sv.profiles) do
-			if dbVer < 11 then
+			if dbVer < 11 and data and data.general then
 				data.general.bubbles = data.general.bubbles and 20 or 0
 			end
-			--@debug@
-			--[==[
-			-- new positioning mode
-			if dbVer < 821 then
-				data.general.anchor = "TOPLEFT"
-				data.general.anchorRelative = "BOTTOMLEFT"
-			end
-
-			-- border texture picker
-			if dbVer < 822 then
-				local borderTexNames = {
-									"Blizzard Dialog", "Blizzard Toast",
-									"Blizzard Minimap Tooltip", "Blizzard Tooltip"
-								}
-				if not data.general.borderTexture then
-					local style = data.general.borderStyle or 1
-					local tex = borderTexNames[style]
-					data.general.borderTexture = tex
-					data.general.borderStyle = nil
-				end
-			end
-
-			if dbVer < 823 then
-				-- Bar priority
-				local bars = data.bars
-				if bars then
-					--[[ No migration ]]
-					bars.showmaxlevel = nil
-					bars.showmaxazerite = nil
-					bars.showrepbar = nil
-					-- AutoTracking settings
-					local rep = data.reputation
-					if rep then
-						rep.autowatchrep = bars.autowatchrep
-						rep.autotrackguild = bars.autotrackguild
-						bars.autowatchrep = nil
-						bars.autotrackguild = nil
-					end
-				end
-			end
-
-			if data.bars then
-				data.bars.azerstr = nil
-				data.bars.azicons = nil
-				data.bars.azerite = nil
-				data.bars.azertext = nil
-				data.bars.priority = nil -- reset priority
-			end
-			]==]
-			--@end-debug@
 		end
 	end
 
