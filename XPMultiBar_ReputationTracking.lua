@@ -107,7 +107,7 @@ end
 function Mod:GetChangedFactionData()
 	for id, rep in pairs(factionData) do
 		local newRep = getFactionInfo(id)
-		if newRep and (newRep.level > rep.level or newRep.value > rep.value) then
+		if newRep and (newRep.level > rep.level or newRep.level == rep.level and newRep.value > rep.value) then
 			factionData[id] = newRep
 			return newRep
 		end

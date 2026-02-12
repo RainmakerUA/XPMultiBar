@@ -1,5 +1,5 @@
 # Changes
 
-- Fix for initial start without saved settings
+- Reputation tracking improvement
 
 #### Complete Changelog
