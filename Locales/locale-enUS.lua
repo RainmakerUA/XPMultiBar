@@ -2,7 +2,7 @@
 local addonName = ...
 local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "enUS", true)
 if not L then return end
----------- Total: 213 ----------
+---------- Total: 216 ----------
 L["General"] = true
 L["Bars"] = true
 L["Help"] = true
@@ -186,6 +186,9 @@ L["Remaining reputation value in percents"] = true
 L["Help on options"] = true
 L["Azerite item not found!"] = true
 L["You need to select a faction to watch"] = true
+L["Left Button click to open reputation menu"] = true
+L["Right Button click to open settings"] = true
+L["Click to open settings"] = true
 L["Right Button click to collapse %1$s factions"] = true
 L["Right Button click to expand %1$s factions"] = true
 L["Click to watch %1$s reputation"] = true

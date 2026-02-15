@@ -47,6 +47,7 @@ local GetCursorPosition = GetCursorPosition
 local IsAltKeyDown = IsAltKeyDown
 local IsControlKeyDown = IsControlKeyDown
 local IsShiftKeyDown = IsShiftKeyDown
+local LIGHTBLUE_FONT_COLOR = LIGHTBLUE_FONT_COLOR
 
 local CollapseFactionHeader = C_Reputation.CollapseFactionHeader or RC.CollapseFactionHeader
 local ExpandFactionHeader = C_Reputation.ExpandFactionHeader or RC.ExpandFactionHeader
@@ -316,9 +317,9 @@ local function ClickMenuItem(_, faction, button)
 		if button == "MiddleButton" or button == "LeftButton" and isCtrl then
 			Config:SetFactionFavorite(factionID, not isFavorite)
 			R:ShowFactionMenu(true)
-			if R.favoriteCheckbox and R.favoriteCheckbox.factionID == factionID then
+			--[[if R.favoriteCheckbox and R.favoriteCheckbox.factionID == factionID then
 				R.favoriteCheckbox:SetChecked(not isFavorite)
-			end
+			end]]--
 		elseif button == "LeftButton" then
 			SetWatchedFactionByIndex(isWatched and 0 or factionIndex)
 		end
@@ -326,35 +327,37 @@ local function ClickMenuItem(_, faction, button)
 end
 
 local function ShowMenuItemTooltip(line, tip)
-	GameTooltip:SetMinimumWidth(250, true)
-	GameTooltip_SetDefaultAnchor(GameTooltip, WorldFrame)
-	GameTooltip_SetTitle(GameTooltip, tip.name)
+	local tt = GameTooltip
+	tt:SetMinimumWidth(250)
+	GameTooltip_SetDefaultAnchor(tt, WorldFrame)
+	GameTooltip_SetTitle(tt, tip.name)
 
 	if tip.desc then
-		GameTooltip_AddNormalLine(GameTooltip, tip.desc)
+		GameTooltip_AddNormalLine(tt, tip.desc)
 	end
 
 	if tip.extraText then
-		GameTooltip_AddHighlightLine(GameTooltip, tip.extraText)
+		GameTooltip_AddHighlightLine(tt, tip.extraText)
 	end
 
 	if not tip.faction.isHeader or tip.faction.hasRep then
 		local commify = Config.GetDB().general.commify
 		local repStatus = GetReputationFrame(tip.faction, 0, commify)
-		local height = GameTooltip_InsertFrame(GameTooltip, repStatus)
-		repStatus:AfterInsert(GameTooltip, height)
+		local height = GameTooltip_InsertFrame(tt, repStatus)
+		repStatus:AfterInsert(tt, height)
 	end
 
 	if tip.instruction then
-		GameTooltip_AddInstructionLine(GameTooltip, tip.instruction)
+		local r, g, b = LIGHTBLUE_FONT_COLOR.r, LIGHTBLUE_FONT_COLOR.g, LIGHTBLUE_FONT_COLOR.b
+		tt:AddLine(tip.instruction, r, g, b, true)
 	end
 
-	GameTooltip:Show()
+	tt:Show()
 end
 
 local function HideMenuItemTooltip()
 	GameTooltip:Hide()
-	GameTooltip:SetMinimumWidth(0, false)
+	GameTooltip:SetMinimumWidth(0)
 	ReleaseFrames()
 end
 

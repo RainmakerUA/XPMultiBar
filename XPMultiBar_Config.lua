@@ -47,7 +47,6 @@ local type = type
 local unpack = unpack
 
 local GameLimitedMode_IsActive = GameLimitedMode_IsActive
-local GetAddOnMetadata = GetAddOnMetadata or C_AddOns.GetAddOnMetadata
 local GetLocale = GetLocale
 local GetRestrictedAccountData = GetRestrictedAccountData
 local InterfaceOptionsFrame_OpenToCategory = InterfaceOptionsFrame_OpenToCategory
@@ -67,13 +66,7 @@ local DB_VERSION = "V" .. tostring(DB_VERSION_NUM)
 L = Utils.DebugL(L)
 --@end-debug@
 
-local md = {
-	title = GetAddOnMetadata(addonName, "Title"),
-	notes = GetAddOnMetadata(addonName, "Notes"),
-	author = GetAddOnMetadata(addonName, "Author"),
-	version = GetAddOnMetadata(addonName, "Version"),
-	date = GetAddOnMetadata(addonName, "X-ReleaseDate"),
-}
+local md = XPMultiBar.Metadata
 
 local xpLockedReasons = {
 	MAX_EXPANSION_LEVEL = 0,

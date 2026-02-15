@@ -2,7 +2,7 @@
 local addonName = ...
 local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "ruRU")
 if not L then return end
----------- Total: 213 ----------
+---------- Total: 216 ----------
 L["General"] = "Загальні"
 L["Bars"] = "Смуги"
 L["Help"] = "Довідка"
@@ -186,6 +186,9 @@ L["Remaining reputation value in percents"] = "Оставшееся значен
 L["Help on options"] = "Довідка з налаштувань"
 L["Azerite item not found!"] = "Азерітовий предмет не знайдено!"
 L["You need to select a faction to watch"] = "Виберіть фракцію для відображения"
+L["Left Button click to open reputation menu"] = "ЛКМ, щоб відкрити меню репутації"
+L["Right Button click to open settings"] = "ПКМ, щоб відкрити налаштування"
+L["Click to open settings"] = "Клікніть, щоб відкрити налаштування"
 L["Right Button click to collapse %1$s factions"] = "ПКМ, щоб згорнути фракції |3-2(%1$s)"
 L["Right Button click to expand %1$s factions"] = "ПКМ, щоб розгорнути фракції |3-2(%1$s)"
 L["Click to watch %1$s reputation"] = "ЛКМ, щоб почати відслідковувати репутацію із |3-4(%1$s)"

@@ -30,9 +30,11 @@ local wowClassic = Utils.IsWoWClassic
 local emptyFun = Utils.EmptyFn
 
 -- WoW globals
+local AddonCompartmentFrame = AddonCompartmentFrame
 local ChatEdit_GetActiveWindow = ChatEdit_GetActiveWindow
 local ChatEdit_GetLastActiveWindow = ChatEdit_GetLastActiveWindow
 local GameLimitedMode_IsActive = GameLimitedMode_IsActive
+local GameTooltip = GameTooltip
 local GetContainerItemInfo = GetContainerItemInfo
 local GetCurrentCombatTextEventInfo = GetCurrentCombatTextEventInfo
 local GetInventoryItemID = GetInventoryItemID
@@ -48,6 +50,8 @@ local UnitLevel = UnitLevel
 local UnitTrialXP = UnitTrialXP
 local UnitXP = UnitXP
 local UnitXPMax = UnitXPMax
+local LIGHTBLUE_FONT_COLOR = LIGHTBLUE_FONT_COLOR
+local NORMAL_FONT_COLOR = NORMAL_FONT_COLOR
 
 local SetTimeout = emptyFun
 local FindActiveAzeriteItem = emptyFun
@@ -353,6 +357,62 @@ local function UpdateReputationBar(updateData)
 	end
 end
 
+local function AddonCompartmentButton_OnClick(data, inputData, menuProxy)
+	local showRepMenu = Config.GetDB().reputation.showRepMenu
+	if not showRepMenu or not inputData or not inputData.buttonName
+			or inputData.buttonName == "RightButton" then
+		Config.OpenSettings()
+	else
+		Reputation:ShowFactionMenu(false)
+	end
+end
+
+local function AddonCompartmentButton_OnEnter(menuButton)
+	local md = XPMultiBar.Metadata
+	local title = md and md.title or addonName
+	local fullVersion = md and md.version and md.date
+			and ("%s (%s)"):format(md.version, md.date) or nil
+	local showRepMenu = Config.GetDB().reputation.showRepMenu
+	local tt = GameTooltip
+	local addLineColoredFromObject = function (tooltip, text, colorObject)
+		local r, g, b = colorObject.r, colorObject.g, colorObject.b
+		tooltip:AddLine(text, r, g, b, true)
+	end
+	tt:SetOwner(menuButton, "ANCHOR_NONE")
+	tt:SetPoint("TOPRIGHT", menuButton, "TOPLEFT", -10, 0)
+	tt:SetText(title, 1, 1, 1, 1, false)
+	if fullVersion then
+		addLineColoredFromObject(tt, fullVersion, NORMAL_FONT_COLOR)
+	end
+	if showRepMenu then
+		addLineColoredFromObject(tt, L["Left Button click to open reputation menu"], LIGHTBLUE_FONT_COLOR)
+		addLineColoredFromObject(tt, L["Right Button click to open settings"], LIGHTBLUE_FONT_COLOR)
+	else
+		addLineColoredFromObject(tt, L["Click to open settings"], LIGHTBLUE_FONT_COLOR)
+	end
+	tt:Show()
+end
+
+local function AddonCompartmentButton_OnLeave()
+	 GameTooltip:Hide()
+end
+
+local function RegisterAddonCompartmentItem()
+	if not AddonCompartmentFrame or not XPMultiBar.Metadata then
+		return
+	end
+
+	local md = XPMultiBar.Metadata
+
+	AddonCompartmentFrame:RegisterAddon {
+		text = md.title or addonName,
+		icon = "Interface\\AddOns\\XPMultiBar\\Textures\\icon",
+		func = AddonCompartmentButton_OnClick,
+        funcOnEnter = AddonCompartmentButton_OnEnter,
+        funcOnLeave = AddonCompartmentButton_OnLeave,
+	}
+end
+
 function M:OnInitialize()
 	Bars = XPMultiBar:GetModule("Bars")
 	Config = XPMultiBar:GetModule("Config")
@@ -490,6 +550,8 @@ function M:OnInitialize()
 
 	Config.RegisterProfileChanged(self.OnProfileChanged, self)
 	UI:RegisterBarEventHandler(self.OnBarEvent, self)
+
+	RegisterAddonCompartmentItem()
 end
 
 function M:OnEnable()
@@ -520,7 +582,7 @@ function M:OnEnable()
 	-- Register some LSM3 callbacks
 	LSM3.RegisterCallback(
 		self, "LibSharedMedia_SetGlobal",
-		function(callback, mtype, override)
+		function(_, mtype, override)
 			if mtype == "statusbar" and override ~= nil then
 				self:SetTexture(override)
 			end
