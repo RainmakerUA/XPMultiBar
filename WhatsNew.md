@@ -1,7 +1,7 @@
 # Changes
 
-- Add icon and interaction to Addon Compartment
-- Reputation tracking improvement
-- Add all supported language support (AI translations)
+- TOC update for 12.1.0
+- Fix for API changes in 12.1.0
+- Fix for faction update
 
 #### Complete Changelog

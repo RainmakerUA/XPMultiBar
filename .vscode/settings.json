@@ -48,7 +48,9 @@
 		"GameTooltip_AddNormalLine",
 		"GameTooltip_InsertFrame",
 		"GameTooltip_SetDefaultAnchor",
-		"GameTooltip_SetTitle"
+		"GameTooltip_SetTitle",
+		"AddonCompartmentFrame",
+		"GameRulesUtil"
 	],
 	"Lua.runtime.version": "Lua 5.1",
 	"Lua.runtime.builtin": {
@@ -63,6 +65,6 @@
 		"utf8": "disable"
 	},
 	"Lua.workspace.library": [
-		"~\\.vscode\\extensions\\ketho.wow-api-0.21.0\\Annotations\\Core"
+		"~\\.vscode\\extensions\\ketho.wow-api-0.22.3\\Annotations\\Core"
 	]
 }

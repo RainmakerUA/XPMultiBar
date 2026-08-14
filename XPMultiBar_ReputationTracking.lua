@@ -125,6 +125,9 @@ function Mod:GetFactionIDByName(name)
 end
 
 function Mod:OnInitialize()
+end
+
+function Mod:OnEnable()
 	--@debug@
 	local startTime = debugprofilestop()
 	--@end-debug@
