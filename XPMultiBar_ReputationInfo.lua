@@ -9,7 +9,7 @@ local Utils = LibStub("rmUtils-1.1")
 local XPMultiBar = LibStub("AceAddon-3.0"):GetAddon(addonName)
 local RI = XPMultiBar:NewModule("ReputationInfo")
 
-local wowClassic = Utils.IsWoWClassic
+local wowClassic = Utils.IsClassic
 local emptyFun = Utils.EmptyFn
 
 local issecretvalue = issecretvalue or function(_) return false end

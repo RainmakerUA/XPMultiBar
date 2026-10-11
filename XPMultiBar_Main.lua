@@ -26,7 +26,7 @@ local type = type
 local math_ceil = math.ceil
 local math_min = math.min
 
-local wowClassic = Utils.IsWoWClassic
+local wowClassic = Utils.IsClassic
 local emptyFun = Utils.EmptyFn
 
 -- WoW globals

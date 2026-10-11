@@ -14,7 +14,7 @@ local RC = XPMultiBar:GetModule("ReputationCompat")
 local pairs = pairs
 local math_floor = math.floor
 
-local wowClassic = Utils.IsWoWClassic
+local wowClassic = Utils.IsClassic
 local emptyFun = Utils.EmptyFn
 
 local MAX_REPUTATION_REACTION = MAX_REPUTATION_REACTION or 8
