@@ -1,7 +1,5 @@
 # Changes
 
-- TOC update for 12.1.0
-- Fix for API changes in 12.1.0
-- Fix for faction update
+- Final version for Retail 12.1.7 and Forever
 
 #### Complete Changelog
